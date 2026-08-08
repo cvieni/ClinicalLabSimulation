@@ -9,7 +9,7 @@ from modules.tracker import SpecimenTracker
 from modules.analytics import export_ai_training_dataset
 
 # Dictionaries
-from modules.config import MEDIA_CONFIG, SPECIMEN_TYPES, SHIFT_STAFFING_PROFILE 
+from params_config.config import MEDIA_CONFIG, SPECIMEN_TYPES, SHIFT_STAFFING_PROFILE 
 
 # Define adjustable variables:
 reincubation_percent = 0.08
@@ -57,11 +57,13 @@ class BatchAccumulator:
 # ==================================================================================
 # SAFELY ADJUST SIMPY RESOURCE CAPACITY AT RUNTIME
 # ==================================================================================
+# Dynamically adjust resource capcity -> example of adding 2 more lab techs.
+# By adding this module you ensure that processess in the waiting queue are explicitly addressed, otherwise waiting processes would stay blocked until a slot naturally releases
 def set_resource_capacity(resource, new_capacity):
     """Safely adjusts SimPy Resource or PriorityResource capacity dynamically."""
     if resource.capacity != new_capacity:
         capacity_diff = new_capacity - resource.capacity
-        # resource.capacity = new_capacity
+        # Update SimPys internal capacity counter
         resource._capacity = new_capacity
 
         # If capacity increased, trigger queued requests to claim newly opened slots
@@ -72,6 +74,11 @@ def set_resource_capacity(resource, new_capacity):
                 # Fallback for alternative SimPy versions
                 resource._do_put()
 
+# continous background observer that checks every 30 minutes to see how many specimens are:
+# 1. in the lab (active_specs)
+# 2. in the plating queue
+# 3. tech queue
+# then log_state takes a snapshot of these metrics to produce the time series plots
 def state_monitor_process(env, resources, tracker, active_counter, interval=30):
     while True:
         yield env.timeout(interval)
@@ -82,6 +89,9 @@ def state_monitor_process(env, resources, tracker, active_counter, interval=30):
         tracker.log_state(env.now, active_specs, plating_q, tech_q)
 
 
+# ==================================================================================
+# Process Specimens
+# ==================================================================================
 def specimen_process(env, spec_id, spec_type, resources, inventory, tracker, time_plating_mean, time_incubation_hours, active_counter, plating_batcher):
     active_counter['count'] += 1
     # 1. Define media_requirements FIRST before any checks
