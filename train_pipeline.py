@@ -6,7 +6,7 @@ from collections import defaultdict
 
 # Import existing core simulation engine and config
 from modules.simulation_d1 import run_simulation
-from modules.config import MEDIA_CONFIG, SPECIMEN_TYPES
+from params_config.config import MEDIA_CONFIG, SPECIMEN_TYPES
 
 
 def run_monte_carlo_dataset_generation(num_runs=50, sim_days_per_run=14, base_seed=42):
