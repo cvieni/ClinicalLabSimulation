@@ -18,14 +18,16 @@ class SpecimenTracker:
             "Hour": round((timestamp % 1440) / 60, 2)
         })
 
-    def log_state(self, timestamp, active_specs, plating_q, tech_q):
+    def log_state(self, timestamp, active_specimens, plating_queue, tech_queue, busy_techs, active_techs):
         self.state_logs.append({
             "Minute": timestamp,
             "Hour": round(timestamp / 60, 1),
             "Day": round(timestamp / 1440, 2),
-            "Active_Specimens_In_Lab": active_specs,
-            "Plating_Queue_Length": plating_q,
-            "Tech_Review_Queue_Length": tech_q
+            "Active_Specimens_In_Lab": active_specimens,
+            "Plating_Queue_Length": plating_queue,
+            "Tech_Review_Queue_Length": tech_queue,
+            "Busy_Techs": busy_techs,
+            "Active_Techs": active_techs
         })
 
     def log_stockout_delay(self, specimen_id, duration_mins):
@@ -33,8 +35,6 @@ class SpecimenTracker:
             "Specimen_ID": specimen_id,
             "Delay_Mins": duration_mins
         })
-
-        # Add this inside SpecimenTracker in tracker.py
 
     def log_media_usage(self, media_type, qty=1):
         """Records consumption of agar plates for inventory tracking."""
