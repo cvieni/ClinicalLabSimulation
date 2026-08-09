@@ -2,18 +2,39 @@
 # DEFAULT SIMULATION RUNTIME & CONTROL PARAMS
 # ==============================================================================
 
+# -------------------------
+# Overall Simulation Parameters
+# -------------------------
 sim_max_time = 31
 seed_input = 42
 
+# -------------------------
 # Workflow Probability Rates
+# -------------------------
 reincubation_percent = 0.08
 second_workup_percent = 0.80  
 third_workup_percent = 0.05
 additional_workup_percent = 0.01
 
-# class BatchAccumulator:
+# -------------------------
+# Shift Manager Module
+# -------------------------
+shift_1_start, shift_1_end = 7, 15
+shift_2_start, shift_2_end = 15, 23
+
+# Shift break
+break1_wind_min = 30
+break1_wind_max = 90
+
+# -------------------------
+# Run_simulation Module & class BatchAccumulator
+# -------------------------
+# Variable for how many plates a tech waits for to take a "batch" of plates
 batch_size=10
+# If a batch is taking more then max_wait time, tech takes all available plates for workup
 max_wait=15
+
+
 
 # -------------------------
 # specimen_process module
@@ -29,7 +50,14 @@ avg_time2posBcx = 18.0
 std_time2posBcx = 6.0
 avg_time2posBdyFld = 20
 std_time2posBdyFld = 10.0
+
+
+incubation_1_time_min = 20 # Hours 
+incubation_1_time_avg = 26 # Hours 
+
 min_subcult_incbtion_time_Bcx = 18.0 # in hours
+
+
 # 3B. Routine Urine, Wound, Tissu
 min_incubation_time_Other = 6.0
 
@@ -65,15 +93,3 @@ phoenix_run_time_hours = 6.0 # in hours
 
 # Shift variables:
 handoff_time = 15 # minutes
-
-# Workstation Base Capacities
-DEFAULT_CAP_PLATING = 2
-DEFAULT_CAP_TECHS = 3
-DEFAULT_CAP_INCUBATORS = 5000
-
-# Batching Configurations
-PLATING_BATCH_SIZE = 10
-PLATING_MAX_WAIT_MINS = 15
-
-# State Monitoring Interval
-STATE_MONITOR_INTERVAL_MINS = 30
