@@ -12,9 +12,7 @@ seed_input = 42
 # Workflow Probability Rates
 # -------------------------
 reincubation_percent = 0.08
-second_workup_percent = 0.80  
-third_workup_percent = 0.05
-additional_workup_percent = 0.01
+
 
 # -------------------------
 # Shift Manager Module
@@ -50,11 +48,14 @@ avg_time2posBcx = 18.0
 std_time2posBcx = 6.0
 avg_time2posBdyFld = 20
 std_time2posBdyFld = 10.0
-
+# Biofire Setup & Gram Stain time
+min_biochem_screen_time = 5.0 # minutes
+max_biochem_screen_time = 10.0 # minutes
 
 incubation_1_time_min = 20 # Hours 
 incubation_1_time_avg = 26 # Hours 
-
+incubation_2_time_min = 24
+incubation_2_time_avg = 26
 min_subcult_incbtion_time_Bcx = 18.0 # in hours
 
 
@@ -65,21 +66,37 @@ min_incubation_time_Other = 6.0
 avg_plating_time = 3.0
 plating_std_time = 1.0
 min_plating_time = 0.5
-max_plating_time = 8.0
+max_plating_time = 3.0
 
 min_allowed_incubation = 300 # in minutes
 
 # 6. Subcultring:
 min_subcultEval_time = 0.5
 max_subcultEval_time = 1.5
-min_subculture_time = 1.0
+min_subculture_time = 0.0
 max_subculture_time = 3.0
+# if more colonies then require more time for workup
+colony_workup_time_factor = 1.0 + (num_colonies - 1) * random.uniform(min_subculture_time, max_subculture_time)
+
+
+# Need for multiple colony workup
+second_colony_percent = 0.4
+third_colony_percent = 0.2
+four_colony_percent = 0.05
+
+# -------- Need to subculture
+# number of times bloods can be subcultured
+max_subculture_limit_blood = 2
+# chance of setting up a 2nd or third subculture (after first culture from primary specimen)
+second_workup_percent = 0.80  # Day 2
+third_workup_percent = 0.05 # Day 3
+additional_workup_percent = 0.01
 
 # 5. Tech Review
 min_tech_review_sub = 2.0
 max_tech_review_sub = 5.0
-min_reincubate_time = 4.0
-max_reincubate_time = 12.0
+min_reincubate_time = 1.0
+max_reincubate_time = 6.0
 
 # Phenix & MALDI workup
 maldi_testing_percent = 0.6

@@ -17,7 +17,7 @@ from modules.analytics import export_ai_training_dataset
 from modules.shift_manager import shift_handoff_process, shift_manager_process, set_resource_capacity, get_current_shift_config
 
 # Main DES simulation process
-from modules.specimen_process_d2 import specimen_process, consume_media_inventory, get_tech_bench
+from modules.specimen_process_d3 import specimen_process, consume_media_inventory, get_tech_bench
 
 
 # -------------------------------

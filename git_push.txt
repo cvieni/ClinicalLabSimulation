@@ -1,1 +1,23 @@
 git push -u origin VsCodePush
+
+git pull origin main 
+# download from git and update local branch
+
+# Check for modified files
+git status
+
+# Create new branch:
+git branch experimental
+# Switch from branch to master/main:
+git switch master
+# Merge branch (called experimental) to master:
+git merge experimental
+# Delete old branch (Called experimental)
+git branch -d experimental
+
+
+# pull changes from repo
+git pull /home/bob/myrepo master
+
+# First:
+git commit -a
