@@ -33,14 +33,14 @@ batch_size=10
 max_wait=15
 
 
-
 # -------------------------
 # specimen_process module
 # -------------------------
 # 1. preprocessing -----
 rejection_percent = 0.02      # 2% of samples are rejected before processing
 # 2. Check and consume inventory
-inventory_stockout_recheck = 300 # recheck delivery every 6 hours
+inventory_stockout_recheck = 480 # recheck delivery
+
 # 3. Blood Culture / body fluid positivity 
 BCx_positivity = 0.10
 BdyFlid_positivity = 0.10
@@ -52,16 +52,15 @@ std_time2posBdyFld = 10.0
 min_biochem_screen_time = 5.0 # minutes
 max_biochem_screen_time = 10.0 # minutes
 
-incubation_1_time_min = 20 # Hours 
-incubation_1_time_avg = 26 # Hours 
-incubation_2_time_min = 24
-incubation_2_time_avg = 26
+incubation_1_time_std = 6.0 # Hours 
+incubation_1_time_avg = 24 # Hours 
+incubation_2_time_std = 6.0 # Hours
+incubation_2_time_avg = 24
 min_subcult_incbtion_time_Bcx = 18.0 # in hours
 
-
 # 3B. Routine Urine, Wound, Tissu
-min_incubation_time_Other = 6.0
-
+avg_incubation_time_Other = 24.0
+std_incubation_time_Other = 6.0
 
 avg_plating_time = 3.0
 plating_std_time = 1.0
@@ -75,11 +74,15 @@ min_subcultEval_time = 0.5
 max_subcultEval_time = 1.5
 min_subculture_time = 0.0
 max_subculture_time = 3.0
-# if more colonies then require more time for workup
-colony_workup_time_factor = 1.0 + (num_colonies - 1) * random.uniform(min_subculture_time, max_subculture_time)
+# if more colonies then require 75% more time for workup
+colony_workup_time_factor = 1.75
 
 
 # Need for multiple colony workup
+second_colony_blood_percent = 0.1
+third_colony_blood_percent = 0.01
+four_colony_blood_percent = 0.001
+
 second_colony_percent = 0.4
 third_colony_percent = 0.2
 four_colony_percent = 0.05
@@ -87,6 +90,7 @@ four_colony_percent = 0.05
 # -------- Need to subculture
 # number of times bloods can be subcultured
 max_subculture_limit_blood = 2
+max_subculture_limit_other = 3
 # chance of setting up a 2nd or third subculture (after first culture from primary specimen)
 second_workup_percent = 0.80  # Day 2
 third_workup_percent = 0.05 # Day 3
@@ -100,13 +104,19 @@ max_reincubate_time = 6.0
 
 # Phenix & MALDI workup
 maldi_testing_percent = 0.6
-Phoenix_test_percent = 0.9
-min_MALDIprep_time = 15.0
-max_MALDIprep_time = 60.0
-MALDI_runtime = 10.0  # in minutes
+Phoenix_test_percent = 0.5
+min_MALDI_prep_time = 15.0
+max_MALDI_prep_time = 60.0
+MALDI_runtime = 20.0  # in minutes
+
 min_PHENIXprep_time = 5.0
 max_PHENIXprep_time = 15.0
 phoenix_run_time_hours = 6.0 # in hours
 
 # Shift variables:
 handoff_time = 15 # minutes
+
+
+# non-variable params / initialization
+subculture_count = 0
+phoenix_max_wait = 240 # minutes

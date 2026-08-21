@@ -20,13 +20,16 @@ from params_config.config import MEDIA_CONFIG, SPECIMEN_TYPES, SHIFT_STAFFING_PR
 def get_tech_bench(spec_type, resources):
     if spec_type in ["BCx", "BodyFluid"]:
         return resources["tech_blood"]
-    elif spec_type in ["Urine"]:
+    # elif spec_type in ["Urine"]:
+    elif spec_type in ["Urine_Invasive", "Urine_NonInvasive"]:
         return resources["tech_urine"]
     elif spec_type in ["Tissue", "Tissue_genital", "Tissue_FNA", "Bone_Cx"]:
+    #  To Add
+    # elif spec_type in ["Resp_nonCF", "Resp_CF",
+    #                     "Stool"]:
         return resources["tech_routine"]
     else:
         return resources["tech_general"]
-
 
 
 # ==========================================
@@ -81,11 +84,14 @@ def specimen_process(env, spec_id, spec_type, resources, inventory, tracker, tim
 
     # Track individual colony workups for this specimen
     workup_number = 0
+    has_maldi_tested = False
+    has_phoenix_tested = False
 
     # 1. Define media_requirements and culture type FIRST before any checks
     spec_cfg = SPECIMEN_TYPES[spec_type]
     is_blood_culture = spec_type.upper().startswith("BCX") or spec_cfg.get("is_blood_culture", False)
     is_body_fluid = spec_type.upper().startswith("BodyFluid") or spec_cfg.get("is_BodyFluid", False)
+
 
     # ==========================================
     # 1. ARRIVAL & PRE-ANALYTICAL REJECTION
@@ -282,7 +288,9 @@ def specimen_process(env, spec_id, spec_type, resources, inventory, tracker, tim
     # ==========================================
     # 6b. REFLEX TESTING: MALDI-TOF IDENTIFICATION
     # ==========================================
-    if random.random() < p.maldi_testing_percent:
+    if not has_maldi_tested and (random.random() < p.maldi_testing_percent):
+        has_maldi_tested = True
+
         # Determine least busy tech between tech_routine and tech_general
         r_tech = resources.get("tech_routine", resources["tech_general"])
         g_tech = resources["tech_general"]

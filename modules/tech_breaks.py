@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 # Centralized parameters file which has the adjustable variables
-import params_config.params as p
+import params_config.params_d2 as p
 
 
 # ==================================================================================

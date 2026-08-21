@@ -4,10 +4,10 @@ import numpy as np
 import pandas as pd
 
 # Centralized parameters file which has the adjustable variables
-import params_config.params as p
+import params_config.deprecated.params as p
 
 # Dictionaries
-from params_config.config import MEDIA_CONFIG, SPECIMEN_TYPES, SHIFT_STAFFING_PROFILE, Instrument_resources
+from params_config.deprecated.config import MEDIA_CONFIG, SPECIMEN_TYPES, SHIFT_STAFFING_PROFILE, Instrument_resources
 
 # -------------------------------
 # ----- Module import -----------
@@ -166,7 +166,7 @@ def nhpp_next_arrival_delta(current_minute, hourly_weights, daily_volume_mean):
             return t_elapsed  # Return true accumulated time delta in minutes
 
 
-def specimen_generator(env, full_id, spec_type, resources, inventory, tracker, time_plating_mean, time_incubation_hours, active_counter, plating_batcher):
+def specimen_generator(env, full_id, spec_type, resources, inventory, tracker, active_counter, plating_batcher):
     spec_id = 0
     spec_cfg = SPECIMEN_TYPES[spec_type]
     hourly_weights = spec_cfg["hourly_arrival_weights"]
@@ -185,7 +185,7 @@ def specimen_generator(env, full_id, spec_type, resources, inventory, tracker, t
         
         env.process(specimen_process(
             env, full_id, spec_type, resources, inventory, tracker, 
-            time_plating_mean, time_incubation_hours, active_counter, plating_batcher
+            active_counter, plating_batcher
         ))
 
 
@@ -208,7 +208,8 @@ def deadlock_diagnostic_observer(env, resources, interval=60):
 # ==================================================================================
 def run_simulation(sim_days = None, seed = None, 
                    instrument_resources = None, shift_staffing_profile = None,
-                   time_plating_mean = None, time_incubation_hours = None
+                   time_plating_mean = None, time_incubation_hours = None,
+                   set_progress=None
                    ):
     # Strict assertions: Fail instantly with a clear message if None is passed
     assert time_plating_mean is not None, "time_plating_mean was passed as None to run_simulation!"
@@ -235,6 +236,7 @@ def run_simulation(sim_days = None, seed = None,
     cap_incubators = instrument_resources["incubator"]
     bc_cap = instrument_resources["bc_instrument"]
     phoenix_cap = instrument_resources["phoenix_instrument"]
+    maldi_cap = instrument_resources["maldi_instrument"]
 
     # Get initial staffing (Day 1, Shift 1) for initial Resource initialization
     initial_shift = shift_staffing_profile["Weekday"]["Shift_1_Day"]
@@ -244,13 +246,19 @@ def run_simulation(sim_days = None, seed = None,
         "plating_bench": simpy.PriorityResource(env, capacity=initial_shift["plating_capacity"]),
         "incubator": simpy.Resource(env, capacity=cap_incubators),
         "bc_instrument": simpy.Resource(env, capacity=bc_cap),
-        "phoenix_instrument": simpy.Resource(env, capacity=phoenix_cap),
+        # Phoenix AST Resources
+        "phoenix_instrument": simpy.PriorityResource(env, capacity=phoenix_cap),
+        "phoenix_loader_lock": simpy.PriorityResource(env, capacity=1),
+        
+        # MALDI-TOF ID Resource
+        "maldi_instrument": simpy.PriorityResource(env, capacity=maldi_cap),
 
         # --- Split Techs by Bench ---
+        "tech_general": simpy.PriorityResource(env, capacity=initial_shift["tech_general"]),
         "tech_blood": simpy.PriorityResource(env, capacity=initial_shift["tech_blood"]),
         "tech_routine": simpy.PriorityResource(env, capacity=initial_shift["tech_routine"]),
         "tech_urine": simpy.PriorityResource(env, capacity=initial_shift["tech_urine"]),
-        "tech_general": simpy.PriorityResource(env, capacity=initial_shift["tech_general"])
+        "tech_new": simpy.PriorityResource(env, capacity=initial_shift["tech_new"])
     }
 
 
@@ -258,20 +266,44 @@ def run_simulation(sim_days = None, seed = None,
     env.process(inventory_manager_process(env, inventory, MEDIA_CONFIG))
     env.process(state_monitor_process(env, resources, tracker, active_counter, shift_staffing_profile, interval=30))
     env.process(shift_manager_process(env, resources, shift_staffing_profile))
-    
-    # ADD THIS LINE TO START DEADLOCK DIAGNOSTICS:
     env.process(deadlock_diagnostic_observer(env, resources, interval=60))
 
     for spec_type in SPECIMEN_TYPES:
         env.process(specimen_generator(
             env, f"{spec_type[:3].upper()}-GEN",
             spec_type, resources, inventory, tracker, 
-            time_plating_mean, time_incubation_hours, 
             active_counter, plating_batcher
         ))
 
     env.run(until=sim_minutes)
 
+    # =========================================================
+    # DYNAMIC PROGRESS BAR EXECUTION LOOP
+    # =========================================================
+    # Advance in 5% increments to update the progress bar without UI overhead
+    step_percent = 5
+    num_steps = 100 // step_percent
+
+    for i in range(1, num_steps + 1):
+        target_minute = (sim_minutes / num_steps) * i
+        env.run(until=target_minute)
+
+        if set_progress:
+            pct = i * step_percent
+            current_day = (env.now / (24 * 60)) + 1
+            set_progress((
+                pct,
+                f"{pct}%",
+                f"Simulating Day {current_day:.1f} of {sim_days} days..."
+            ))
+
+    # Guarantee execution up to the exact final minute
+    if env.now < sim_minutes:
+        env.run(until=sim_minutes)
+
+    # =========================================================
+    # POST-SIMULATION DATA PROCESSING
+    # =========================================================
     logs = getattr(tracker, 'logs', [])
     state_logs = getattr(tracker, 'state_logs', [])
     media_usage = dict(getattr(tracker, 'media_usage', {}))

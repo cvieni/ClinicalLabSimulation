@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 # Centralized parameters file which has the adjustable variables
-import params_config.params as p
+import params_config.deprecated.params as p
 
 from modules.tech_breaks import single_shift_breaks
 
@@ -64,8 +64,9 @@ def shift_manager_process(env, resources, shift_staffing_profile):
     last_spawned_shift = None  # Tracks which shift's breaks were last launched
 
     while True:
-        current_day = int(env.now // 1440) % 7  # 0-4 = Mon-Fri, 5-6 = Sat-Sun
-        current_hour = int((env.now % 1440) // 60)
+        sim_time = env.now
+        current_day = int(sim_time // 1440) % 7  # 0-4 = Mon-Fri, 5-6 = Sat-Sun
+        current_hour = int((sim_time % 1440) // 60)
         
         # Handle night shift wrap-around (hours 0-6 belong to shift that started yesterday)
         effective_day = (current_day - 1) % 7 if current_hour < 7 else current_day
@@ -93,11 +94,13 @@ def shift_manager_process(env, resources, shift_staffing_profile):
             shift_start_hour = shift_2_end if current_hour >= shift_2_end else -1  # Night shift starts at 23:00 previous day
 
         # 1. Dynamically set bench-specific tech capacities
-        set_resource_capacity(resources["plating_bench"], profile["plating_capacity"])
+        set_resource_capacity(resources["plating_bench"], profile.get("plating_capacity", 3))
+        set_resource_capacity(resources["tech_accession"], profile.get("tech_accession", 0))
+        set_resource_capacity(resources["tech_plating"], profile.get("tech_plating", 0))
         set_resource_capacity(resources["tech_blood"], profile.get("tech_blood", 0))
         set_resource_capacity(resources["tech_routine"], profile.get("tech_routine", 0))
         set_resource_capacity(resources["tech_urine"], profile.get("tech_urine", 0))
-        set_resource_capacity(resources["tech_general"], profile.get("tech_general", 0))
+        set_resource_capacity(resources["tech_new"], profile.get("tech_new", 0))
 
         # 2. Trigger huddle & breaks on shift change
         if current_shift_key != last_spawned_shift:

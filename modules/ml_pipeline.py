@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.metrics import classification_report, mean_absolute_error
 
-from modules.simulation_d2 import run_simulation
+from modules.simulation_d3 import run_simulation
 
 # modules/ml_pipeline.py
 
