@@ -12,8 +12,10 @@ from pathlib import Path
 sns.set_theme(style="whitegrid")
 plt.rcParams.update({'font.size': 11})
 
-def Extract_and_Plot_Metrics(csv_path, save_plots=True):
+def Extract_and_Plot_Metrics(csv_path, BASE_DIR, save_plots=True):
     base_filename = os.path.splitext(os.path.basename(csv_path))[0]
+    png_dir = Path(BASE_DIR) / "ARUP_data" / "png_direct"
+
 
     df = pd.read_csv(csv_path)
 
@@ -224,10 +226,10 @@ def Extract_and_Plot_Metrics(csv_path, save_plots=True):
     plt.tight_layout()
     
     if save_plots:
-        plot2_path = os.path.join("ARUP_data/png_direct", f"{base_filename}_hourly_arrivals_weekday_vs_weekend.png")
+        plot2_path = os.path.join(png_dir, f"{base_filename}_hourly_arrivals_weekday_vs_weekend.png")
         plt.savefig(plot2_path, dpi=300)
         print(f"--> Saved plot: {plot2_path}")
-    plt.show()
+    # plt.show()
    
 
     # -------------------------------------------------------------
@@ -265,10 +267,10 @@ def Extract_and_Plot_Metrics(csv_path, save_plots=True):
 
         plt.tight_layout()
         if save_plots:
-            plot3_path = os.path.join("ARUP_data/png_direct", f"{base_filename}_cancel_codes_distribution.png")
+            plot3_path = os.path.join(png_dir, f"{base_filename}_cancel_codes_distribution.png")
             plt.savefig(plot3_path, dpi=300)
             print(f"--> Saved plot: {plot3_path}")
-        plt.show()
+        # plt.show()
 
     # -------------------------------------------------------------
     # 4B. GRAPH: Accessioning / Processing Time Distribution
@@ -301,10 +303,10 @@ def Extract_and_Plot_Metrics(csv_path, save_plots=True):
         plt.tight_layout()
 
         if save_plots:
-            plot_acc_path = os.path.join("ARUP_data/png_direct", f"{base_filename}_accession_time_distribution.png")
+            plot_acc_path = os.path.join(png_dir, f"{base_filename}_accession_time_distribution.png")
             plt.savefig(plot_acc_path, dpi=300)
             print(f"--> Saved plot: {plot_acc_path}")
-        plt.show()
+        # plt.show()
 
 
     # -------------------------------------------------------------
@@ -321,7 +323,7 @@ def Extract_and_Plot_Metrics(csv_path, save_plots=True):
 
     # Save output to JSON for config/params ingestion
     csv_dir = os.path.dirname(csv_path)
-    json_dir = os.path.join(csv_dir, "json_clned_data/")
+    json_dir = os.path.join(BASE_DIR, csv_dir, "json_clned_data/")
     
     os.makedirs(json_dir, exist_ok=True)
 
@@ -338,13 +340,26 @@ def Extract_and_Plot_Metrics(csv_path, save_plots=True):
 # PIPELINE EXECUTION
 # ------------------------------------------------------------------------------
 if __name__ == "__main__":
-    BASE_DIR = Path(__file__).resolve().parent
+    BASE_DIR = Path(__file__).resolve().parent.parent
     data_dir = BASE_DIR / "ARUP_data"
+    print("BASE_DIR", BASE_DIR)
+    print("data_dir", data_dir)
 
     # Define files and their descriptive labels/keys
     specimen_files = {
+        "Bone": data_dir / "Bone_2024.csv",
         "Urine_Inv": data_dir / "InvUrine_2024.csv",
+        "Urine_Inv": data_dir / "Inv_Urine_UofU_2024.csv",
         "Urine_NonInv": data_dir / "NonInv_Urine_2024.csv",
+        "Urine_NonInv_UofU": data_dir / "NonInv_Urine_UofU_2024.csv",
+        "Resp_NonCF": data_dir / "Respiratory_NonCF_2024.csv",
+        "Resp_CF": data_dir / "Respiratory_CF_2024.csv",
+        "Stool": data_dir / "Stool_2024.csv",
+        "Tissue_genital": data_dir / "Tiss_genital_2024.csv",
+        "Tissue_FNA": data_dir / "Tiss_FNA_2024.csv",
+        "Tissue_other": data_dir / "TissueCleaned_2024.csv",
+        "Wound_genital": data_dir / "Wound_genital_2024.csv",
+        "Wound_other": data_dir / "Wound_Cleaned_2024.csv",
     }
 
     # Process all files in a single loop and collect metrics in a dict
@@ -352,7 +367,7 @@ if __name__ == "__main__":
     for spec_type, csv_path in specimen_files.items():
         if csv_path.exists():
             print(f"\nProcessing {spec_type} from {csv_path.name}...")
-            weights, daily_vol = Extract_and_Plot_Metrics(str(csv_path))
+            weights, daily_vol = Extract_and_Plot_Metrics(str(csv_path), BASE_DIR, save_plots=True)
             results[spec_type] = {
                 "weights": weights,
                 "daily_volume": daily_vol,
