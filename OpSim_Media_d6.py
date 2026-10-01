@@ -5,7 +5,11 @@ import diskcache
 from dash import DiskcacheManager
 
 from components.layouts import get_main_layout
-from components.callbacks_d3 import register_callbacks
+from components.callbacks_d4 import register_callbacks
+
+
+# Check version history
+# python -c "import dash; print(dash.__version__)"
 
 # Create cache directory (for progress bar)
 cache = diskcache.Cache("./cache")

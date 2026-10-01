@@ -18,17 +18,31 @@ class SpecimenTracker:
             "Hour": round((timestamp % 1440) / 60, 2)
         })
 
-    def log_state(self, timestamp, active_specimens, plating_queue, tech_queue, busy_techs, active_techs):
-        self.state_logs.append({
+    # def log_state(self, timestamp, active_specimens, plating_queue, tech_queue, busy_techs, active_techs):
+    def log_state(self, timestamp, active_specimens, plating_queue, tech_queue, busy_techs, active_techs, **kwargs):
+        """
+        Logs simulation snapshots. Accepts explicit core metrics plus optional
+        dynamic queues passed via **kwargs.
+        """
+        entry = {
             "Minute": timestamp,
             "Hour": round(timestamp / 60, 1),
             "Day": round(timestamp / 1440, 2),
             "Active_Specimens_In_Lab": active_specimens,
             "Plating_Queue_Length": plating_queue,
-            "Tech_Review_Queue_Length": tech_queue,
+            "Total_Tech_Queue_Length": tech_queue, 
             "Busy_Techs": busy_techs,
             "Active_Techs": active_techs
-        })
+        }
+
+        # Dynamically append individual tech queues passed from state_monitor_process
+        for key, val in kwargs.items():
+            # Converts keys like 'tech_accession_queue' -> 'Tech_Accession_Queue_Length'
+            clean_key = key.replace("tech_", "").replace("_queue_length", "").replace("_queue", "")
+            formatted_key = f"Tech_{clean_key.capitalize()}_Queue_Length"
+            entry[formatted_key] = val
+
+        self.state_logs.append(entry)
 
     def log_stockout_delay(self, specimen_id, duration_mins):
         self.stockout_delays.append({
