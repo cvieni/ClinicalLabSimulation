@@ -1,4 +1,36 @@
+# Python cache & build files
 __pycache__/
 *.pyc
+
+# Ignore global caches & data
 cache/
 ARUP_data/
+.vscode/
+
+# Ignore previous simulation versions
+Sim/
+Sim_d2/
+Sim_d3/
+Sim_d4/
+Sim_d5b/
+
+# Ignore output & data directories inside Sim_d5 (or anywhere in project)
+**/__pycache__/
+**/.vscode/
+**/cache/
+**/data/
+**/headless_outputs/
+**/output_pngs/
+**/results_experiments/
+**/results_montecarlo_output/
+**/sim_output_logs/
+**/temp/
+
+# Common raw data file types (optional safety net)
+*.csv
+*.xlsx
+*.xls
+*.json
+*.parquet
+*.h5
+*.hdf5
