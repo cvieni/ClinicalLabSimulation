@@ -3,9 +3,9 @@
 import numpy as np
 import pandas as pd
 from typing import Dict, Any, List
-from modules.simulation_d2 import run_simulation
+from modules.simulation_d3 import run_simulation
 
-from params_config.config import Instrument_resources  # Import default capacities if available
+from params_config.config_d2 import Instrument_resources  # Import default capacities if available
 
 def run_monte_carlo_simulation(
     proposed_policy: Dict[str, int],

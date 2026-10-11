@@ -4,8 +4,10 @@ import dash
 from dash import dcc, html, dash_table
 import dash_bootstrap_components as dbc
 
-import params_config.params as p
-from params_config.config import SHIFT_STAFFING_PROFILE, Instrument_resources
+import params_config.params_d2 as p
+from params_config.config_d2 import SHIFT_STAFFING_PROFILE, Instrument_resources
+
+from components.GraphingFunctions_d2 import Graphing_SampleQueue
 
 SIM_MAX_TIME = p.sim_max_time
 
@@ -36,16 +38,26 @@ def create_shift_inputs(day_type, shift_key, shift_label):
     """Helper to build consistent shift input cards pre-populated with config defaults."""
     
     # Read dynamic defaults from SHIFT_STAFFING_PROFILE
+    val_a = get_default_tech(day_type, shift_key, "tech_accession", default=1)
+    val_plt = get_default_tech(day_type, shift_key, "tech_plating", default=1)
     val_b = get_default_tech(day_type, shift_key, "tech_blood", default=1)
     val_r = get_default_tech(day_type, shift_key, "tech_routine", default=1)
     val_u = get_default_tech(day_type, shift_key, "tech_urine", default=1)
-    val_g = get_default_tech(day_type, shift_key, "tech_general", default=1)
+    val_n = get_default_tech(day_type, shift_key, "tech_new", default=1)
     val_p = get_default_tech(day_type, shift_key, "plating_capacity", default=2)
 
     return dbc.Card(
         dbc.CardBody([
             html.H6(shift_label, className="card-subtitle mb-2 text-primary"),
             dbc.Row([
+                dbc.Col([
+                    html.Label("Accessioning Techs", style={"fontSize": "11px"}),
+                    dbc.Input(id=f"input_{day_type}_{shift_key}_tech_accession", type="number", value=val_a, min=0, size="sm"),
+                ], width=3),
+                dbc.Col([
+                    html.Label("Plating Techs", style={"fontSize": "11px"}),
+                    dbc.Input(id=f"input_{day_type}_{shift_key}_tech_plating", type="number", value=val_plt, min=0, size="sm"),
+                ], width=3),
                 dbc.Col([
                     html.Label("Blood Techs", style={"fontSize": "11px"}),
                     dbc.Input(id=f"input_{day_type}_{shift_key}_tech_blood", type="number", value=val_b, min=0, size="sm"),
@@ -59,8 +71,8 @@ def create_shift_inputs(day_type, shift_key, shift_label):
                     dbc.Input(id=f"input_{day_type}_{shift_key}_tech_urine", type="number", value=val_u, min=0, size="sm"),
                 ], width=3),
                 dbc.Col([
-                    html.Label("General Techs", style={"fontSize": "11px"}),
-                    dbc.Input(id=f"input_{day_type}_{shift_key}_tech_general", type="number", value=val_g, min=0, size="sm"),
+                    html.Label("News Bench", style={"fontSize": "11px"}),
+                    dbc.Input(id=f"input_{day_type}_{shift_key}_tech_new", type="number", value=val_n, min=0, size="sm"),
                 ], width=3),
             ], className="mb-2"),
             dbc.Row([
@@ -81,6 +93,7 @@ def create_sidebar_controls():
     bc_default = Instrument_resources.get("bc_instrument", 1500) if isinstance(Instrument_resources, dict) else 1500
     inc_default = Instrument_resources.get("incubator", 10000) if isinstance(Instrument_resources, dict) else 10000
     phx_default = Instrument_resources.get("phoenix_instrument", 150) if isinstance(Instrument_resources, dict) else 150
+    maldi_default = Instrument_resources.get("maldi_instrument", 2) if isinstance(Instrument_resources, dict) else 2
 
     return html.Div([
         html.H4("Simulation Settings", className="mb-3"),
@@ -92,7 +105,7 @@ def create_sidebar_controls():
                     id="slider_sim_days",
                     min=1, max=SIM_MAX_TIME,
                     step=1, value=7,
-                    marks={1: "1d", 7: "7d", 14: "14d", 31: "31d"}
+                    marks={1: "1d", 7: "7d", 14: "14d", 21: "21d", 31: "31d"}
                 ),
                 html.Hr(),
 
@@ -121,6 +134,8 @@ def create_sidebar_controls():
                 dbc.Input(id="input_incubator_capacity", type="number", value=inc_default, size="sm", className="mb-2"),
                 html.Label("Phoenix Capacity"),
                 dbc.Input(id="input_phoenix_capacity", type="number", value=phx_default, size="sm", className="mb-2"),
+                html.Label("Number of MALDI-TOF Instruments"),
+                dbc.Input(id="input_maldi_capacity", type="number", value=maldi_default, size="sm", className="mb-2"),
             ], title="⚙️ General & Instrument Capacities"),
 
             # GROUP 2: Weekday Staffing
@@ -139,9 +154,6 @@ def create_sidebar_controls():
         ], start_collapsed=True, always_open=False),
 
         dbc.Button("🚀 Run Simulation", id="btn_run_sim", color="primary", className="w-100 mt-3"),
-
-        # Progress bar container
-        dbc.Progress(id="sim-progress-bar", value=0, striped=True, animated=True, style={"marginTop": "15px", "display": "none"}),
         html.Div(id="simulation-output-container")
     ])
 
@@ -159,19 +171,36 @@ def get_main_layout():
                     dbc.Col(create_sidebar_controls(), width=3),
 
                     dbc.Col([
+                        # ----------------------------------------------------
+                        # PROGRESS BAR CONTAINER (MOVED ABOVE KPI INDEXES)
+                        # ----------------------------------------------------
+                        html.Div([
+                            html.H6("Progress Bar", className="fw-bold mb-2"),
+                            dbc.Progress(id="sim_progress_bar", value=0, label="0%", striped=True, animated=True, className="mb-1"),
+                            html.P(id="sim_progress_text", className="text-muted small text-center mb-0")
+                        ], id="sim_progress_container", className="mt-3 mb-2"),
+
+                        # KPI CARDS ROW
                         dbc.Row([
                             dbc.Col(dbc.Card([dbc.CardBody([html.H6("Total Specimens"), html.H3(id="kpi_total", children="-")])], color="light")),
                             dbc.Col(dbc.Card([dbc.CardBody([html.H6("Avg TAT"), html.H3(id="kpi_tat", children="-")])], color="light")),
                             dbc.Col(dbc.Card([dbc.CardBody([html.H6("Avg Wait Mins"), html.H3(id="kpi_wait", children="-")])], color="light")),
                             dbc.Col(dbc.Card([dbc.CardBody([html.H6("Completion Rate"), html.H3(id="kpi_completion", children="-")])], color="light")),
-                        ], className="mb-4 mt-3"),
+                        ], className="mb-4"),
 
                         dcc.Tabs([
                             dcc.Tab(label="📈 Workload & Queues", children=[dcc.Graph(id="chart_scatter_timeline")]),
-                            dcc.Tab(label="👨‍🔬 Tech Utilization Over Time", children=[dcc.Graph(id="chart_tech_utilization")]),
+                            dcc.Tab(label="📈 Sample Volume Trends", children=[dcc.Graph(id="chart_sample_volumes_line")]),
+                            dcc.Tab(label="👨‍🔬 Tech Utilization Over Time", children=[
+                                dcc.Graph(id="chart_tech_utilization"), 
+                                html.Hr(className="my-4"),
+                                html.H5("🔥 Resource Bottleneck & Queue Diagnostic", className="mt-3 mb-2 text-secondary"),
+                                dcc.Graph(id="chart_queue_diagnostic")
+                                ]),
                             dcc.Tab(label="📊 Turnaround Times", children=[dcc.Graph(id="chart_tat")]),
                             dcc.Tab(label="⏳ Queue Distribution", children=[dcc.Graph(id="chart_wait")]),
                             dcc.Tab(label="📦 Consumables Usage", children=[dcc.Graph(id="chart_media")]),
+                            dcc.Tab(label="🔬 Review Milestones Scatter", children=[dcc.Graph(id="chart_review_milestones")]),
                         ]),
 
                         html.H5("🔍 Specimen Timestamps Log", className="mt-4"),
@@ -225,9 +254,9 @@ def get_main_layout():
                             dbc.CardBody([
                                 # PROGRESS BAR SECTION -------
                                 html.Div([
-                                        dbc.Progress(id="mc_progress_bar", value=0, label="0%", striped=True, animated=True, className="mb-2"),
-                                        html.P(id="mc_progress_text", className="text-muted small text-center")
-                                    ], className="my-3"),
+                                    dbc.Progress(id="mc_progress_bar", value=0, label="0%", striped=True, animated=True, className="mb-2"),
+                                    html.P(id="mc_progress_text", className="text-muted small text-center")
+                                ], className="my-3"),
                                 # Results contains ----
                                 html.Div(id="mc_results_container", children=[
                                     html.P("Click 'Run Monte Carlo Stress Test' to evaluate order risk profile.", className="text-muted")

@@ -6,8 +6,8 @@ import plotly.express as px
 import pandas as pd
 import numpy as np
 
-from modules.simulation_d2 import run_simulation
-from params_config.config import MEDIA_CONFIG
+from modules.simulation_d1 import run_simulation
+from modules.deprecated.config import MEDIA_CONFIG
 
 sim_max_time = 31
 
@@ -38,7 +38,7 @@ app.layout = dbc.Container([
                             dcc.Slider(id="cap_plating", min=1, max=10, step=1, value=2),
                             
                             html.Label("Lab Technicians:", className="mt-2"),
-                            dcc.Slider(id="cap_techs", min=1, max=20, step=1, value=3),
+                            dcc.Slider(id="cap_techs", min=1, max=10, step=1, value=3),
                             
                             html.Label("Incubator Capacity:", className="mt-2"),
                             dcc.Slider(id="cap_incubators", min=1000, max=10000, step=10, value=5000),
@@ -51,11 +51,7 @@ app.layout = dbc.Container([
                             html.Label("Mean Incubation (hours):", className="mt-2"),
                             dcc.Slider(id="time_incubation", min=12, max=48, step=2, value=24),
                             
-                            dbc.Button("🚀 Run Simulation", id="btn_run", color="primary", className="w-100 mt-4"),
-                            dcc.Loading(id="loading_sim", type="default",  # Options: "graph", "cube", "circle", "dot", "default"
-                                        children=[html.Div(id="sim_status_output", className="mt-2 text-center")]
-                                    )
-
+                            dbc.Button("🚀 Run Simulation", id="btn_run", color="primary", className="w-100 mt-4")
                         ])
                     ], className="shadow-sm mt-3")
                 ], width=3),
@@ -71,7 +67,6 @@ app.layout = dbc.Container([
                     
                     dcc.Tabs([
                         dcc.Tab(label="📈 Workload & Queues", children=[dcc.Graph(id="chart_scatter_timeline")]),
-                        dcc.Tab(label="👨‍🔬 Tech Utilization Over Time", children=[dcc.Graph(id="chart_tech_utilization")]),
                         dcc.Tab(label="📊 Turnaround Times", children=[dcc.Graph(id="chart_tat")]),
                         dcc.Tab(label="⏳ Queue Distribution", children=[dcc.Graph(id="chart_wait")]),
                         dcc.Tab(label="📦 Consumables Usage", children=[dcc.Graph(id="chart_media")]),
@@ -140,10 +135,7 @@ app.layout = dbc.Container([
 # CALLBACKS: TAB 1 SIMULATION
 # =============================================================================
 @app.callback(
-    [
-        Output("store_sim_data", "data"),
-        Output("sim_status_output", "children")  # Progress bar callback
-    ],
+    Output("store_sim_data", "data"),
     Input("btn_run", "n_clicks"),
     State("sim_days", "value"),
     State("seed", "value"),
@@ -164,18 +156,12 @@ def trigger_simulation(n_clicks, days, seed, plating, techs, incubators, time_pl
         time_plating_mean=time_plating,
         time_incubation_hours=time_incubation
     )
-    # Value 1: Dictionary for store_sim_data
-    sim_data = {
+    
+    return {
         "df_pivot": df_pivot.to_dict("records") if not df_pivot.empty else [],
         "df_state": df_state.to_dict("records") if not df_state.empty else [],
         "media_usage": media_usage
     }
-    
-    # Value 2: Status UI component for sim_status_output
-    status_ui = dbc.Badge("✅ Simulation Complete", color="success", className="p-2 w-100")
-
-    # Return BOTH items as a tuple
-    return sim_data, status_ui
 
 
 @app.callback(
@@ -185,7 +171,6 @@ def trigger_simulation(n_clicks, days, seed, plating, techs, incubators, time_pl
         Output("kpi_wait", "children"),
         Output("kpi_completion", "children"),
         Output("chart_scatter_timeline", "figure"),
-        Output("chart_tech_utilization", "figure"),
         Output("chart_tat", "figure"),
         Output("chart_wait", "figure"),
         Output("chart_media", "figure"),
@@ -255,27 +240,6 @@ def update_dashboard(data):
                     annotation_font_size=10,
                     annotation_font_color="#6c757d"
                 )
-
-        # Plot tech utilization figure
-        tech_cols = [c for c in ["Busy_Techs", "Active_Techs"] if c in df_state.columns]
-        if tech_cols:
-            fig_tech = px.line(
-                df_state,
-                x="Day",
-                y=tech_cols,
-                labels={"Day": "Simulation Time (Days)", "value": "Number of Technicians", "variable": "Metric"},
-                title="Technician Staffing & Active Utilization Over Time"
-            )
-            # Add weekend bands to Tech chart as well
-            for d in range(0, max_days + 7, 7):
-                if d + 5 <= max_days:
-                    fig_tech.add_vrect(
-                        x0=d + 5, x1=min(d + 7, max_days),
-                        fillcolor="rgba(108, 117, 125, 0.15)", layer="below",
-                        line_width=1, line_color="rgba(108, 117, 125, 0.3)", line_dash="dot"
-                    )
-        else:
-            fig_tech = empty_fig
                 
     else:
         fig_scatter = empty_fig
