@@ -1,0 +1,22 @@
+__pycache__/
+*.pyc
+cache/
+ARUP_data/
+
+# Raw data directories
+data/
+headless_outputs/
+output_pngs/
+results_experiments/
+results_montecarlo_output/
+sim_output_logs/
+temp/
+
+# Common raw data file types (optional safety net)
+*.csv
+*.xlsx
+*.xls
+*.json
+*.parquet
+*.h5
+*.hdf5

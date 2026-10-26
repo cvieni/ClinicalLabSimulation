@@ -1,0 +1,2492 @@
+=== Simulation Log Started for 1 Days (1440 mins) ===
+Seed: 7 | Max Accession Techs: 12
+DEBUG [11.1m] Worker-1: Assembled batch of 1 items in 11.05m. Store left: 0
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 15.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 0      [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use:  0/10000 (  0.0%) | Queue: 0     
+  Resource: bc_instrument          | In Use:  0/1296 (  0.0%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 2     
+  Resource: tech_plating           | In Use:  4/4  (100.0%) | Queue: 1     
+  Resource: tech_blood             | In Use:  1/1  (100.0%) | Queue: 1     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 2     
+  Resource: tech_urine             | In Use:  1/1  (100.0%) | Queue: 1     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 1     
+============================================================
+
+DEBUG [15.0m] Worker-1: Acquired tech_accession lock after waiting 3.95m.
+DEBUG [16.5m] Worker-1: Finished processing batch of 1. Released lock.
+DEBUG [16.5m] Worker-2: Assembled batch of 1 items in 16.47m. Store left: 0
+DEBUG [16.5m] Worker-2: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [16.9m] Worker-2: Finished processing batch of 1. Released lock.
+DEBUG [17.1m] Worker-3: Assembled batch of 1 items in 17.14m. Store left: 0
+DEBUG [17.1m] Worker-3: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [17.8m] Worker-3: Finished processing batch of 1. Released lock.
+DEBUG [19.6m] Worker-4: Assembled batch of 2 items in 19.57m. Store left: 0
+DEBUG [19.6m] Worker-4: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [20.0m] Worker-5: Assembled batch of 2 items in 19.98m. Store left: 0
+DEBUG [20.0m] Worker-5: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [20.5m] Worker-6: Assembled batch of 1 items in 20.54m. Store left: 0
+DEBUG [20.5m] Worker-6: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [20.6m] Worker-7: Assembled batch of 1 items in 20.64m. Store left: 0
+DEBUG [20.6m] Worker-7: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [20.8m] Worker-6: Finished processing batch of 1. Released lock.
+DEBUG [20.9m] Worker-5: Finished processing batch of 2. Released lock.
+DEBUG [21.2m] Worker-7: Finished processing batch of 1. Released lock.
+DEBUG [22.3m] Worker-4: Finished processing batch of 2. Released lock.
+DEBUG [22.7m] Worker-8: Assembled batch of 2 items in 22.71m. Store left: 0
+DEBUG [22.7m] Worker-8: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [23.3m] Worker-8: Finished processing batch of 2. Released lock.
+DEBUG [24.8m] Worker-9: Assembled batch of 1 items in 24.84m. Store left: 0
+DEBUG [24.8m] Worker-9: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [25.6m] Worker-10: Assembled batch of 1 items in 25.58m. Store left: 0
+DEBUG [25.6m] Worker-10: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [25.9m] Worker-9: Finished processing batch of 1. Released lock.
+DEBUG [26.1m] Worker-11: Assembled batch of 1 items in 26.06m. Store left: 0
+DEBUG [26.1m] Worker-11: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [26.6m] Worker-10: Finished processing batch of 1. Released lock.
+DEBUG [26.8m] Worker-12: Assembled batch of 1 items in 26.76m. Store left: 0
+DEBUG [26.8m] Worker-12: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [27.1m] Worker-12: Finished processing batch of 1. Released lock.
+DEBUG [27.4m] Worker-11: Finished processing batch of 1. Released lock.
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 30.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 0      [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  1/1  (100.0%) | Queue: 4     
+  Resource: incubator              | In Use:  4/10000 (  0.0%) | Queue: 0     
+  Resource: bc_instrument          | In Use:  4/1296 (  0.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  2/5  ( 40.0%) | Queue: 0     
+  Resource: tech_plating           | In Use:  4/4  (100.0%) | Queue: 0     
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  1/2  ( 50.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  1/2  ( 50.0%) | Queue: 0     
+============================================================
+
+DEBUG [36.3m] Worker-1: Assembled batch of 1 items in 19.87m. Store left: 0
+DEBUG [36.3m] Worker-1: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [37.0m] Worker-1: Finished processing batch of 1. Released lock.
+DEBUG [40.5m] Worker-2: Assembled batch of 1 items in 23.52m. Store left: 0
+DEBUG [40.5m] Worker-2: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [40.9m] Worker-2: Finished processing batch of 1. Released lock.
+DEBUG [42.0m] Worker-3: Assembled batch of 2 items in 24.19m. Store left: 0
+DEBUG [42.0m] Worker-3: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [43.6m] Worker-3: Finished processing batch of 2. Released lock.
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 45.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 0      [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 12/10000 (  0.1%) | Queue: 0     
+  Resource: bc_instrument          | In Use:  4/1296 (  0.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  0/5  (  0.0%) | Queue: 0     
+  Resource: tech_plating           | In Use:  3/4  ( 75.0%) | Queue: 0     
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  1/2  ( 50.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+DEBUG [45.1m] Worker-6: Assembled batch of 2 items in 24.33m. Store left: 0
+DEBUG [45.1m] Worker-6: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [45.8m] Worker-5: Assembled batch of 2 items in 24.88m. Store left: 0
+DEBUG [45.8m] Worker-5: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [46.5m] Worker-7: Assembled batch of 2 items in 25.31m. Store left: 0
+DEBUG [46.5m] Worker-7: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [47.0m] Worker-6: Finished processing batch of 2. Released lock.
+DEBUG [47.1m] Worker-5: Finished processing batch of 2. Released lock.
+DEBUG [47.6m] Worker-4: Assembled batch of 2 items in 25.31m. Store left: 0
+DEBUG [47.6m] Worker-4: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [48.6m] Worker-7: Finished processing batch of 2. Released lock.
+DEBUG [49.2m] Worker-8: Assembled batch of 2 items in 25.97m. Store left: 0
+DEBUG [49.2m] Worker-8: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [49.4m] Worker-9: Assembled batch of 2 items in 23.53m. Store left: 0
+DEBUG [49.4m] Worker-9: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [49.8m] Worker-4: Finished processing batch of 2. Released lock.
+DEBUG [50.0m] Worker-10: Assembled batch of 2 items in 23.37m. Store left: 0
+DEBUG [50.0m] Worker-10: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [50.8m] Worker-12: Assembled batch of 1 items in 23.77m. Store left: 0
+DEBUG [50.8m] Worker-12: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [50.9m] Worker-8: Finished processing batch of 2. Released lock.
+DEBUG [51.0m] Worker-11: Assembled batch of 1 items in 23.59m. Store left: 0
+DEBUG [51.0m] Worker-11: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [51.1m] Worker-9: Finished processing batch of 2. Released lock.
+DEBUG [51.2m] Worker-11: Finished processing batch of 1. Released lock.
+DEBUG [51.7m] Worker-12: Finished processing batch of 1. Released lock.
+DEBUG [51.8m] Worker-10: Finished processing batch of 2. Released lock.
+DEBUG [55.4m] Worker-1: Assembled batch of 2 items in 18.39m. Store left: 0
+DEBUG [55.4m] Worker-1: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [58.0m] Worker-1: Finished processing batch of 2. Released lock.
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 60.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 0      [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  1/1  (100.0%) | Queue: 6     
+  Resource: incubator              | In Use: 15/10000 (  0.1%) | Queue: 0     
+  Resource: bc_instrument          | In Use:  7/1296 (  0.5%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 0     
+  Resource: tech_plating           | In Use:  4/4  (100.0%) | Queue: 2     
+  Resource: tech_blood             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 3     
+  Resource: tech_urine             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 2     
+============================================================
+
+DEBUG [61.0m] Worker-2: Assembled batch of 2 items in 20.09m. Store left: 0
+DEBUG [61.1m] Worker-3: Assembled batch of 2 items in 17.52m. Store left: 0
+DEBUG [62.7m] Worker-6: Assembled batch of 1 items in 15.71m. Store left: 0
+DEBUG [62.9m] Worker-5: Assembled batch of 1 items in 15.81m. Store left: 0
+DEBUG [63.0m] Worker-7: Assembled batch of 1 items in 14.41m. Store left: 0
+DEBUG [63.6m] Worker-4: Assembled batch of 1 items in 13.80m. Store left: 0
+DEBUG [64.4m] Worker-8: Assembled batch of 1 items in 13.54m. Store left: 0
+DEBUG [64.8m] Worker-2: Acquired tech_accession lock after waiting 3.77m.
+DEBUG [65.9m] Worker-9: Assembled batch of 1 items in 14.82m. Store left: 0
+DEBUG [66.2m] Worker-3: Acquired tech_accession lock after waiting 5.07m.
+DEBUG [67.4m] Worker-2: Finished processing batch of 2. Released lock.
+DEBUG [67.4m] Worker-6: Acquired tech_accession lock after waiting 4.73m.
+DEBUG [67.8m] Worker-11: Assembled batch of 1 items in 16.60m. Store left: 0
+DEBUG [68.0m] Worker-6: Finished processing batch of 1. Released lock.
+DEBUG [68.0m] Worker-5: Acquired tech_accession lock after waiting 5.07m.
+DEBUG [68.0m] Worker-7: Acquired tech_accession lock after waiting 4.96m.
+DEBUG [68.1m] Worker-3: Finished processing batch of 2. Released lock.
+DEBUG [68.1m] Worker-4: Acquired tech_accession lock after waiting 4.44m.
+DEBUG [68.5m] Worker-7: Finished processing batch of 1. Released lock.
+DEBUG [68.5m] Worker-8: Acquired tech_accession lock after waiting 4.11m.
+DEBUG [68.5m] Worker-5: Finished processing batch of 1. Released lock.
+DEBUG [68.5m] Worker-9: Acquired tech_accession lock after waiting 2.65m.
+DEBUG [69.1m] Worker-9: Finished processing batch of 1. Released lock.
+DEBUG [69.1m] Worker-11: Acquired tech_accession lock after waiting 1.27m.
+DEBUG [69.1m] Worker-4: Finished processing batch of 1. Released lock.
+DEBUG [69.2m] Worker-8: Finished processing batch of 1. Released lock.
+DEBUG [70.6m] Worker-11: Finished processing batch of 1. Released lock.
+DEBUG [72.2m] Worker-12: Assembled batch of 2 items in 20.50m. Store left: 0
+DEBUG [72.2m] Worker-12: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [74.3m] Worker-12: Finished processing batch of 2. Released lock.
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 75.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 0      [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 20/10000 (  0.2%) | Queue: 0     
+  Resource: bc_instrument          | In Use:  9/1296 (  0.7%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  2/5  ( 40.0%) | Queue: 0     
+  Resource: tech_plating           | In Use:  4/4  (100.0%) | Queue: 4     
+  Resource: tech_blood             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 8     
+  Resource: tech_urine             | In Use:  1/1  (100.0%) | Queue: 1     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 6     
+============================================================
+
+DEBUG [76.3m] Worker-10: Assembled batch of 2 items in 24.51m. Store left: 0
+DEBUG [76.3m] Worker-10: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [77.2m] Worker-10: Finished processing batch of 2. Released lock.
+DEBUG [78.0m] Worker-1: Assembled batch of 2 items in 20.03m. Store left: 0
+DEBUG [82.4m] Worker-1: Acquired tech_accession lock after waiting 4.41m.
+DEBUG [83.4m] Worker-2: Assembled batch of 2 items in 15.99m. Store left: 0
+DEBUG [83.5m] Worker-6: Assembled batch of 1 items in 15.48m. Store left: 0
+DEBUG [83.7m] Worker-2: Acquired tech_accession lock after waiting 0.26m.
+DEBUG [84.0m] Worker-1: Finished processing batch of 2. Released lock.
+DEBUG [84.0m] Worker-6: Acquired tech_accession lock after waiting 0.57m.
+DEBUG [84.9m] Worker-6: Finished processing batch of 1. Released lock.
+DEBUG [85.3m] Worker-3: Assembled batch of 1 items in 17.21m. Store left: 0
+DEBUG [85.3m] Worker-3: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [85.4m] Worker-2: Finished processing batch of 2. Released lock.
+DEBUG [86.8m] Worker-3: Finished processing batch of 1. Released lock.
+DEBUG [87.1m] Worker-7: Assembled batch of 2 items in 18.55m. Store left: 0
+DEBUG [87.1m] Worker-7: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [87.1m] Worker-5: Assembled batch of 2 items in 18.61m. Store left: 0
+DEBUG [87.1m] Worker-5: Acquired tech_accession lock after waiting 0.00m.
+DEBUG [87.9m] Worker-9: Assembled batch of 1 items in 18.81m. Store left: 0
+DEBUG [88.1m] Worker-4: Assembled batch of 1 items in 18.96m. Store left: 0
+DEBUG [88.7m] Worker-7: Finished processing batch of 2. Released lock.
+DEBUG [88.7m] Worker-9: Acquired tech_accession lock after waiting 0.76m.
+DEBUG [88.8m] Worker-8: Assembled batch of 2 items in 19.66m. Store left: 0
+DEBUG [89.7m] Worker-5: Finished processing batch of 2. Released lock.
+DEBUG [89.7m] Worker-4: Acquired tech_accession lock after waiting 1.64m.
+DEBUG [89.9m] Worker-9: Finished processing batch of 1. Released lock.
+DEBUG [89.9m] Worker-8: Acquired tech_accession lock after waiting 1.06m.
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 90.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 0      [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 17/10000 (  0.2%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 10/1296 (  0.8%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 1     
+  Resource: tech_plating           | In Use:  4/4  (100.0%) | Queue: 2     
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 13    
+  Resource: tech_urine             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 10    
+============================================================
+
+DEBUG [90.2m] Worker-11: Assembled batch of 2 items in 19.59m. Store left: 0
+DEBUG [90.6m] Worker-8: Finished processing batch of 2. Released lock.
+DEBUG [90.6m] Worker-11: Acquired tech_accession lock after waiting 0.42m.
+DEBUG [90.7m] Worker-4: Finished processing batch of 1. Released lock.
+DEBUG [91.8m] Worker-11: Finished processing batch of 2. Released lock.
+DEBUG [94.6m] Worker-12: Assembled batch of 2 items in 20.28m. Store left: 0
+DEBUG [96.4m] Worker-10: Assembled batch of 2 items in 19.23m. Store left: 0
+DEBUG [101.0m] Worker-1: Assembled batch of 1 items in 16.93m. Store left: 0
+DEBUG [102.1m] Worker-6: Assembled batch of 1 items in 17.22m. Store left: 0
+DEBUG [103.0m] Worker-2: Assembled batch of 1 items in 17.61m. Store left: 0
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 105.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 0      [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 13/10000 (  0.1%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 10/1296 (  0.8%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 9     
+  Resource: tech_plating           | In Use:  3/4  ( 75.0%) | Queue: 0     
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 15    
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 16    
+============================================================
+
+DEBUG [105.3m] Worker-3: Assembled batch of 2 items in 18.50m. Store left: 0
+DEBUG [105.8m] Worker-7: Assembled batch of 1 items in 17.08m. Store left: 0
+DEBUG [105.9m] Worker-5: Assembled batch of 1 items in 16.16m. Store left: 0
+DEBUG [109.2m] Worker-9: Assembled batch of 2 items in 19.34m. Store left: 0
+DEBUG [109.3m] Worker-8: Assembled batch of 1 items in 18.78m. Store left: 0
+DEBUG [111.4m] Worker-4: Assembled batch of 2 items in 20.71m. Store left: 0
+DEBUG [112.6m] Worker-11: Assembled batch of 6 items in 20.85m. Store left: 0
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 120.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 8      [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use:  6/10000 (  0.1%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 10/1296 (  0.8%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 16    
+  Resource: tech_plating           | In Use:  2/4  ( 50.0%) | Queue: 0     
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 21    
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 17    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 135.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 21     [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use:  3/10000 (  0.0%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 10/1296 (  0.8%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 15    
+  Resource: tech_plating           | In Use:  1/4  ( 25.0%) | Queue: 0     
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 22    
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 18    
+============================================================
+
+DEBUG [141.5m] Worker-12: Acquired tech_accession lock after waiting 46.89m.
+DEBUG [143.5m] Worker-12: Finished processing batch of 2. Released lock.
+DEBUG [143.5m] Worker-10: Acquired tech_accession lock after waiting 47.09m.
+DEBUG [143.5m] Worker-12: Assembled batch of 10 items in 0.00m. Store left: 17
+DEBUG [145.1m] Worker-10: Finished processing batch of 2. Released lock.
+DEBUG [145.1m] Worker-1: Acquired tech_accession lock after waiting 44.11m.
+DEBUG [145.1m] Worker-10: Assembled batch of 10 items in 0.00m. Store left: 8
+DEBUG [145.8m] Worker-1: Finished processing batch of 1. Released lock.
+DEBUG [145.8m] Worker-6: Acquired tech_accession lock after waiting 43.68m.
+DEBUG [146.2m] Worker-6: Finished processing batch of 1. Released lock.
+DEBUG [146.2m] Worker-2: Acquired tech_accession lock after waiting 43.18m.
+DEBUG [147.2m] Worker-2: Finished processing batch of 1. Released lock.
+DEBUG [147.2m] Worker-3: Acquired tech_accession lock after waiting 41.91m.
+DEBUG [148.6m] Worker-3: Finished processing batch of 2. Released lock.
+DEBUG [148.6m] Worker-7: Acquired tech_accession lock after waiting 42.85m.
+DEBUG [149.9m] Worker-7: Finished processing batch of 1. Released lock.
+DEBUG [149.9m] Worker-5: Acquired tech_accession lock after waiting 44.00m.
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 150.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 0      [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use:  9/10000 (  0.1%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 12/1296 (  0.9%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 6     
+  Resource: tech_plating           | In Use:  2/4  ( 50.0%) | Queue: 0     
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 19    
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 20    
+============================================================
+
+DEBUG [151.2m] Worker-5: Finished processing batch of 1. Released lock.
+DEBUG [151.2m] Worker-9: Acquired tech_accession lock after waiting 41.97m.
+DEBUG [152.0m] Worker-9: Finished processing batch of 2. Released lock.
+DEBUG [152.0m] Worker-8: Acquired tech_accession lock after waiting 42.60m.
+DEBUG [152.9m] Worker-8: Finished processing batch of 1. Released lock.
+DEBUG [152.9m] Worker-4: Acquired tech_accession lock after waiting 41.45m.
+DEBUG [154.6m] Worker-4: Finished processing batch of 2. Released lock.
+DEBUG [154.6m] Worker-11: Acquired tech_accession lock after waiting 42.00m.
+DEBUG [155.8m] Worker-1: Assembled batch of 9 items in 10.00m. Store left: 0
+DEBUG [158.5m] Worker-11: Finished processing batch of 6. Released lock.
+DEBUG [158.5m] Worker-12: Acquired tech_accession lock after waiting 14.99m.
+DEBUG [162.8m] Worker-6: Assembled batch of 2 items in 16.62m. Store left: 0
+DEBUG [163.0m] Worker-2: Assembled batch of 1 items in 15.83m. Store left: 0
+DEBUG [163.9m] Worker-3: Assembled batch of 1 items in 15.26m. Store left: 0
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 165.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 0      [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: incubator              | In Use: 14/10000 (  0.1%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 15/1296 (  1.2%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 8     
+  Resource: tech_plating           | In Use:  4/4  (100.0%) | Queue: 3     
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 21    
+  Resource: tech_urine             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 21    
+============================================================
+
+DEBUG [165.8m] Worker-7: Assembled batch of 2 items in 15.86m. Store left: 0
+DEBUG [166.1m] Worker-5: Assembled batch of 1 items in 14.90m. Store left: 0
+DEBUG [167.1m] Worker-9: Assembled batch of 2 items in 15.13m. Store left: 0
+DEBUG [168.0m] Worker-12: Finished processing batch of 10. Released lock.
+DEBUG [168.0m] Worker-10: Acquired tech_accession lock after waiting 22.93m.
+DEBUG [172.5m] Worker-8: Assembled batch of 2 items in 19.64m. Store left: 0
+DEBUG [174.0m] Worker-4: Assembled batch of 2 items in 19.35m. Store left: 0
+DEBUG [176.2m] Worker-10: Finished processing batch of 10. Released lock.
+DEBUG [177.8m] Worker-11: Assembled batch of 5 items in 19.31m. Store left: 0
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 180.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 0      [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: incubator              | In Use: 20/10000 (  0.2%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 14    
+  Resource: tech_plating           | In Use:  4/4  (100.0%) | Queue: 6     
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 24    
+  Resource: tech_urine             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 23    
+============================================================
+
+DEBUG [184.1m] Worker-12: Assembled batch of 6 items in 16.05m. Store left: 0
+DEBUG [187.3m] Worker-10: Assembled batch of 6 items in 11.14m. Store left: 0
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 195.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 7      [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 19/10000 (  0.2%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 14    
+  Resource: tech_plating           | In Use:  3/4  ( 75.0%) | Queue: 0     
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 28    
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 25    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 210.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 15     [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 10/10000 (  0.1%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 15    
+  Resource: tech_plating           | In Use:  4/4  (100.0%) | Queue: 0     
+  Resource: tech_blood             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 32    
+  Resource: tech_urine             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 32    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 225.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 26     [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use:  5/10000 (  0.1%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 16    
+  Resource: tech_plating           | In Use:  4/4  (100.0%) | Queue: 1     
+  Resource: tech_blood             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 37    
+  Resource: tech_urine             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 34    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 240.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 35     [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use:  5/10000 (  0.1%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 17    
+  Resource: tech_plating           | In Use:  3/4  ( 75.0%) | Queue: 2     
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 39    
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 32    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 255.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 41     [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use:  5/10000 (  0.1%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 18    
+  Resource: tech_plating           | In Use:  4/4  (100.0%) | Queue: 2     
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 38    
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 32    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 270.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 42     [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use:  6/10000 (  0.1%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 19    
+  Resource: tech_plating           | In Use:  3/4  ( 75.0%) | Queue: 2     
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 36    
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 30    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 285.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 49     [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use:  8/10000 (  0.1%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 19    
+  Resource: tech_plating           | In Use:  4/4  (100.0%) | Queue: 1     
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 32    
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 32    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 300.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 51     [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 10/10000 (  0.1%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 19    
+  Resource: tech_plating           | In Use:  3/4  ( 75.0%) | Queue: 1     
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 30    
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 32    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 315.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 58     [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 10/10000 (  0.1%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 19    
+  Resource: tech_plating           | In Use:  4/4  (100.0%) | Queue: 0     
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 32    
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 30    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 330.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 64     [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 11/10000 (  0.1%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 19    
+  Resource: tech_plating           | In Use:  3/4  ( 75.0%) | Queue: 0     
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 32    
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 29    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 345.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 72     [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 12/10000 (  0.1%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 19    
+  Resource: tech_plating           | In Use:  3/4  ( 75.0%) | Queue: 0     
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 31    
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 29    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 360.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 77     [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 13/10000 (  0.1%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 19    
+  Resource: tech_plating           | In Use:  3/4  ( 75.0%) | Queue: 0     
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 29    
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 30    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 375.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 82     [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 14/10000 (  0.1%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  1/2  ( 50.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 19    
+  Resource: tech_plating           | In Use:  3/4  ( 75.0%) | Queue: 0     
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 29    
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 29    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 390.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 88     [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 15/10000 (  0.1%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 19    
+  Resource: tech_plating           | In Use:  3/4  ( 75.0%) | Queue: 0     
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 27    
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 29    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 405.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 89     [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 15/10000 (  0.1%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  5/5  (100.0%) | Queue: 19    
+  Resource: tech_plating           | In Use:  3/4  ( 75.0%) | Queue: 0     
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 28    
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 27    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 420.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 92     [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 21/10000 (  0.2%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 24    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 3     
+  Resource: tech_blood             | In Use:  2/2  (100.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  3/3  (100.0%) | Queue: 26    
+  Resource: tech_urine             | In Use:  2/2  (100.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 27    
+============================================================
+
+DEBUG [420.0m] Worker-1: Acquired tech_accession lock after waiting 264.22m.
+DEBUG [420.0m] Worker-6: Acquired tech_accession lock after waiting 257.17m.
+⚠️ HIGH LATENCY [421.2m] Specimen URI-00023 waited 268.3m in store before accession completion!
+⚠️ HIGH LATENCY [421.4m] Specimen URI-00048 waited 287.0m in store before accession completion!
+⚠️ HIGH LATENCY [421.7m] Specimen URI-00030 waited 286.6m in store before accession completion!
+⚠️ HIGH LATENCY [422.5m] Specimen STO-00009 waited 286.6m in store before accession completion!
+DEBUG [422.6m] Worker-6: Finished processing batch of 2. Released lock.
+⚠️ HIGH LATENCY [422.6m] Specimen STO-00011 waited 261.2m in store before accession completion!
+DEBUG [422.6m] Worker-6: Assembled batch of 10 items in 0.00m. Store left: 84
+⚠️ HIGH LATENCY [423.3m] Specimen URI-00053 waited 284.9m in store before accession completion!
+⚠️ HIGH LATENCY [423.9m] Specimen URI-00005 waited 284.9m in store before accession completion!
+⚠️ HIGH LATENCY [425.0m] Specimen URI-00055 waited 282.0m in store before accession completion!
+⚠️ HIGH LATENCY [426.2m] Specimen WOU-00015 waited 283.1m in store before accession completion!
+⚠️ HIGH LATENCY [427.0m] Specimen URI-00054 waited 282.0m in store before accession completion!
+DEBUG [428.4m] Worker-1: Finished processing batch of 9. Released lock.
+⚠️ HIGH LATENCY [428.4m] Specimen TIS-00005 waited 275.8m in store before accession completion!
+DEBUG [428.4m] Worker-1: Assembled batch of 10 items in 0.00m. Store left: 74
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 435.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 78     [OK]
+  Store: routine_plating_store     | Items Waiting: 3      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 27/10000 (  0.3%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 24    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 13    
+  Resource: tech_blood             | In Use:  2/2  (100.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  3/3  (100.0%) | Queue: 26    
+  Resource: tech_urine             | In Use:  2/2  (100.0%) | Queue: 2     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 26    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 450.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 86     [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 24/10000 (  0.2%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use:  7/12 ( 58.3%) | Queue: 24    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 13    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  3/3  (100.0%) | Queue: 30    
+  Resource: tech_urine             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 25    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 465.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 91     [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 25/10000 (  0.2%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 19    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 14    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  3/3  (100.0%) | Queue: 26    
+  Resource: tech_urine             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 23    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 480.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 95     [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 29/10000 (  0.3%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 20    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 15    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  3/3  (100.0%) | Queue: 25    
+  Resource: tech_urine             | In Use:  1/2  ( 50.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 20    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 495.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 100    [OK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 29/10000 (  0.3%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 20    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 16    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  3/3  (100.0%) | Queue: 28    
+  Resource: tech_urine             | In Use:  1/2  ( 50.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 17    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 510.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 103    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 30/10000 (  0.3%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 22    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 16    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  3/3  (100.0%) | Queue: 28    
+  Resource: tech_urine             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 16    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 525.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 107    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 30/10000 (  0.3%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 23    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 16    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  3/3  (100.0%) | Queue: 30    
+  Resource: tech_urine             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 14    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 540.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 111    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 30/10000 (  0.3%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 23    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 17    
+  Resource: tech_blood             | In Use:  1/2  ( 50.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  3/3  (100.0%) | Queue: 33    
+  Resource: tech_urine             | In Use:  1/2  ( 50.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 12    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 555.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 114    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 35/10000 (  0.4%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 24    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 18    
+  Resource: tech_blood             | In Use:  2/2  (100.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  3/3  (100.0%) | Queue: 30    
+  Resource: tech_urine             | In Use:  2/2  (100.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 12    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 570.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 116    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 36/10000 (  0.4%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  1/147 (  0.7%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 25    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 19    
+  Resource: tech_blood             | In Use:  1/2  ( 50.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  3/3  (100.0%) | Queue: 26    
+  Resource: tech_urine             | In Use:  1/2  ( 50.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 13    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 585.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 118    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 37/10000 (  0.4%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  1/147 (  0.7%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 27    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 21    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  3/3  (100.0%) | Queue: 22    
+  Resource: tech_urine             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 13    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 600.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 123    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 36/10000 (  0.4%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  1/147 (  0.7%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 29    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 21    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  3/3  (100.0%) | Queue: 22    
+  Resource: tech_urine             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 13    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 615.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 130    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 41/10000 (  0.4%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  1/147 (  0.7%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 29    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 21    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  3/3  (100.0%) | Queue: 16    
+  Resource: tech_urine             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 12    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 630.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 138    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 49/10000 (  0.5%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  2/147 (  1.4%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 31    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 21    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  3/3  (100.0%) | Queue: 7     
+  Resource: tech_urine             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 11    
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 645.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 148    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 57/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  2/147 (  1.4%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 31    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 21    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  1/3  ( 33.3%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 9     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 660.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 155    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 58/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  2/147 (  1.4%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 31    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 21    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 9     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 675.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 169    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 58/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  2/147 (  1.4%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 31    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 21    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  1/3  ( 33.3%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 7     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 690.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 184    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  2/147 (  1.4%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 31    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 21    
+  Resource: tech_blood             | In Use:  1/2  ( 50.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  1/3  ( 33.3%) | Queue: 0     
+  Resource: tech_urine             | In Use:  1/2  ( 50.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 8     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 705.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 199    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  2/147 (  1.4%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 31    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 21    
+  Resource: tech_blood             | In Use:  2/2  (100.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  3/3  (100.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  2/2  (100.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 7     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 720.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 216    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  2/147 (  1.4%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 31    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 21    
+  Resource: tech_blood             | In Use:  1/2  ( 50.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/3  ( 66.7%) | Queue: 1     
+  Resource: tech_urine             | In Use:  1/2  ( 50.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 6     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 735.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 227    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  2/147 (  1.4%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  1/2  ( 50.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 31    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 21    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/3  ( 66.7%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 5     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 750.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 245    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  2/147 (  1.4%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 31    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 21    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 3     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 765.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 264    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  2/147 (  1.4%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 31    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 21    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 2     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 780.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 281    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  2/147 (  1.4%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 31    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 21    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 2     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 795.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 298    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  2/147 (  1.4%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 31    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 21    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 810.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 320    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  2/147 (  1.4%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 31    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 21    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  1/2  ( 50.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 825.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 343    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  2/147 (  1.4%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  1/2  ( 50.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 31    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 21    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  1/2  ( 50.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 840.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 361    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  2/147 (  1.4%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  1/2  ( 50.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 31    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 21    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  1/2  ( 50.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 855.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 380    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  2/147 (  1.4%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 31    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 21    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 870.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 394    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  2/147 (  1.4%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 31    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 21    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 885.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 417    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/4  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  2/147 (  1.4%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/12 (100.0%) | Queue: 31    
+  Resource: tech_plating           | In Use:  8/8  (100.0%) | Queue: 21    
+  Resource: tech_blood             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 900.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 456    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  2/147 (  1.4%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 42    ⚠️ OVER-CAPACITY
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 27    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 915.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 474    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  2/147 (  1.4%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 42    ⚠️ OVER-CAPACITY
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 27    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 930.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 502    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  1/147 (  0.7%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 42    ⚠️ OVER-CAPACITY
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 27    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 945.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 527    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  1/147 (  0.7%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 42    ⚠️ OVER-CAPACITY
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 28    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 960.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 547    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  1/147 (  0.7%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 43    ⚠️ OVER-CAPACITY
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 28    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  1/2  ( 50.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 975.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 585    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  1/147 (  0.7%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 43    ⚠️ OVER-CAPACITY
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 29    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 990.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 629    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 45    ⚠️ OVER-CAPACITY
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 29    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  1/2  ( 50.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1005.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 667    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 46    ⚠️ OVER-CAPACITY
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 31    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1020.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 696    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 47    ⚠️ OVER-CAPACITY
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 31    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  1/2  ( 50.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  1/2  ( 50.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1035.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 728    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 47    ⚠️ OVER-CAPACITY
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 31    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1050.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 764    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 50    ⚠️ OVER-CAPACITY
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 32    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  1/2  ( 50.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  1/2  ( 50.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1065.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 804    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 50    ⚠️ OVER-CAPACITY
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 33    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1080.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 831    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 50    ⚠️ OVER-CAPACITY
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 33    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1095.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 860    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 51    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 33    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1110.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 884    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 51    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 33    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1125.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 896    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 53    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 33    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1140.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 922    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 53    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 33    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1155.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 956    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 53    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 33    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1170.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 988    [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 53    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 33    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  1/2  ( 50.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  1/2  ( 50.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1185.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 1023   [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 53    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 33    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  2/2  (100.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1200.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 1059   [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 53    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 33    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  1/2  ( 50.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  1/2  ( 50.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1215.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 1095   [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 53    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 33    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1230.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 1117   [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 53    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 33    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1245.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 1144   [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 53    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 33    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1260.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 1164   [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 53    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 33    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1275.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 1183   [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 53    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 33    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1290.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 1205   [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 53    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 33    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1305.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 1230   [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 53    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 33    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1320.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 1252   [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 53    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 33    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1335.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 1273   [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 53    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 33    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1350.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 1296   [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 53    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 33    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1365.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 1311   [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/3  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/11 (109.1%) | Queue: 53    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/6  (133.3%) | Queue: 33    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1380.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 1321   [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 59/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/6  (200.0%) | Queue: 59    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/4  (200.0%) | Queue: 37    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1395.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 1333   [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 58/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/6  (200.0%) | Queue: 59    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/4  (200.0%) | Queue: 37    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  1/1  (100.0%) | Queue: 1     
+  Resource: tech_urine             | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  2/2  (100.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1410.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 1351   [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 58/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/6  (200.0%) | Queue: 59    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/4  (200.0%) | Queue: 37    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  1/1  (100.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  0/2  (  0.0%) | Queue: 0     
+============================================================
+
+
+============================================================
+--- DETAILED BOTTLENECK DIAGNOSTIC [Sim Time: 1425.0 min] ---
+============================================================
+--- STORES & HOLDING BUFFERS ---
+  Store: accession_incoming_store  | Items Waiting: 1368   [🚨 BOTTLENECK]
+  Store: routine_plating_store     | Items Waiting: 0      [OK]
+  Store: priority_plating_store    | Items Waiting: 0      [OK]
+
+--- RESOURCE UTILIZATION & QUEUES ---
+  Resource: plating_bench          | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: incubator              | In Use: 58/10000 (  0.6%) | Queue: 0     
+  Resource: bc_instrument          | In Use: 17/1296 (  1.3%) | Queue: 0     
+  Resource: phoenix_instrument     | In Use:  0/147 (  0.0%) | Queue: 0     
+  Resource: phoenix_loader_lock    | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: maldi_instrument       | In Use:  0/2  (  0.0%) | Queue: 0     
+  Resource: tech_accession         | In Use: 12/6  (200.0%) | Queue: 59    ⚠️ OVER-CAPACITY 🔥 QUEUE SURGE
+  Resource: tech_plating           | In Use:  8/4  (200.0%) | Queue: 38    ⚠️ OVER-CAPACITY
+  Resource: tech_blood             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_routine           | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_urine             | In Use:  0/1  (  0.0%) | Queue: 0     
+  Resource: tech_new               | In Use:  1/2  ( 50.0%) | Queue: 0     
+============================================================
+
+=== Simulation Completed at Sim Time 1440.0 min ===
