@@ -1,0 +1,134 @@
+LabSim project change summary
+============================
+
+Implemented changes and outcomes
+--------------------------------
+
+1. Headless Monte Carlo validation was added and stabilized
+- Added CLI-only validation workflow in OpSim_Media_d6_CLI_only.py.
+- This allows monthly comparison of simulated TAT distributions against observed LIS values without running the dashboard.
+- Validation compares monthly P50/P95 and pooled distribution metrics.
+
+2. Parameter tuning workflow was implemented and fixed
+- Added tune_parameters_sequentially.py to run single-parameter scans, preset sequences, and multi-parameter grids.
+- Supports:
+  - --param and --values for single-parameter sweeps
+  - --grid for explicit joint parameter grids
+  - --preset for predefined calibration sequences
+- Added robust handling for dynamic parameter overrides during each Monte Carlo run.
+- Result tables save to results_experiments/parameter_tuning and include best_value markers.
+
+3. Tail-focused calibration workflow was added
+- Added a dedicated tail_focused scan sequence to help probe the slow-end error drivers.
+- This focuses on the parameter combinations most likely to affect long-tail TAT behavior,
+  such as incubation, polymicrobial workup, positivity, and re-incubation dynamics.
+
+4. Multi-parameter grid scan behavior was fixed and validated
+- Grid runs now evaluate multi-parameter combinations using cartesian product logic.
+- Outputs include combo_label, parameter_values, and ranked overall_map_pct values.
+- Best-performing combinations are flagged in the output CSV.
+
+5. Plotting for parameter scans was made more reliable
+- Added visualize_parameter_scan.py to summarize multi-parameter tuning results.
+- The script auto-detects the newest valid tuning CSV and creates a plot in output_pngs/parameter_scan_summary.png.
+
+6. Diagnostic bottleneck logging was enhanced
+- Queue and resource diagnostics were added to show where the process is saturated.
+- Logs now track key bottleneck signals across accessioning, plating, and tech review stages.
+- This helps separate workload volume effects from step-time effects.
+
+7. Staffing and shift behavior were reviewed against the real lab setup
+- Shift staffing profiles in params_config/staffing_config.py include 12 accession techs during the day shift and lower counts for evening/night shifts.
+- This was checked against the active shift selection logic in modules/shift_manager_d2.py.
+- The observed log pattern of 5/5 occupied accession slots does not mean the model is using only 5 techs total; it means only 5 are busy at that instant.
+
+8. Calibration data import and parameter initialization were improved
+- Default TTP (time-to-positive) calibration data can now be loaded from ARUP JSON outputs when present.
+- Fallback defaults are used when data files are missing or incomplete.
+- This is intended to make the simulation behavior more connected to observed LIS distributions.
+
+Key findings from the tuning runs
+---------------------------------
+
+- Median fit improved materially after parameter propagation fixes.
+- The model now responds dynamically to tuning changes instead of behaving as if parameter edits were static.
+- The remaining major challenge is the upper-tail P95 mismatch, which is still much higher than the median fit.
+- High P95 error suggests queueing / off-shift buildup / slow tail pathways are still dominating the longest cases.
+- The model is much better at the center of the distribution than at the far right tail.
+
+Interpretation of the main remaining limitation
+-----------------------------------------------
+
+The P95 issue is not necessarily proof that the underlying microbiology parameters are wrong.
+It is often a combination of:
+- arrival timing and shift overlap
+- accession batching delay
+- workup queues
+- re-incubation / repeat workup logic
+- off-shift backlog being carried into day-shift operations
+
+This is why the same model may have a decent median error but a poor P95 tail.
+
+Recommendations for data cleaning and calibration next
+------------------------------------------------------
+
+1. Clean raw 2024 extraction before tuning
+- Yes, you should clean the extraction data more before using it to tune the simulation.
+- The simulation is only as good as the operational truth it is fitted against.
+- Recommended cleaning steps:
+  - drop invalid dates and impossible TAT values
+  - standardize specimen type labels across files
+  - remove canceled or duplicate specimens when they are not meant to be modeled as valid cultures
+  - flag missing timestamps and missing specimen-type data
+  - separate out stat / emergency specimens from routine specimens
+  - inspect outliers to determine whether they are true clinical delay events or data-entry problems
+
+2. Stratify metrics by specimen type and shift
+- This is the right next step.
+- The simulation should be evaluated separately for:
+  - Blood culture
+  - Body fluid
+  - Urine / stool / wound / tissue (as appropriate)
+  - Day shift arrival window, evening shift, and night shift
+- Doing this will show whether the bottleneck is:
+  - accessioning
+  - incubation
+  - plating
+  - workup / culture review
+  - shift handoff or off-shift queue buildup
+
+3. Evaluate the bottleneck by component, not only by overall TAT
+- Track metrics separately for:
+  - accession wait time
+  - plating duration
+  - incubation duration
+  - repeat workup frequency
+  - tech review time
+  - overnight backlog carryover
+
+4. Use shift-specific validation first
+- Compare day, evening, and night arrivals independently.
+- This is important because off-shift arrivals can create artificial backlog that pushes the overall P95 much higher than the actual within-shift process performance.
+- The recommendation is: separate off-shift latency from microbiology dynamics before tuning the tail parameters.
+
+5. Tune tail drivers after the structure is clean
+- Primary tail-issue candidates to focus on next:
+  - reincubation_percent
+  - repeat workup frequency for polymicrobial specimens
+  - batch pickup / accession queue logic
+  - shift handoff delay between evening and day shifts
+  - plate review backlog around bench saturation
+
+Best next-step plan
+-------------------
+
+1. Clean the extraction scripts more aggressively before using the 2024 data as validation truth.
+2. Add a filtered, shift-specific summary table for each specimen type.
+3. Compare day/evening/night metrics separately.
+4. Re-run the tuning scan focusing on the slow-end drivers rather than only overall median behavior.
+5. Once the shift-specific behavior is understood, re-fit the parameters most likely to affect P95.
+
+This should make the calibration more statistically interpretable and help determine whether the current error is being driven by:
+- data quality issues,
+- arrival timing and staffing patterns,
+- or true process delays in the lab workflow.
