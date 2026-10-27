@@ -152,8 +152,8 @@ seed_input = 42
 #    biases completed-only TAT low in the tail. Set it >= your longest realistic workup chain.
 # The window is (sim_days - warmup - cooldown) long: with the defaults, use sim_days >= 37 for a
 # 30-day measured window. n_incomplete_in_window in the run stats should be ~0.
-warmup_days = 3.0
-cooldown_days = 4.0
+warmup_days = 5.0
+cooldown_days = 7.0
 sim_start_weekday = 0     # sim t=0 is midnight on this weekday (0=Mon). Must match shift_manager.
 
 # -------------------------
@@ -253,8 +253,8 @@ max_isolates_identified = 3
 
 
 # 2. Tech touch time during accessioning
-touch_time_min = 1.0
-touch_time_max = 4.0
+touch_time_min = 0.5
+touch_time_max = 3.0
 # touch_time_max = 3.0
 bld_touch_time_min = 0.5
 bld_touch_time_max = 2.0

@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 import params_config.params_d3 as p
-from modules.stages import (
+from params_config.stages import (
     STAGE_ABORTED, STAGE_ARRIVED, STAGE_COMPLETED, STAGE_INCUBATION_STARTS,
     STAGE_NEGATIVE_MARKERS, STAGE_PLATING_STARTS, STAGE_REJECTED_PREFIX, STAGE_TECH_REVIEW,
 )

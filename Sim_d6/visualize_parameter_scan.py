@@ -16,6 +16,9 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
+
+from scipy.stats import ks_2samp
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 DEFAULT_OUTPUT = PROJECT_ROOT / "output_pngs" / "parameter_scan_summary.png"
@@ -86,7 +89,6 @@ def plot_multi_parameter_scan(df: pd.DataFrame, output_path: Path) -> None:
     if not param_cols:
         raise ValueError("Multi-parameter scan CSV does not contain numeric parameter columns to plot.")
 
-    # Create a 3-column grid layout: 2 columns for line plots, 1 wide column for the bar chart
     fig = plt.figure(figsize=(16, 8))
     gs = fig.add_gridspec(2, 3, width_ratios=[1, 1, 1.2])
 
@@ -97,25 +99,20 @@ def plot_multi_parameter_scan(df: pd.DataFrame, output_path: Path) -> None:
         fig.add_subplot(gs[1, 1]),
     ]
 
-    # Plot parameter trends
     for ax, param in zip(line_axes, param_cols[:4]):
         summary = df.groupby(param, as_index=False)[["overall_map_pct"]].mean().sort_values(param)
         ax.plot(summary[param], summary["overall_map_pct"], marker="o", linewidth=2, color="steelblue")
-        ax.set_title(f"{param} vs overall MAP", fontsize=10, fontweight="bold")
+        ax.set_title(f"{param} vs Overall MAP", fontsize=10, fontweight="bold")
         ax.set_xlabel(param, fontsize=9)
         ax.set_ylabel("Overall MAP (%)", fontsize=9)
         ax.grid(True, linestyle=":", alpha=0.5)
 
-    # Hide extra unused line axes if fewer than 4 parameters exist
     for ax in line_axes[len(param_cols[:4]):]:
         ax.axis("off")
 
-    # Dedicated right axis for top-ranked combinations bar chart
     bar_ax = fig.add_subplot(gs[:, 2])
-
     top = df.sort_values("overall_map_pct", kind="mergesort").head(8).copy().reset_index(drop=True)
-    
-    # Truncate labels cleanly so they don't overlap bars
+
     labels = [str(x)[:45] + "..." if len(str(x)) > 45 else str(x) for x in top["combo_label"]]
     values = top["overall_map_pct"].to_numpy()
 
@@ -133,16 +130,81 @@ def plot_multi_parameter_scan(df: pd.DataFrame, output_path: Path) -> None:
     fig.savefig(output_path, dpi=300)
     plt.close(fig)
 
+def compute_continuous_ks_analysis(raw_sim_csv: Path, raw_obs_csv: Path):
+    """Loads raw individual specimen TATs and computes a continuous 2-sample KS test."""
+    df_sim = pd.read_csv(raw_sim_csv)
+    df_obs = pd.read_csv(raw_obs_csv)
+
+    # Extract clean TAT continuous vectors
+    sim_tats = df_sim["Total_TAT_Hours"].dropna().to_numpy()
+    
+    obs_tat_col = next((c for c in ["TAT_Hours", "tat_hours", "Turnaround_Hours"] if c in df_obs.columns), None)
+    obs_tats = df_obs[obs_tat_col].dropna().to_numpy()
+
+    # Perform continuous 2-sample Kolmogorov-Smirnov test
+    ks_result = ks_2samp(sim_tats, obs_tats)
+    
+    return {
+        "sim_tats": sim_tats,
+        "obs_tats": obs_tats,
+        "ks_stat": ks_result.statistic,
+        "p_value": ks_result.pvalue,
+    }
+
+def plot_ks_ecdf_overlay(sim_tats: np.ndarray, obs_tats: np.ndarray, ks_stat: float, p_value: float, ax: plt.Axes):
+    """Plots empirical CDFs of observed vs simulated TATs with KS distance callout."""
+    # Compute sorted arrays for eCDF calculation
+    sim_sorted = np.sort(sim_tats)
+    obs_sorted = np.sort(obs_tats)
+    
+    sim_ecdf = np.arange(1, len(sim_sorted) + 1) / len(sim_sorted)
+    obs_ecdf = np.arange(1, len(obs_sorted) + 1) / len(obs_sorted)
+
+    ax.step(sim_sorted, sim_ecdf, label="Simulated eCDF", color="steelblue", linewidth=2)
+    ax.step(obs_sorted, obs_ecdf, label="Observed LIS eCDF", color="darkorange", linestyle="--", linewidth=2)
+
+    ax.set_xlabel("Turnaround Time (Hours)", fontsize=9)
+    ax.set_ylabel("Cumulative Probability", fontsize=9)
+    ax.set_title(f"Continuous KS Test (D = {ks_stat:.3f}, p = {p_value:.3e})", fontsize=10, fontweight="bold")
+    ax.grid(True, linestyle=":", alpha=0.5)
+    ax.legend(frameon=False, fontsize=8)
+
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Create a quick parameter-scan summary plot from tuning CSV output.")
-    parser.add_argument("--csv", type=str, default=str(DEFAULT_CSV), help="CSV file from tune_parameters_sequentially.py")
+    parser = argparse.ArgumentParser(description="Create parameter scan or continuous KS distribution plots.")
+    parser.add_argument("--csv", type=str, default=str(DEFAULT_CSV), help="Tuning summary CSV file")
     parser.add_argument("--output", type=str, default=str(DEFAULT_OUTPUT), help="PNG output path")
+    parser.add_argument("--raw-sim-csv", type=str, default=None, help="Raw simulation run CSV containing Total_TAT_Hours")
+    parser.add_argument("--raw-obs-csv", type=str, default=None, help="Raw historical LIS CSV containing TAT_Hours")
     args = parser.parse_args()
 
-    csv_path = Path(args.csv)
     output_path = Path(args.output)
 
+    # Pathway A: Raw Continuous KS Analysis
+    if args.raw_sim_csv and args.raw_obs_csv:
+        print("Computing continuous 2-sample Kolmogorov-Smirnov distribution test...")
+        ks_data = compute_continuous_ks_analysis(Path(args.raw_sim_csv), Path(args.raw_obs_csv))
+
+        fig, ax = plt.subplots(figsize=(8, 6))
+        plot_ks_ecdf_overlay(
+            ks_data["sim_tats"],
+            ks_data["obs_tats"],
+            ks_data["ks_stat"],
+            ks_data["p_value"],
+            ax,
+        )
+        fig.tight_layout()
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(output_path, dpi=300)
+        plt.close(fig)
+
+        print(f"Continuous KS Stat: {ks_data['ks_stat']:.4f}")
+        print(f"Continuous p-value: {ks_data['p_value']:.4e}")
+        print(f"Saved eCDF comparison figure to: {output_path}")
+        return
+
+    # Pathway B: Pre-aggregated Parameter Tuning Summaries
+    csv_path = Path(args.csv)
     if not csv_path.exists():
         raise FileNotFoundError(f"CSV not found: {csv_path}")
 
@@ -159,8 +221,9 @@ def main() -> None:
         print(f"Saved multi-parameter scan figure to: {output_path}")
         return
 
-    raise ValueError("CSV does not look like a tuning result file.")
+    raise ValueError("CSV structure does not match a recognizable parameter sweep output.")
 
 
 if __name__ == "__main__":
     main()
+
