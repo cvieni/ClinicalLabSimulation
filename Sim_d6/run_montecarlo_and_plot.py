@@ -447,6 +447,11 @@ def main():
     ap.add_argument("--plots-only", action="store_true", help="re-plot an existing --out directory")
     a = ap.parse_args()
 
+    if ap.initial_conditions is None and INITIAL_CONDITIONS_PATH.exists():
+        ap.initial_conditions = str(INITIAL_CONDITIONS_PATH)
+        print(f"Initial conditions not provided, defaulting to \n {INITIAL_CONDITIONS_PATH}")
+
+
     overrides = None
     if a.overrides_file:
         overrides_path = Path(a.overrides_file)
@@ -537,9 +542,6 @@ def main():
     print(f"Done. Open {pl.resolve()}")
 
 
-    if ap.initial_conditions is None and INITIAL_CONDITIONS_PATH.exists():
-        ap.initial_conditions = str(INITIAL_CONDITIONS_PATH)
-        print(f"Initial conditions not provided, defaulting to \n {INITIAL_CONDITIONS_PATH}")
 
 
 
