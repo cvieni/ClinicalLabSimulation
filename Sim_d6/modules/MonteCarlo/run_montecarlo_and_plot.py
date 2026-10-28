@@ -46,7 +46,7 @@ import numpy as np
 import pandas as pd
 
 import params_config.params_d3 as p
-from modules.simulation_d3 import run_simulation
+from modules.simulation_d4 import run_simulation
 from modules.run_metrics import compute_tat_metrics
 from modules.param_overrides import validate_overrides
 from modules.monte_carlo import summarize_run_table
