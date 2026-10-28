@@ -49,7 +49,7 @@ import params_config.params_d3 as p
 from modules.simulation_d4 import run_simulation
 from modules.run_metrics import compute_tat_metrics
 from modules.param_overrides import validate_overrides
-from modules.monte_carlo import summarize_run_table
+from modules.MonteCarlo.monte_carlo_d3 import summarize_run_table
 
 SPEC_COLS = ["Specimen_ID", "Type", "Arrival_Minute", "Completed_Minute",
              "Total_TAT_Hours", "Arrival_Shift", "Outcome", "In_Window"]
@@ -57,6 +57,9 @@ SHIFT_COLORS = {"Day": "#FFE98A", "Evening": "#FFB86B", "Night": "#9DB4F0"}
 SHIFT_ORDER = ["Day", "Evening", "Night"]
 MIN_N = 5            # fewer specimens than this in a bin -> no percentile drawn
 MIN_N_SHIFT = 10
+
+PROJECT_ROOT = Path(__file__).resolve().parent
+INITIAL_CONDITIONS_PATH = PROJECT_ROOT / "params_config" / "initial_conditions.json"
 
 
 # ==================================================================================
@@ -446,10 +449,23 @@ def main():
 
     overrides = None
     if a.overrides_file:
-        overrides = json.loads(Path(a.overrides_file).read_text())
+        overrides_path = Path(a.overrides_file)
+        if not overrides_path.exists():
+            raise FileNotFoundError(f"Specified overrides file not found: {overrides_path.resolve()}")
+        
+        raw_json = json.loads(overrides_path.read_text(encoding="utf-8"))
+        
+        # Extract parameter dictionary if nested, or use as top-level dict
+        if "ttp_config" in raw_json and "params" in raw_json["ttp_config"]:
+            overrides = raw_json["ttp_config"]["params"]
+        else:
+            overrides = raw_json
+
     if a.overrides:
         overrides = {**(overrides or {}), **json.loads(a.overrides)}
-    validate_overrides(overrides)
+
+    if overrides:
+        validate_overrides(overrides)
 
     if a.plots_only and not a.out:
         sys.exit("--plots-only needs --out pointing at an existing run directory")
@@ -491,7 +507,15 @@ def main():
     window = _window(run_table, a.sim_days)
 
     print("\nKey KPIs across replications (hours): mean [95% band of one simulated month]")
-    key = summary[summary["metric"].str.match(r"^tat_(overall_p50|overall_p95|p50_[^_]+$|p95_[^_]+$)")]
+    # key = summary[summary["metric"].str.match(r"^tat_(overall_p50|overall_p95|p50_[^_]+$|p95_[^_]+$)")]
+    if not summary.empty and "metric" in summary.columns:
+        key = summary[summary["metric"].str.match(r"^tat_(overall_p50|overall_p95|p50_[^_]+$|p95_[^_]+$)")]
+        for _, r in key.iterrows():
+            print(f"  {r['metric']:<28} {r['mean']:7.2f}  [{r['pi_lo']:.2f}, {r['pi_hi']:.2f}]   n={int(r['n'])}")
+    else:
+        print("  WARNING: No completed specimens recorded across replications; TAT metrics unavailable.")
+
+    
     for _, r in key.iterrows():
         print(f"  {r['metric']:<28} {r['mean']:7.2f}  [{r['pi_lo']:.2f}, {r['pi_hi']:.2f}]   n={int(r['n'])}")
     if "n_incomplete_in_window" in run_table.columns and run_table["n_incomplete_in_window"].max() > 0:
@@ -511,6 +535,12 @@ def main():
                              pl / "3_tech_utilization.png")
         plot_kpis(spec, run_table, observed, pl / "4_kpis.png")
     print(f"Done. Open {pl.resolve()}")
+
+
+    if ap.initial_conditions is None and INITIAL_CONDITIONS_PATH.exists():
+        ap.initial_conditions = str(INITIAL_CONDITIONS_PATH)
+        print(f"Initial conditions not provided, defaulting to \n {INITIAL_CONDITIONS_PATH}")
+
 
 
 if __name__ == "__main__":

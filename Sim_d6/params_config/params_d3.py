@@ -20,7 +20,9 @@ PROJECT_ROOT = os.path.dirname(file_dir)
 PARENT_DIR = os.path.dirname(PROJECT_ROOT)
 # print("PARENT_DIR = ", PARENT_DIR)
 
-json_dir = os.path.join(PARENT_DIR, "ARUP_data", "json_clned_data")
+json_year = 2025
+
+json_dir = os.path.join(PARENT_DIR, "ARUP_data", f"json_clned_data_{json_year}")
 # print("json_dir = ", json_dir)
 
 # First define fallback time to positive params:
@@ -47,8 +49,8 @@ TTP_CONFIGS = {
 # ---------------------------------------------------
 # Specimen configurations to load
 configs_to_load = {
-    "BloodCult": "BCx_2024_calibrated_params.json",
-    "BodyFluid": "BodyFluid_2024_calibrated_params.json",
+    "BloodCult": f"BCx_{json_year}_calibrated_params.json",
+    "BodyFluid": f"BodyFluid_{json_year}_calibrated_params.json",
 }
 
 # ---------------------------------------------------
@@ -139,7 +141,8 @@ def sample_time_to_positive(specimen_type="BloodCult", rng=None):
 # -------------------------
 # Overall Simulation Parameters
 # -------------------------
-sim_max_time = 31
+# sim_max_time = 31
+sim_max_time = 43 # given 5 day warm up and 7 day cool down --> 43 - 5 - 7 = 31 total days
 seed_input = 42
 
 # -------------------------
@@ -251,14 +254,16 @@ colony_workup_time_factor = 0.35
 # identified (4+ organisms = mixed flora).
 max_isolates_identified = 3
 
-
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # 2. Tech touch time during accessioning
-touch_time_min = 0.5
-touch_time_max = 3.0
-# touch_time_max = 3.0
-bld_touch_time_min = 0.5
-bld_touch_time_max = 2.0
+# touch_time_min = 0.5
+# touch_time_max = 1.5
+# # touch_time_max = 3.0
+# bld_touch_time_min = 0.5
+# bld_touch_time_max = 2.0
 accession_batch_max_wait_minutes = 10.0
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 
 # Time to perform Misc testing
 gram_stain_time = 5.0

@@ -140,7 +140,7 @@ DEFAULT_PARAMETER_SEQUENCE = {
     ("maldi_testing_percent", [0.50, 0.65, 0.80]),
     ("colony_workup_time_factor", [1.25, 1.50, 1.75]),
     ("second_colony_percent", [0.20, 0.30, 0.40]),
-    ("touch_time_max", [4.0, 6.0, 8.0]),
+    # ("touch_time_max", [4.0, 6.0, 8.0]),
     ]
 }
 

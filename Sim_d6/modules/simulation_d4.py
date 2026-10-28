@@ -121,6 +121,7 @@ def _spawn_background_workers(env, resources, accession_incoming_store, routine_
             batch_size=batch_size,
             max_wait_time=max_wait,
             worker_id=i + 1,
+            shift_staffing_profile=shift_staffing_profile  # Passed to support shift toggling
         ))
 
     for j in range(max_plating_techs):
@@ -131,6 +132,7 @@ def _spawn_background_workers(env, resources, accession_incoming_store, routine_
             priority_plating_store,
             tracker,
             worker_id=j + 1,
+            # shift_staffing_profile=shift_staffing_profile
         ))
 
     return max_accession_techs, max_plating_techs

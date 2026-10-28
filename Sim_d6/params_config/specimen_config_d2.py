@@ -24,7 +24,9 @@ PROJECT_ROOT = os.path.dirname(file_dir)
 PARENT_DIR = os.path.dirname(PROJECT_ROOT)
 # print("PARENT_DIR = ", PARENT_DIR)
 
-json_dir = os.path.join(PARENT_DIR, "ARUP_data", "json_clned_data")
+json_year = 2025
+
+json_dir = os.path.join(PARENT_DIR, "ARUP_data", f"json_clned_data_{json_year}")
 # print("json_dir = ", json_dir)
 
 
@@ -35,21 +37,21 @@ json_dir = os.path.join(PARENT_DIR, "ARUP_data", "json_clned_data")
 # Map of variable name / label -> JSON filename
 configs_to_load = {
     # Automated Reader speciments ------
-    "BloodCult": "BCx_2024_calibrated_params.json",
-    "BodyFluid": "BodyFluid_2024_calibrated_params.json",
+    "BloodCult": f"BCx_{json_year}_calibrated_params.json",
+    "BodyFluid": f"BodyFluid_{json_year}_calibrated_params.json",
 
     # Manual Plating specimens ------------
-    "Bone": "Bone_2024_calibrated_params.json",
-    "Urine_Inv": "InvUrine_2024_calibrated_params.json",
-    "Urine_NonInv": "NonInv_Urine_2024_calibrated_params.json",
-    "Resp_NonCF": "Respiratory_NonCF_2024_calibrated_params.json",
-    "Resp_CF": "Respiratory_CF_2024_calibrated_params.json",
-    "Stool": "Stool_2024_calibrated_params.json",
-    "Tissue_genital": "Tiss_genital_2024_calibrated_params.json",
-    "Tissue_FNA": "Tiss_FNA_2024_calibrated_params.json",
-    "Tissue_other": "TissueCleaned_2024_calibrated_params.json",
-    "Wound_genital": "Wound_genital_2024_calibrated_params.json",
-    "Wound_other": "Wound_Cleaned_2024_calibrated_params.json",
+    "Bone": f"Bone_{json_year}_calibrated_params.json",
+    "Urine_Inv": f"InvUrine_{json_year}_calibrated_params.json",
+    "Urine_NonInv": f"NonInv_Urine_{json_year}_calibrated_params.json",
+    "Resp_NonCF": f"Respiratory_NonCF_{json_year}_calibrated_params.json",
+    "Resp_CF": f"Respiratory_CF_{json_year}_calibrated_params.json",
+    "Stool": f"Stool_{json_year}_calibrated_params.json",
+    "Tissue_genital": f"Tiss_genital_{json_year}_calibrated_params.json",
+    "Tissue_FNA": f"Tiss_FNA_{json_year}_calibrated_params.json",
+    "Tissue_other": f"TissueCleaned_{json_year}_calibrated_params.json",
+    "Wound_genital": f"Wound_genital_{json_year}_calibrated_params.json",
+    "Wound_other": f"Wound_Cleaned_{json_year}_calibrated_params.json",
 }
 
 loaded_data = {}
@@ -176,6 +178,8 @@ SPECIMEN_TYPES = {
 
 
         "accession_time_config": get_accession_config("BloodCult"),
+        "accession_touch_time_min": 0.25,  # 15 seconds
+        "accession_touch_time_max": 1.0,  # 45 seconds
         "cancel_rate_percent": loaded_data["BloodCult"]["cancellation_metrics"]["lab_cancel_rate_pct"],
         "plating_time_range": (0.0, 0.0),
         "tech_review_range": (2.0, 4.0), 
@@ -193,6 +197,8 @@ SPECIMEN_TYPES = {
         "daily_volume_mean": get_param("BodyFluid", "daily_volume_mean"),
         "ttp_config": loaded_data["BodyFluid"].get("ttp_config", {}),
         "accession_time_config": get_accession_config("BodyFluid"),
+        "accession_touch_time_min": 0.25,
+        "accession_touch_time_max": 2.0,
         "cancel_rate_percent": loaded_data["BodyFluid"]["cancellation_metrics"]["lab_cancel_rate_pct"],
         "plating_time_range": (0.0, 0.0),
         "tech_review_range": (2.0, 4.0), 
@@ -215,6 +221,8 @@ SPECIMEN_TYPES = {
         "initial_vol": 100,
         "daily_volume_mean": get_param("Bone", "daily_volume_mean"),
         "accession_time_config": get_accession_config("Bone"),
+        "accession_touch_time_min": 1.0,
+        "accession_touch_time_max": 5.0,
         "cancel_rate_percent": loaded_data["Bone"]["cancellation_metrics"]["lab_cancel_rate_pct"],
         "hourly_arrival_weights": {
             "weekday": get_param("Bone", "hourly_weights_weekday"),
@@ -228,6 +236,8 @@ SPECIMEN_TYPES = {
         "media_req": {"ChromeAgar": 1, "Blood_Agar": 2},
         "daily_volume_mean": get_param("Urine_Inv", "daily_volume_mean"),
         "accession_time_config": get_accession_config("Urine_Inv"),
+        "accession_touch_time_min": 0.5,
+        "accession_touch_time_max": 2.5,
         "cancel_rate_percent": loaded_data["Urine_Inv"]["cancellation_metrics"]["lab_cancel_rate_pct"],
         "plating_time_range": (0.1, 5.0),
         "tech_review_range": (1.0, 3.0), 
@@ -242,6 +252,8 @@ SPECIMEN_TYPES = {
         "media_req": {"ChromeAgar": 1, "Blood_Agar": 1},
         "daily_volume_mean": get_param("Urine_NonInv", "daily_volume_mean"),
         "accession_time_config": get_accession_config("Urine_NonInv"),
+        "accession_touch_time_min": 0.5,
+        "accession_touch_time_max": 2.5,
         "cancel_rate_percent": loaded_data["Urine_NonInv"]["cancellation_metrics"]["lab_cancel_rate_pct"],
         "plating_time_range": (0.1, 5.0),
         "tech_review_range": (1.0, 3.0), 
@@ -264,6 +276,8 @@ SPECIMEN_TYPES = {
         "initial_vol": 100,
         "daily_volume_mean": get_param("Resp_NonCF", "daily_volume_mean"),
         "accession_time_config": get_accession_config("Resp_NonCF"),
+        "accession_touch_time_min": 0.5,
+        "accession_touch_time_max": 3.0,
         "cancel_rate_percent": loaded_data["Resp_NonCF"]["cancellation_metrics"]["lab_cancel_rate_pct"],
         "hourly_arrival_weights": {
             "weekday": get_param("Resp_NonCF", "hourly_weights_weekday"),
@@ -280,6 +294,8 @@ SPECIMEN_TYPES = {
         "initial_vol": 100,
         "daily_volume_mean": get_param("Resp_CF", "daily_volume_mean"),
         "accession_time_config": get_accession_config("Resp_CF"),
+        "accession_touch_time_min": 0.5,
+        "accession_touch_time_max": 3.0,
         "cancel_rate_percent": loaded_data["Resp_CF"]["cancellation_metrics"]["lab_cancel_rate_pct"],
         "hourly_arrival_weights": {
             "weekday": get_param("Resp_CF", "hourly_weights_weekday"),
@@ -300,6 +316,8 @@ SPECIMEN_TYPES = {
         "initial_vol": 100,
         "daily_volume_mean": get_param("Wound_other", "daily_volume_mean"),
         "accession_time_config": get_accession_config("Wound_other"),
+        "accession_touch_time_min": 1.5,
+        "accession_touch_time_max": 6.0,
         "cancel_rate_percent": loaded_data["Wound_other"]["cancellation_metrics"]["lab_cancel_rate_pct"],
         "hourly_arrival_weights": {
             "weekday": get_param("Wound_other", "hourly_weights_weekday"),
@@ -313,6 +331,8 @@ SPECIMEN_TYPES = {
         "initial_vol": 100,
         "daily_volume_mean": get_param("Wound_genital", "daily_volume_mean"),
         "accession_time_config": get_accession_config("Wound_genital"),
+        "accession_touch_time_min": 1.0,
+        "accession_touch_time_max": 6.0,
         "cancel_rate_percent": loaded_data["Wound_genital"]["cancellation_metrics"]["lab_cancel_rate_pct"],
         "hourly_arrival_weights": {
             "weekday": get_param("Wound_genital", "hourly_weights_weekday"),
@@ -332,6 +352,8 @@ SPECIMEN_TYPES = {
         "initial_vol": 100,
         "daily_volume_mean": get_param("Tissue_other", "daily_volume_mean"),
         "accession_time_config": get_accession_config("Tissue_other"),
+        "accession_touch_time_min": 1.5,
+        "accession_touch_time_max": 6.0,
         "cancel_rate_percent": loaded_data["Tissue_other"]["cancellation_metrics"]["lab_cancel_rate_pct"],
         "hourly_arrival_weights": {
             "weekday": get_param("Tissue_other", "hourly_weights_weekday"),
@@ -345,6 +367,8 @@ SPECIMEN_TYPES = {
         "initial_vol": 100,
         "daily_volume_mean": get_param("Tissue_genital", "daily_volume_mean"),
         "accession_time_config": get_accession_config("Tissue_genital"),
+        "accession_touch_time_min": 1.0,
+        "accession_touch_time_max": 6.0,
         "cancel_rate_percent": loaded_data["Tissue_genital"]["cancellation_metrics"]["lab_cancel_rate_pct"],
         "hourly_arrival_weights": {
             "weekday": get_param("Tissue_genital", "hourly_weights_weekday"),
@@ -359,6 +383,8 @@ SPECIMEN_TYPES = {
         "initial_vol": 100,
         "daily_volume_mean": get_param("Tissue_FNA", "daily_volume_mean"),
         "accession_time_config": get_accession_config("Tissue_FNA"),
+        "accession_touch_time_min": 1.0,
+        "accession_touch_time_max": 4.0,
         "cancel_rate_percent": loaded_data["Tissue_FNA"]["cancellation_metrics"]["lab_cancel_rate_pct"],
         "hourly_arrival_weights": {
             "weekday": get_param("Tissue_FNA", "hourly_weights_weekday"),
@@ -381,6 +407,8 @@ SPECIMEN_TYPES = {
         "initial_vol": 100,
         "daily_volume_mean": get_param("Stool", "daily_volume_mean"),
         "accession_time_config": get_accession_config("Stool"),
+        "accession_touch_time_min": 0.5,
+        "accession_touch_time_max": 3.0,
         "cancel_rate_percent": loaded_data["Stool"]["cancellation_metrics"]["lab_cancel_rate_pct"],
         "hourly_arrival_weights": {
             "weekday": get_param("Stool", "hourly_weights_weekday"),

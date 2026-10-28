@@ -246,6 +246,10 @@ def main() -> None:
     print(f"\nSaved validation summary CSV to: {csv_summary_path}")
     print(f"Saved figure to: {args.output_path}")
 
+    if args.initial_conditions is None and INITIAL_CONDITIONS_PATH.exists():
+        args.initial_conditions = str(INITIAL_CONDITIONS_PATH)
+        print(f"Initial conditions not provided, defaulting to \n {INITIAL_CONDITIONS_PATH}")
+
 
 if __name__ == "__main__":
     main()

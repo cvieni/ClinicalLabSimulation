@@ -17,7 +17,9 @@ PROJECT_ROOT = os.path.dirname(file_dir)
 PARENT_DIR = os.path.dirname(PROJECT_ROOT)
 # print("PARENT_DIR = ", PARENT_DIR)
 
-json_dir = os.path.join(PARENT_DIR, "ARUP_data", "json_clned_data")
+json_year = 2025
+
+json_dir = os.path.join(PARENT_DIR, "ARUP_data", f"json_clned_data_{json_year}")
 # print("json_dir = ", json_dir)
 
 
@@ -28,21 +30,21 @@ json_dir = os.path.join(PARENT_DIR, "ARUP_data", "json_clned_data")
 # Map of variable name / label -> JSON filename
 configs_to_load = {
     # Automated Reader speciments ------
-    "BloodCult": "BCx_2024_calibrated_params.json",
-    "BodyFluid": "BodyFluid_2024_calibrated_params.json",
+    "BloodCult": f"BCx_{json_year}_calibrated_params.json",
+    "BodyFluid": f"BodyFluid_{json_year}_calibrated_params.json",
 
     # Manual Plating specimens ------------
-    "Bone": "Bone_2024_calibrated_params.json",
-    "Urine_Inv": "InvUrine_2024_calibrated_params.json",
-    "Urine_NonInv": "NonInv_Urine_2024_calibrated_params.json",
-    "Resp_NonCF": "Respiratory_NonCF_2024_calibrated_params.json",
-    "Resp_CF": "Respiratory_CF_2024_calibrated_params.json",
-    "Stool": "Stool_2024_calibrated_params.json",
-    "Tissue_genital": "Tiss_genital_2024_calibrated_params.json",
-    "Tissue_FNA": "Tiss_FNA_2024_calibrated_params.json",
-    "Tissue_other": "TissueCleaned_2024_calibrated_params.json",
-    "Wound_genital": "Wound_genital_2024_calibrated_params.json",
-    "Wound_other": "Wound_Cleaned_2024_calibrated_params.json",
+    "Bone": f"Bone_{json_year}_calibrated_params.json",
+    "Urine_Inv": f"InvUrine_{json_year}_calibrated_params.json",
+    "Urine_NonInv": f"NonInv_Urine_{json_year}_calibrated_params.json",
+    "Resp_NonCF": f"Respiratory_NonCF_{json_year}_calibrated_params.json",
+    "Resp_CF": f"Respiratory_CF_{json_year}_calibrated_params.json",
+    "Stool": f"Stool_{json_year}_calibrated_params.json",
+    "Tissue_genital": f"Tiss_genital_{json_year}_calibrated_params.json",
+    "Tissue_FNA": f"Tiss_FNA_{json_year}_calibrated_params.json",
+    "Tissue_other": f"TissueCleaned_{json_year}_calibrated_params.json",
+    "Wound_genital": f"Wound_genital_{json_year}_calibrated_params.json",
+    "Wound_other": f"Wound_Cleaned_{json_year}_calibrated_params.json",
 }
 
 loaded_data = {}
@@ -60,6 +62,38 @@ for specimen_key, filename in configs_to_load.items():
 # Helper function to eliminate repetitive dict lookups safely
 def get_param(key, param_name):
     return loaded_data[key][param_name]
+
+# In params_config/specimen_config_helperfunctions.py
+
+# def get_param(key, param_name, default=None):
+#     """Retrieve a parameter from loaded_data, checking both root level 
+#     and common nested dictionary wrappers (e.g. 'params', 'specimen_metrics').
+#     """
+#     if key not in loaded_data:
+#         if default is not None:
+#             return default
+#         raise KeyError(f"Specimen key '{key}' not found in loaded_data.")
+
+#     data = loaded_data[key]
+
+#     # 1. Check top-level root
+#     if param_name in data:
+#         return data[param_name]
+
+#     # 2. Check common nested keys
+#     nested_keys = ["params", "ttp_config", "specimen_metrics", "volume_metrics", "config"]
+#     for nested in nested_keys:
+#         if nested in data and isinstance(data[nested], dict) and param_name in data[nested]:
+#             return data[nested][param_name]
+
+#     # 3. Fallback or raise clear informative error
+#     if default is not None:
+#         return default
+
+#     raise KeyError(
+#         f"Parameter '{param_name}' for '{key}' not found at root or within nested blocks "
+#         f"({nested_keys}) in JSON. Found top-level keys: {list(data.keys())}"
+#     )
 
 def get_accession_config(specimen_key):
     return loaded_data[specimen_key].get("accession_time_config", {})

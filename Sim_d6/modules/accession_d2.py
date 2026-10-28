@@ -4,6 +4,7 @@ import params_config.params_d3 as p
 from params_config.specimen_config_d2 import resolve_specimen_tuning_value
 from modules.specimen_priority import get_specimen_priority
 from modules.spec_proc_helpers import req_resource
+from modules.shift_manager_d2 import get_current_shift_config 
 
 DEBUG_BOTTLENECKS = True
 
@@ -11,15 +12,53 @@ DEBUG_BOTTLENECKS = True
 def _sample_accession_touch_time(spec_cfg, is_stat, sim_minutes=None):
     """Return the accessioning touch duration, allowing specimen- and shift-specific overrides."""
     if is_stat:
+        # Tier 1: Check active shift matrix or sensitivity sweep overrides
         override_min = resolve_specimen_tuning_value(spec_cfg, "accession_touch_time_min_stat", sim_minutes=sim_minutes)
         override_max = resolve_specimen_tuning_value(spec_cfg, "accession_touch_time_max_stat", sim_minutes=sim_minutes)
-        base_min = p.bld_touch_time_min if override_min is None else float(override_min)
-        base_max = p.bld_touch_time_max if override_max is None else float(override_max)
+
+        # Tier 2: Check spec_cfg keys explicitly (with stat fallback to routine specimen values)
+        if override_min is not None:
+            base_min = float(override_min)
+        elif "accession_touch_time_min_stat" in spec_cfg:
+            base_min = float(spec_cfg["accession_touch_time_min_stat"])
+        elif "accession_touch_time_min" in spec_cfg:
+            base_min = float(spec_cfg["accession_touch_time_min"])
+        else:
+            raise KeyError(f"Specimen config for '{spec_cfg.get('type', 'Unknown')}' missing 'accession_touch_time_min'")
+
+        if override_max is not None:
+            base_max = float(override_max)
+        elif "accession_touch_time_max_stat" in spec_cfg:
+            base_max = float(spec_cfg["accession_touch_time_max_stat"])
+        elif "accession_touch_time_max" in spec_cfg:
+            base_max = float(spec_cfg["accession_touch_time_max"])
+        else:
+            raise KeyError(f"Specimen config for '{spec_cfg.get('type', 'Unknown')}' missing 'accession_touch_time_max'")
+        
+        # base_min = p.bld_touch_time_min if override_min is None else float(override_min)
+        # base_max = p.bld_touch_time_max if override_max is None else float(override_max)
     else:
+        # Tier 1: Check active shift matrix or sensitivity sweep overrides
         override_min = resolve_specimen_tuning_value(spec_cfg, "accession_touch_time_min", sim_minutes=sim_minutes)
         override_max = resolve_specimen_tuning_value(spec_cfg, "accession_touch_time_max", sim_minutes=sim_minutes)
-        base_min = p.touch_time_min if override_min is None else float(override_min)
-        base_max = p.touch_time_max if override_max is None else float(override_max)
+
+        # Tier 2: Fetch strictly from spec_cfg
+        if override_min is not None:
+            base_min = float(override_min)
+        elif "accession_touch_time_min" in spec_cfg:
+            base_min = float(spec_cfg["accession_touch_time_min"])
+        else:
+            raise KeyError(f"Specimen config for '{spec_cfg.get('type', 'Unknown')}' missing 'accession_touch_time_min'")
+
+        if override_max is not None:
+            base_max = float(override_max)
+        elif "accession_touch_time_max" in spec_cfg:
+            base_max = float(spec_cfg["accession_touch_time_max"])
+        else:
+            raise KeyError(f"Specimen config for '{spec_cfg.get('type', 'Unknown')}' missing 'accession_touch_time_max'")
+        
+        # base_min = p.touch_time_min if override_min is None else float(override_min)
+        # base_max = p.touch_time_max if override_max is None else float(override_max)
 
     return float(random.uniform(base_min, base_max))
 
@@ -184,112 +223,86 @@ def plating_worker_process(env, resources, routine_plating_store, priority_plati
 
 
 def accession_worker_process(env, resources, accession_incoming_store, routine_plating_store, 
-                             tracker, batch_size=15, max_wait_time=None, worker_id = 1):
+                             tracker, batch_size=5, max_wait_time=None, worker_id=1,
+                             shift_staffing_profile=None):
     """
-    Pulls up to `batch_size` specimens from the accession store. The batch wait time
-    represents the short time a tray sits before tech picks it up for sorting and
-    accessioning; it should stay non-zero and realistic rather than effectively
-    processing each specimen immediately.
+    Dedicated Accession Technician Process.
+    Spawns as a dedicated worker thread. Respects active shift schedules dynamically
+    and pulls items from accession_incoming_store without resource-lock contention.
     """
     if max_wait_time is None:
         max_wait_time = getattr(p, "accession_batch_max_wait_minutes", 15.0)
 
-    # Keep trays small enough that one accession batch does not monopolize the entire
-    # tech pool and create a queueing artifact that cannot be separated from the real
-    # process model. The batch still aggregates arrivals, but the tech lock is applied
-    # per specimen so multiple allocations can flow in parallel.
     effective_batch_size = max(1, min(int(batch_size), 5))
 
     while True:
-        start_fetch = env.now
+        # Step A: Dynamic Shift Staffing Check using shift manager
+        if shift_staffing_profile is not None:
+            current_shift_cfg = get_current_shift_config(env.now, shift_staffing_profile)
+            active_techs = int(current_shift_cfg.get("tech_accession", 0)) if current_shift_cfg else 0
+            
+            if worker_id > active_techs:
+                # Worker is off-shift; sleep 15 minutes before re-checking shift schedule
+                yield env.timeout(15.0)
+                continue
 
-        # 1. Pull the first item (blocks until at least 1 specimen arrives)
+        # Step B: Block until at least 1 specimen is available in store
+        start_fetch = env.now
         first_item = yield accession_incoming_store.get()
         batch = [first_item]
 
-        # 2. Accumulate up to a modest batch size or until the wait timer expires.
-        start_wait = env.now
+        # Step C: Safely pull additional ready specimens without suspension risk
         while len(batch) < effective_batch_size:
-            timeout_remaining = max_wait_time - (env.now - start_wait)
-            if timeout_remaining <= 0:
+            if len(accession_incoming_store.items) == 0:
                 break
-
-            get_next = accession_incoming_store.get()
-            timer = env.timeout(timeout_remaining)
-            results = yield env.any_of([get_next, timer])
-
-            if get_next in results:
-                batch.append(results[get_next])
+            
+            get_evt = accession_incoming_store.get()
+            if get_evt.has_value:
+                batch.append(get_evt.value)
             else:
-                if not get_next.processed:
-                    get_next.cancel()
-                else:
-                    batch.append(get_next.value)
+                get_evt.cancel()
                 break
 
-        # DEBUG LOG A: Batch Assembly Complete
-        print(f"DEBUG [{env.now:.1f}m] Worker-{worker_id}: Assembled batch of {len(batch)} items in {env.now - start_fetch:.2f}m. Store left: {len(accession_incoming_store.items)}")
-
-        # 4. Request 1 Accession Tech (or Float Tech) for the ENTIRE batch
-        # -------------------------------------------------------------
-        # SURGE OVERFLOW / FLOAT TECH BALANCING
-        # -------------------------------------------------------------
-        # Evaluate store backlog to pick primary tech vs. float tech
-        tech_pool = resources['tech_accession']
         store_backlog = len(accession_incoming_store.items)
+        batch_priority = min(float(item.get('priority', 5.0)) for item in batch)
 
-        if store_backlog > 50:
-            candidates = [resources['tech_accession'], resources.get('tech_float')]
-            valid_candidates = [r for r in candidates if r and r.capacity > 0]
-            if valid_candidates:
-                tech_pool = min(valid_candidates, key=lambda r: len(r.queue) / max(1, r.capacity))
+        _debug_bottleneck(
+            f"AccessionStart worker={worker_id}",
+            batch_size=len(batch),
+            fetch_time_min=env.now - start_fetch,
+            backlog=store_backlog,
+            priority=batch_priority,
+        )
 
+        # Step D: Process batch sequentially (Technician Touch Time)
         for item in batch:
             spec_id = item['spec_id']
             spec_type = item['spec_type']
             spec_cfg = item['spec_cfg']
             is_stat = item['is_stat']
-            item_priority = float(item.get('priority', 5.0))
-            req_time = env.now
+
+            tracker.log_event(spec_id, spec_type, "1d. Accessioning Started (Tech Touch)", env.now)
+
+            touch_time = _sample_accession_touch_time(spec_cfg, is_stat, env.now)
 
             _debug_bottleneck(
-                f"AccessionRequest worker={worker_id}",
+                f"AccessionProcess worker={worker_id}",
                 spec_id=spec_id,
                 spec_type=spec_type,
-                is_stat=is_stat,
-                queue_len=len(tech_pool.queue),
-                backlog=len(accession_incoming_store.items),
-                priority=item_priority,
+                touch_time_min=touch_time,
+                backlog=len(accession_incoming_store.items)
             )
 
-            with req_resource(tech_pool, item_priority) as req:
-                yield req
-                queue_wait = env.now - req_time
-                tracker.log_event(spec_id, spec_type, "1d. Accessioning Started (Tech Touch)", env.now)
+            yield env.timeout(touch_time)
+            tracker.log_event(spec_id, spec_type, "1d. Accessioning Completed", env.now)
 
-                # Realistic high-throughput touch time: 9-21 sec routine, 18-30 sec STAT
-                touch_time = _sample_accession_touch_time(spec_cfg, is_stat, env.now)
+            # Signal process completion to specimen process thread
+            if 'done_event' in item and not item['done_event'].triggered:
+                item['done_event'].succeed()
+            else:
+                print(f"🚨 CRITICAL [{env.now:.1f}m] Worker-{worker_id}: Item {spec_id} done_event ALREADY TRIGGERED or MISSING!")
 
-                _debug_bottleneck(
-                    f"AccessionProcess worker={worker_id}",
-                    spec_id=spec_id,
-                    spec_type=spec_type,
-                    queue_wait_min=queue_wait,
-                    touch_time_min=touch_time,
-                    pool_capacity=tech_pool.capacity,
-                    pool_in_use=tech_pool.count,
-                )
-
-                yield env.timeout(touch_time)
-                tracker.log_event(spec_id, spec_type, "1d. Accessioning Completed", env.now)
-
-                # Unblock the individual specimen caller process
-                if 'done_event' in item and not item['done_event'].triggered:
-                    item['done_event'].succeed()
-                else:
-                    print(f"🚨 CRITICAL [{env.now:.1f}m] Worker-{worker_id}: Item {spec_id} done_event ALREADY TRIGGERED or MISSING!")
-
-        print(f"DEBUG [{env.now:.1f}m] Worker-{worker_id}: Finished processing batch of {len(batch)}. Released lock.")
+        _debug_bottleneck(f"AccessionDone worker={worker_id}", batch_size=len(batch))
 
 
 
