@@ -447,8 +447,8 @@ def main():
     ap.add_argument("--plots-only", action="store_true", help="re-plot an existing --out directory")
     a = ap.parse_args()
 
-    if ap.initial_conditions is None and INITIAL_CONDITIONS_PATH.exists():
-        ap.initial_conditions = str(INITIAL_CONDITIONS_PATH)
+    if a.initial_conditions is None and INITIAL_CONDITIONS_PATH.exists():
+        a.initial_conditions = str(INITIAL_CONDITIONS_PATH)
         print(f"Initial conditions not provided, defaulting to \n {INITIAL_CONDITIONS_PATH}")
 
 
@@ -521,11 +521,11 @@ def main():
         print("  WARNING: No completed specimens recorded across replications; TAT metrics unavailable.")
 
     
-    for _, r in key.iterrows():
-        print(f"  {r['metric']:<28} {r['mean']:7.2f}  [{r['pi_lo']:.2f}, {r['pi_hi']:.2f}]   n={int(r['n'])}")
-    if "n_incomplete_in_window" in run_table.columns and run_table["n_incomplete_in_window"].max() > 0:
-        print(f"\n  WARNING: up to {int(run_table['n_incomplete_in_window'].max())} in-window specimens never "
-              f"finished (right-censored). Raise --sim-days or cooldown_days.")
+    # for _, r in key.iterrows():
+    #     print(f"  {r['metric']:<28} {r['mean']:7.2f}  [{r['pi_lo']:.2f}, {r['pi_hi']:.2f}]   n={int(r['n'])}")
+    # if "n_incomplete_in_window" in run_table.columns and run_table["n_incomplete_in_window"].max() > 0:
+    #     print(f"\n  WARNING: up to {int(run_table['n_incomplete_in_window'].max())} in-window specimens never "
+    #           f"finished (right-censored). Raise --sim-days or cooldown_days.")
 
     pl = out / "plots"
     print("\nPlotting...")
