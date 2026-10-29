@@ -9,10 +9,10 @@ import numpy as np
 import pandas as pd
 
 import params_config.params_d3 as p
-from params_config.stages import (
-    STAGE_ABORTED, STAGE_ARRIVED, STAGE_COMPLETED, STAGE_INCUBATION_STARTS,
-    STAGE_NEGATIVE_MARKERS, STAGE_PLATING_STARTS, STAGE_REJECTED_PREFIX, STAGE_TECH_REVIEW,
-)
+from params_config import event_name as EV
+STAGE_ABORTED, STAGE_ARRIVED, STAGE_COMPLETED = EV.ABORTED, EV.ARRIVED, EV.COMPLETED
+STAGE_INCUBATION_STARTS, STAGE_NEGATIVE_MARKERS = EV.INCUBATION_STARTS, EV.NEGATIVE_MARKERS
+STAGE_PLATING_STARTS, STAGE_REJECTED_PREFIX, STAGE_TECH_REVIEW = EV.PLATING_STARTS, EV.REJECTED_PREFIX, EV.TECH_REVIEW
 
 KEYS = ["Specimen_ID", "Type"]
 MIN_N_FOR_PERCENTILE = 10   # below this a P95 is just "the max"; do not report it
@@ -62,7 +62,7 @@ def build_results_frame(df_raw: pd.DataFrame, sim_minutes: float, initial_condit
         df_pivot["Wait_For_Plating_Mins"] = df_pivot[plating_cols].min(axis=1) - df_pivot["Arrival_Minute"]
     else:
         warnings.warn("None of STAGE_PLATING_STARTS were logged; Wait_For_Plating_Mins is NaN. "
-                      "Update modules/stages.py to your real stage names.")
+                      "Update params_config/event_name.py to your real stage names.")
         df_pivot["Wait_For_Plating_Mins"] = np.nan
 
     inc_cols = [c for c in STAGE_INCUBATION_STARTS if c in df_pivot.columns]

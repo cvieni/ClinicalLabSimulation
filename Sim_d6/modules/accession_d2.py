@@ -4,9 +4,14 @@ import params_config.params_d3 as p
 from params_config.specimen_config_d2 import resolve_specimen_tuning_value
 from modules.specimen_priority import get_specimen_priority
 from modules.spec_proc_helpers import req_resource
-from modules.shift_manager_d2 import get_current_shift_config 
+from modules.shift_manager_d2 import get_current_shift_config
+from modules.accession_priority import classify_priority, sample_pre_accession_hold
+from params_config import event_name as EV
+import pandas as pd
+import matplotlib.pyplot as plt
+import os
 
-DEBUG_BOTTLENECKS = True
+DEBUG_BOTTLENECKS = False   # prints one line per specimen: leave off for Monte Carlo
 
 
 def _sample_accession_touch_time(spec_cfg, is_stat, sim_minutes=None):
@@ -75,48 +80,23 @@ def process_accessioning(env, spec_id, spec_type, spec_cfg, resources, tracker, 
     # ==========================================
     # 1c. CENTRAL PROCESSING & ACCESSIONING
     # ==========================================
-    tracker.log_event(spec_id, spec_type, "1c. Arrived at Pre-Accession Hold", env.now)
+    base_priority, IS_HIGH_PRIORITY_STAT = classify_priority(spec_cfg)
+    spec_priority = base_priority          # routine aging is done inside PriorityAccessionStore, from enqueue time
+    tracker.log_event(spec_id, spec_type, EV.priority_label(IS_HIGH_PRIORITY_STAT), env.now)
+    tracker.log_event(spec_id, spec_type, EV.PRE_ACCESSION_HOLD, env.now)
 
     # -------------------------------------------------------------
-    # Step A: Pre-Accession Holding / Sorting Track (NO TECH REQUIRED)
+    # Pre-accession hold / sorting delay (NO TECH REQUIRED). See accession_priority.sample_pre_accession_hold
+    # for what the JSON histogram represents and the p.accession_hold_mode switch.
     # -------------------------------------------------------------
-    # Calculate base priority from specimen config
-    base_priority = get_specimen_priority(spec_cfg)
-    IS_HIGH_PRIORITY_STAT = base_priority <= 4
-
-    if not IS_HIGH_PRIORITY_STAT:
-        time_waiting = env.now - arrival_time
-        # Improves priority by 1 rank per 15 mins of wait time, clamped at max priority level 4
-        spec_priority = max(5.0, base_priority - (time_waiting / 15.0))
-    else:
-        spec_priority = base_priority
-
-    # ==========================================
-    # 2. PRE-ACCESSION HOLDING TRACK (No Tech Required)
-    # ==========================================
-    if IS_HIGH_PRIORITY_STAT:
-        pre_accession_hold = 0.0
-    else:
-        acc_config = spec_cfg["accession_time_config"]
-        probs = acc_config["bin_probabilities"]
-        edges = acc_config["bin_edges"]
-        bin_idx = np.random.choice(len(probs), p=probs)
-        pre_accession_hold = random.uniform(edges[bin_idx], edges[bin_idx + 1])
-
-        hold_multiplier = resolve_specimen_tuning_value(
-            spec_cfg,
-            "pre_accession_hold_multiplier",
-            sim_minutes=env.now,
-        )
-        if hold_multiplier is None:
-            hold_multiplier = 1.0
-        if isinstance(hold_multiplier, (int, float)) and hold_multiplier > 0:
-            pre_accession_hold *= float(hold_multiplier)
+    hold_multiplier = resolve_specimen_tuning_value(spec_cfg, "pre_accession_hold_multiplier", sim_minutes=env.now)
+    pre_accession_hold = sample_pre_accession_hold(
+        spec_cfg, IS_HIGH_PRIORITY_STAT, 1.0 if hold_multiplier is None else hold_multiplier)
 
     if pre_accession_hold > 0:
         yield env.timeout(pre_accession_hold)
 
-    tracker.log_event(spec_id, spec_type, "1c. Waiting in Accession Store", env.now)
+    tracker.log_event(spec_id, spec_type, EV.ACCESSION_STORE_WAIT, env.now)
 
     item = {
             'spec_id': spec_id,
@@ -124,6 +104,7 @@ def process_accessioning(env, spec_id, spec_type, spec_cfg, resources, tracker, 
             'spec_cfg': spec_cfg,
             'priority': spec_priority,
             'is_stat': IS_HIGH_PRIORITY_STAT,
+            'arrival_time': arrival_time,
             'done_event': env.event() # Signal when accessioning is complete
         }
     
@@ -134,7 +115,7 @@ def process_accessioning(env, spec_id, spec_type, spec_cfg, resources, tracker, 
     yield item['done_event'] # Block specimen process until batch tech finishes it
     wait_duration = env.now - wait_start
     
-    if wait_duration > 120.0: # Alert if specimen waits > 2 hours for worker
+    if DEBUG_BOTTLENECKS and wait_duration > 120.0: # Alert if specimen waits > 2 hours for worker
         print(f"⚠️ HIGH LATENCY [{env.now:.1f}m] Specimen {spec_id} waited {wait_duration:.1f}m in store before accession completion!")
 
 
@@ -146,12 +127,12 @@ def process_accessioning(env, spec_id, spec_type, spec_cfg, resources, tracker, 
     is_body_fluid = spec_type.upper().startswith("BODYFLUID") or spec_cfg.get("is_BodyFluid", False)
 
     if is_blood or is_body_fluid:
-        tracker.log_event(spec_id, spec_type, "2A. Time to Load onto BC Instrument (Automated)", env.now)
+        tracker.log_event(spec_id, spec_type, EV.BC_INSTRUMENT_LOAD_PENDING, env.now)
         yield env.timeout(random.uniform(0.1, 0.5))
-        tracker.log_event(spec_id, spec_type, "2A. Loaded into BC Instrument", env.now)
+        tracker.log_event(spec_id, spec_type, EV.BC_INSTRUMENT_LOADED, env.now)
     else:
         # Route standard specimens asynchronously into FIFO plating store
-        tracker.log_event(spec_id, spec_type, "2B. Queued in Routine Plating Store", env.now)
+        tracker.log_event(spec_id, spec_type, EV.ROUTINE_PLATING_QUEUED, env.now)
         item = {
             'spec_id': spec_id,
             'spec_type': spec_type,
@@ -196,7 +177,7 @@ def plating_worker_process(env, resources, routine_plating_store, priority_plati
         spec_priority = item.get('priority', 5)
         done_event = item.get('done_event', None)
 
-        tracker.log_event(spec_id, spec_type, "2B. Waiting for Plating Tech", env.now)
+        tracker.log_event(spec_id, spec_type, EV.PLATING_TECH_WAIT, env.now)
 
         # Select tech pool
         candidate_keys = ['tech_plating', 'tech_urine', 'tech_routine']
@@ -207,13 +188,12 @@ def plating_worker_process(env, resources, routine_plating_store, priority_plati
         with tech_pool.request(priority=spec_priority) as req:
             yield req
             
-            log_prefix = "3A. Priority Blood Plating" if is_priority else "2C. Routine Plating"
-            tracker.log_event(spec_id, spec_type, f"{log_prefix} Started", env.now)
+            tracker.log_event(spec_id, spec_type, EV.plating_started(is_priority), env.now)
             
             plating_time = spec_cfg.get("plating_touch_time", random.uniform(1.0, 3.0))
             yield env.timeout(plating_time)
             
-            tracker.log_event(spec_id, spec_type, f"{log_prefix} Completed", env.now)
+            tracker.log_event(spec_id, spec_type, EV.plating_done(is_priority), env.now)
 
         # Unblock waiting main thread (for priority blood cultures)
         if done_event and not done_event.triggered:
@@ -222,87 +202,49 @@ def plating_worker_process(env, resources, routine_plating_store, priority_plati
 
 
 
-def accession_worker_process(env, resources, accession_incoming_store, routine_plating_store, 
-                             tracker, batch_size=5, max_wait_time=None, worker_id=1,
+def accession_worker_process(env, resources, accession_incoming_store, routine_plating_store,
+                             tracker, batch_size=1, max_wait_time=None, worker_id=1,
                              shift_staffing_profile=None):
-    """
-    Dedicated Accession Technician Process.
-    Spawns as a dedicated worker thread. Respects active shift schedules dynamically
-    and pulls items from accession_incoming_store without resource-lock contention.
-    """
-    if max_wait_time is None:
-        max_wait_time = getattr(p, "accession_batch_max_wait_minutes", 15.0)
+    """Dedicated accession technician (worker_id k works while k <= tech_accession of the current shift).
 
-    effective_batch_size = max(1, min(int(batch_size), 5))
-
+    Changes vs the previous version
+    * Takes ONE specimen at a time straight from the PriorityAccessionStore. The old 'batch of 5' was processed
+      one touch after another (no time saved) but meant a STAT specimen arriving mid-batch waited behind up to
+      four routine ones. `batch_size` / `max_wait_time` are accepted for signature compatibility and ignored.
+    * Fixed `get_evt.has_value` (simpy events have no such attribute -> AttributeError whenever the store was
+      non-empty after the first get, which killed the worker process silently).
+    * A worker blocked on `get()` used to keep working through the end of its shift (the shift check ran only
+      once per loop). It now waits on get() OR a 15-minute timeout and re-checks the roster each time.
+    """
+    RECHECK = 15.0
     while True:
-        # Step A: Dynamic Shift Staffing Check using shift manager
         if shift_staffing_profile is not None:
-            current_shift_cfg = get_current_shift_config(env.now, shift_staffing_profile)
-            active_techs = int(current_shift_cfg.get("tech_accession", 0)) if current_shift_cfg else 0
-            
+            cfg = get_current_shift_config(env.now, shift_staffing_profile)
+            active_techs = int(cfg.get("tech_accession", 0)) if cfg else 0
             if worker_id > active_techs:
-                # Worker is off-shift; sleep 15 minutes before re-checking shift schedule
-                yield env.timeout(15.0)
+                yield env.timeout(RECHECK)
                 continue
 
-        # Step B: Block until at least 1 specimen is available in store
-        start_fetch = env.now
-        first_item = yield accession_incoming_store.get()
-        batch = [first_item]
+        get_evt = accession_incoming_store.get()
+        yield get_evt | env.timeout(RECHECK)
+        if not get_evt.triggered:
+            get_evt.cancel()
+            continue                      # re-check the roster, then wait again
+        item = get_evt.value
 
-        # Step C: Safely pull additional ready specimens without suspension risk
-        while len(batch) < effective_batch_size:
-            if len(accession_incoming_store.items) == 0:
-                break
-            
-            get_evt = accession_incoming_store.get()
-            if get_evt.has_value:
-                batch.append(get_evt.value)
-            else:
-                get_evt.cancel()
-                break
+        spec_id, spec_type, spec_cfg = item['spec_id'], item['spec_type'], item['spec_cfg']
+        tracker.log_event(spec_id, spec_type, EV.ACCESSION_START, env.now)
+        touch_time = _sample_accession_touch_time(spec_cfg, item['is_stat'], env.now)
+        _debug_bottleneck(f"AccessionProcess worker={worker_id}", spec_id=spec_id, spec_type=spec_type,
+                          is_stat=item['is_stat'], touch_time_min=round(touch_time, 2),
+                          backlog=len(accession_incoming_store.items))
+        yield env.timeout(touch_time)
+        tracker.log_event(spec_id, spec_type, EV.ACCESSION_DONE, env.now)
 
-        store_backlog = len(accession_incoming_store.items)
-        batch_priority = min(float(item.get('priority', 5.0)) for item in batch)
-
-        _debug_bottleneck(
-            f"AccessionStart worker={worker_id}",
-            batch_size=len(batch),
-            fetch_time_min=env.now - start_fetch,
-            backlog=store_backlog,
-            priority=batch_priority,
-        )
-
-        # Step D: Process batch sequentially (Technician Touch Time)
-        for item in batch:
-            spec_id = item['spec_id']
-            spec_type = item['spec_type']
-            spec_cfg = item['spec_cfg']
-            is_stat = item['is_stat']
-
-            tracker.log_event(spec_id, spec_type, "1d. Accessioning Started (Tech Touch)", env.now)
-
-            touch_time = _sample_accession_touch_time(spec_cfg, is_stat, env.now)
-
-            _debug_bottleneck(
-                f"AccessionProcess worker={worker_id}",
-                spec_id=spec_id,
-                spec_type=spec_type,
-                touch_time_min=touch_time,
-                backlog=len(accession_incoming_store.items)
-            )
-
-            yield env.timeout(touch_time)
-            tracker.log_event(spec_id, spec_type, "1d. Accessioning Completed", env.now)
-
-            # Signal process completion to specimen process thread
-            if 'done_event' in item and not item['done_event'].triggered:
-                item['done_event'].succeed()
-            else:
-                print(f"🚨 CRITICAL [{env.now:.1f}m] Worker-{worker_id}: Item {spec_id} done_event ALREADY TRIGGERED or MISSING!")
-
-        _debug_bottleneck(f"AccessionDone worker={worker_id}", batch_size=len(batch))
+        if not item['done_event'].triggered:
+            item['done_event'].succeed()
+        else:
+            print(f"CRITICAL [{env.now:.1f}m] Worker-{worker_id}: {spec_id} done_event already triggered")
 
 
 

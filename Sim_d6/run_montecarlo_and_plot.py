@@ -51,6 +51,15 @@ from modules.run_metrics import compute_tat_metrics
 from modules.param_overrides import validate_overrides
 from modules.MonteCarlo.monte_carlo_d3 import summarize_run_table
 
+# --------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------
+
+PROJECT_ROOT = Path(__file__).resolve().parent
+RESULTS_DIR = PROJECT_ROOT / "results_experiments"
+
+# --------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------
+
 SPEC_COLS = ["Specimen_ID", "Type", "Arrival_Minute", "Completed_Minute",
              "Total_TAT_Hours", "Arrival_Shift", "Outcome", "In_Window"]
 SHIFT_COLORS = {"Day": "#FFE98A", "Evening": "#FFB86B", "Night": "#9DB4F0"}
@@ -474,7 +483,14 @@ def main():
 
     if a.plots_only and not a.out:
         sys.exit("--plots-only needs --out pointing at an existing run directory")
-    out = Path(a.out) if a.out else Path("results_experiments") / f"mc_{datetime.now():%Y%m%d_%H%M%S}"
+
+    # Output paths ---------------------------------------
+    out = Path(a.out) if a.out else Path(RESULTS_DIR) / f"mc_{datetime.now():%Y%m%d_%H%M%S}"
+    # Output paths ---------------------------------------
+
+
+
+
     (out / "plots").mkdir(parents=True, exist_ok=True)
     rep_dir = out / "replications"
 

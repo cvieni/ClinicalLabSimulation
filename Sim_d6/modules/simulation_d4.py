@@ -189,7 +189,6 @@ def run_simulation(sim_days=None, seed=None,
             set_progress, save_plots, log_filename, export_diagnostics,
         )
 
-
 def _run_simulation_impl(sim_days, seed, instrument_resources, shift_staffing_profile,
                          initial_conditions_json, set_progress, save_plots, log_filename,
                          export_diagnostics):

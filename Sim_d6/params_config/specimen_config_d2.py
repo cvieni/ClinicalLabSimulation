@@ -427,6 +427,9 @@ for specimen_name, shifts in SPECIMEN_TUNING_MATRIX.items():
     for shift_name, values in shifts.items():
         SPECIMEN_TYPES[specimen_name]["tuning_overrides"].setdefault(shift_name, {}).update(values)
 
+stat_priority_cutoff = 4
+accession_aging_minutes_per_rank = 15.0  # routine specimens gain 1 rank per this many minutes of waiting
+
 # Specimen priority based off of SOP: MICRO-PROC-217 pg 4
 SPEC_PRIORITY_MAP = {
     "whole_blood_bone_marrow": 1,   # Whole Blood & Bone Marrow (non-blood culture)

@@ -9,7 +9,7 @@ from modules.subpathways import process_automated_bactec, process_automated_wasp
 from modules.MALDI_biochemicals import process_maldi_testing, process_BioFire, process_GramStain
 from modules.AST_phoenix import process_phoenix_testing
 from modules.accession_d2 import process_accessioning
-from params_config.stages import STAGE_ABORTED, STAGE_COMPLETED
+from params_config import event_name as EV
 
 # Centralized parameters file which has the adjustable variables
 import params_config.params_d3 as p
@@ -179,20 +179,18 @@ def _perform_repeat_workup_batch(env, spec_id, spec_type, spec_cfg, rng, resourc
     tech_resource = resources[tech_key]
     with req_resource(tech_resource, spec_priority) as req:
         yield req
-        label = (f"5a. Parallel repeat workup ({n_organisms} organisms)" if n_organisms > 1
-                 else "5a. Repeat workup (1 organism)")
-        tracker.log_event(spec_id, spec_type, label, env.now)
+        tracker.log_event(spec_id, spec_type, EV.repeat_workup(n_organisms), env.now)
         yield env.timeout(rng.py.uniform(p.min_subculture_time, p.max_subculture_time) * _colony_factor(n_organisms))
 
     with resources["incubator"].request() as inc_req:
         yield inc_req
-        tracker.log_event(spec_id, spec_type, "5b. Repeat workup incubation", env.now)
+        tracker.log_event(spec_id, spec_type, EV.REPEAT_WORKUP_INCUBATION, env.now)
         yield env.timeout(_sample_incubation_minutes(env, spec_cfg, rng, "repeat"))
 
     # Previously missing: the tech has to read the subculture plate, which consumes tech time.
     with req_resource(tech_resource, spec_priority) as req:
         yield req
-        tracker.log_event(spec_id, spec_type, "5c. Repeat workup plate read", env.now)
+        tracker.log_event(spec_id, spec_type, EV.REPEAT_WORKUP_READ, env.now)
         yield env.timeout(rng.py.uniform(p.min_repeat_read_time, p.max_repeat_read_time) * _colony_factor(n_organisms))
 
     return True
@@ -210,9 +208,9 @@ def _run_workup_rounds(env, spec_id, spec_type, spec_cfg, rng, resources, invent
             tech = get_least_busy_tech(resources, "tech_routine", "tech_new")
             with req_resource(tech, spec_priority) as req:
                 yield req
-                tracker.log_event(spec_id, spec_type, "4a. Rapid Biochemical Screening ", env.now)
+                tracker.log_event(spec_id, spec_type, EV.RAPID_BIOCHEM_SCREEN, env.now)
                 yield env.timeout(rng.py.uniform(p.min_biochem_screen_time, p.max_biochem_screen_time) * batch_size)
-                tracker.log_event(spec_id, spec_type, "4a. Direct Biochemical Screening Completed", env.now)
+                tracker.log_event(spec_id, spec_type, EV.DIRECT_BIOCHEM_DONE, env.now)
         ok = yield from _perform_repeat_workup_batch(
             env, spec_id, spec_type, spec_cfg, rng, resources, inventory, tracker,
             spec_priority, tech_key, batch_size)
@@ -234,16 +232,16 @@ def _handle_blood_culture_path(env, spec_id, spec_type, spec_cfg, rng, resources
     is_positive = yield from process_automated_bactec(env, spec_id, spec_type, spec_cfg, resources, tracker,
                                                       is_blood_culture, is_body_fluid)
     if not is_positive:
-        tracker.log_event(spec_id, spec_type, "2A. Bactec Bottle Negative", env.now)
+        tracker.log_event(spec_id, spec_type, EV.BACTEC_NEGATIVE, env.now)
         # Negatives are finished specimens and must count toward TAT.
         # Assumes process_automated_bactec waits the full protocol for negatives.
-        tracker.log_event(spec_id, spec_type, STAGE_COMPLETED, env.now)
+        tracker.log_event(spec_id, spec_type, EV.COMPLETED, env.now)
         return False
-    tracker.log_event(spec_id, spec_type, "2A. Bactec Bottle Positive", env.now)
+    tracker.log_event(spec_id, spec_type, EV.BACTEC_POSITIVE, env.now)
 
     media_allocated = yield from consume_media_inventory(env, inventory, tracker, spec_id, spec_type, spec_cfg["media_req"])
     if not media_allocated:
-        tracker.log_event(spec_id, spec_type, STAGE_ABORTED, env.now)
+        tracker.log_event(spec_id, spec_type, EV.ABORTED, env.now)
         return False
 
     plating_done_event = env.event()
@@ -262,7 +260,7 @@ def _handle_blood_culture_path(env, spec_id, spec_type, spec_cfg, rng, resources
 
     with resources["incubator"].request() as inc_req:
         yield inc_req
-        tracker.log_event(spec_id, spec_type, "3a-3. Incubate plate from BCx or BF Bottle", env.now)
+        tracker.log_event(spec_id, spec_type, EV.BLOOD_PLATE_INCUBATION, env.now)
         yield env.timeout(_sample_incubation_minutes(env, spec_cfg, rng, "blood"))
     return True
 
@@ -283,26 +281,26 @@ def _handle_direct_plating_path(env, spec_id, spec_type, spec_cfg, rng, resource
         return False
 
     if is_stool_culture:
-        tracker.log_event(spec_id, spec_type, "GN Broth 6-Hour Incubation Started", env.now)
+        tracker.log_event(spec_id, spec_type, EV.GN_BROTH_INCUBATION_START, env.now)
         yield env.timeout(6.0 * 60.0)
-        tracker.log_event(spec_id, spec_type, "GN Broth 6-Hour Incubation Completed", env.now)
+        tracker.log_event(spec_id, spec_type, EV.GN_BROTH_INCUBATION_DONE, env.now)
 
         with req_resource(resources["tech_plating"], spec_priority) as req:
             yield req
             with req_resource(resources["plating_bench"], spec_priority) as p_req:
                 yield p_req
-                tracker.log_event(spec_id, spec_type, "GN Broth Subculture Plating Started", env.now)
+                tracker.log_event(spec_id, spec_type, EV.GN_BROTH_SUBCULTURE_START, env.now)
                 media_allocated = yield from consume_media_inventory(env, inventory, tracker, spec_id, spec_type,
                                                                      {"HE_Agar": 1})
                 if not media_allocated:
-                    tracker.log_event(spec_id, spec_type, STAGE_ABORTED, env.now)
+                    tracker.log_event(spec_id, spec_type, EV.ABORTED, env.now)
                     return False
                 yield env.timeout(rng.py.uniform(2.0, 4.0))
-                tracker.log_event(spec_id, spec_type, "GN Broth Subculture Plating Completed", env.now)
+                tracker.log_event(spec_id, spec_type, EV.GN_BROTH_SUBCULTURE_DONE, env.now)
 
     with resources["incubator"].request() as inc_req:
         yield inc_req
-        tracker.log_event(spec_id, spec_type, "Incubation from Primary Specimen Started", env.now)
+        tracker.log_event(spec_id, spec_type, EV.PRIMARY_INCUBATION, env.now)
         yield env.timeout(_sample_incubation_minutes(env, spec_cfg, rng, "primary"))
     return True
 
@@ -336,9 +334,9 @@ def _specimen_workflow(env, spec_id, spec_type, resources, inventory, tracker,
     spec_priority = get_specimen_priority(spec_cfg)
 
     # ---- 1. arrival & pre-analytical rejection --------------------------------------
-    tracker.log_event(spec_id, spec_type, "1. Arrived", env.now)
+    tracker.log_event(spec_id, spec_type, EV.ARRIVED, env.now)
     if rng.py.random() < p.rejection_percent:
-        tracker.log_event(spec_id, spec_type, "1b. Rejected (Pre-Analytical)", env.now)
+        tracker.log_event(spec_id, spec_type, EV.REJECTED, env.now)
         return
 
     # ---- 1c. accessioning -----------------------------------------------------------
@@ -361,7 +359,7 @@ def _specimen_workflow(env, spec_id, spec_type, resources, inventory, tracker,
     tech_resource = get_tech_bench(spec_type, resources)
     with req_resource(tech_resource, spec_priority) as req:
         yield req
-        tracker.log_event(spec_id, spec_type, "4. Tech Review Started (Plate - Day 2)", env.now)
+        tracker.log_event(spec_id, spec_type, EV.TECH_REVIEW, env.now)
         override_range = resolve_time_range_override(
             spec_cfg, "tech_review_range", sim_minutes=env.now,
             default_range=(p.min_tech_review_sub, p.max_tech_review_sub))
@@ -372,14 +370,14 @@ def _specimen_workflow(env, spec_id, spec_type, resources, inventory, tracker,
     if rng.py.random() < p.reincubation_percent:
         with resources["incubator"].request() as reinc_req:
             yield reinc_req
-            tracker.log_event(spec_id, spec_type, "4a. Extended Re-Incubation", env.now)
+            tracker.log_event(spec_id, spec_type, EV.EXTENDED_REINCUBATION, env.now)
             yield env.timeout(rng.py.uniform(p.min_reincubate_time * 60, p.max_reincubate_time * 60))
 
     # ---- 6a. day-2 outcome + repeat workup ------------------------------------------
     if is_blood_culture:
         with req_resource(resources["tech_blood"], spec_priority) as req:
             yield req
-            tracker.log_event(spec_id, spec_type, "4a. Evaluate Blood Subculture (Plate - Day 2)", env.now)
+            tracker.log_event(spec_id, spec_type, EV.EVALUATE_BLOOD_SUBCULTURE, env.now)
             yield env.timeout(rng.py.uniform(p.min_subcultEval_time, p.max_subcultEval_time))
 
     # Bottle-based specimens were already gated by Bactec positivity: do NOT roll again.
@@ -389,17 +387,17 @@ def _specimen_workflow(env, spec_id, spec_type, resources, inventory, tracker,
         positive_specimen = rng.py.random() < _rate(spec_cfg, "positive_specimen_rate")
 
     if not positive_specimen:
-        tracker.log_event(spec_id, spec_type, "4B. No significant growth / no repeat workup", env.now)
-        tracker.log_event(spec_id, spec_type, STAGE_COMPLETED, env.now)   # negatives count toward TAT
+        tracker.log_event(spec_id, spec_type, EV.NO_SIGNIFICANT_GROWTH, env.now)
+        tracker.log_event(spec_id, spec_type, EV.COMPLETED, env.now)   # negatives count toward TAT
         return
 
     num_colonies = _sample_num_colonies(spec_cfg, rng, is_blood_culture)
     if num_colonies >= 4:
-        tracker.log_event(spec_id, spec_type, "4B. Likely Mixed Flora (4+ organisms)", env.now)
+        tracker.log_event(spec_id, spec_type, EV.MIXED_FLORA, env.now)
 
     needs_workup, batch_size = _sample_repeat_workup_profile(spec_cfg, rng, num_colonies)
     if not needs_workup:
-        tracker.log_event(spec_id, spec_type, "4B. Positive culture but no repeat workup required", env.now)
+        tracker.log_event(spec_id, spec_type, EV.POSITIVE_NO_WORKUP, env.now)
     else:
         ok = yield from _run_workup_rounds(
             env, spec_id, spec_type, spec_cfg, rng, resources, inventory, tracker, spec_priority,
@@ -408,10 +406,10 @@ def _specimen_workflow(env, spec_id, spec_type, resources, inventory, tracker,
             max_rounds=p.max_subculture_limit_blood if is_blood_culture else p.max_subculture_limit_other,
             with_biochem=not is_blood_culture)
         if not ok:
-            tracker.log_event(spec_id, spec_type, STAGE_ABORTED, env.now)
+            tracker.log_event(spec_id, spec_type, EV.ABORTED, env.now)
             return
         if batch_size > 1:
-            tracker.log_event(spec_id, spec_type, f"4B. Multiple organisms worked up in parallel ({batch_size})", env.now)
+            tracker.log_event(spec_id, spec_type, EV.multi_organism_parallel(batch_size), env.now)
 
     # ---- 6b/6c. identification and AST, driven by the isolates actually present -----
     # Old logic: two independent per-specimen coin flips (MALDI 70%, Phoenix 40%) regardless of
@@ -440,4 +438,4 @@ def _specimen_workflow(env, spec_id, spec_type, resources, inventory, tracker,
         yield from process_phoenix_testing(env, spec_id, spec_type, resources, tracker, spec_priority, n_ast)
 
     # ---- 10. complete ---------------------------------------------------------------
-    tracker.log_event(spec_id, spec_type, STAGE_COMPLETED, env.now)
+    tracker.log_event(spec_id, spec_type, EV.COMPLETED, env.now)

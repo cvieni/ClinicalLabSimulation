@@ -25,11 +25,9 @@ import pandas as pd
 # Exact stage names from accession_d2.py / specimen_process. startswith() is deliberate:
 # "1. Arrived" does NOT match "1c. Arrived at Pre-Accession Hold" but does match
 # "1. Arrived (Initial State)" from the initial-conditions loader.
-ARRIVED = "1. Arrived"
-REJECTED = "1b. Rejected"
-IN_STORE = "1c. Waiting in Accession Store"
-TOUCH_START = "1d. Accessioning Started"
-TOUCH_DONE = "1d. Accessioning Completed"
+from Sim_d6.params_config import event_name as EV
+ARRIVED, REJECTED, IN_STORE = EV.ARRIVED, EV.REJECTED_PREFIX, EV.ACCESSION_STORE_WAIT
+TOUCH_START, TOUCH_DONE = EV.ACCESSION_START, EV.ACCESSION_DONE
 
 
 def _columns(df: pd.DataFrame):

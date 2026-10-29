@@ -145,6 +145,9 @@ def sample_time_to_positive(specimen_type="BloodCult", rng=None):
 sim_max_time = 43 # given 5 day warm up and 7 day cool down --> 43 - 5 - 7 = 31 total days
 seed_input = 42
 
+stat_skip_hold = True                    # STAT skips the pre-accession hold
+accession_hold_mode = "histogram"        # "histogram" | "histogram_minus_touch" | "none"  (see accession_priority.py)
+
 # -------------------------
 # Measurement window (items: warm-up and right-censoring)
 # -------------------------
