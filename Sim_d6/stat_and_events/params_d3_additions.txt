@@ -1,5 +1,0 @@
-# ---- add to params_config/params_d3.py ----
-stat_priority_cutoff = 4                 # SPEC_PRIORITY_MAP rank <= this is STAT (your existing rule)
-stat_skip_hold = True                    # STAT skips the pre-accession hold
-accession_aging_minutes_per_rank = 15.0  # routine specimens gain 1 rank per this many minutes of waiting
-accession_hold_mode = "histogram"        # "histogram" | "histogram_minus_touch" | "none"  (see accession_priority.py)

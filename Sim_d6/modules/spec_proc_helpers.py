@@ -1,6 +1,7 @@
 # modules/helpers.py
 import simpy
 import params_config.params_d3 as p
+from params_config import event_name as EV
 
 # ==========================================
 # Helper to pick the right tech resource based on specimen type
@@ -79,12 +80,12 @@ def consume_media_inventory(env, inventory, tracker, spec_id, spec_type, media_r
             attempts += 1
             if stockout_start is None:
                 stockout_start = env.now
-                tracker.log_event(spec_id, spec_type, "Stockout Delay Started", env.now)
+                tracker.log_event(spec_id, spec_type, EV.STOCKOUT_DELAY_START, env.now)
 
             # Re-check inventory every N minutes during a stockout
             recheck_interval = p.inventory_stockout_recheck
             yield env.timeout(recheck_interval)
 
     # Max attempts reached; log failure and return False without forcing consumption
-    tracker.log_event(spec_id, spec_type, "Media Allocation Failed - Aborted", env.now)
+    tracker.log_event(spec_id, spec_type, EV.MEDIA_ALLOCATION_FAILED, env.now)
     return False

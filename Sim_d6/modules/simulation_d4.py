@@ -23,6 +23,9 @@ from params_config.staffing_config import SHIFT_STAFFING_PROFILE
 # ----- Module import -----------
 from modules.inventory import MediaInventory, inventory_manager_process
 from modules.tracker import SpecimenTracker
+from modules.accession_priority import PriorityAccessionStore
+from modules.media_checks import validate_media_requirements
+from params_config import event_name as EV
 from modules.analytics import export_ai_training_dataset, extract_run_stochastic_metrics
 from modules.shift_manager_d2 import shift_handoff_process, shift_manager_process, set_resource_capacity, get_current_shift_config
 from modules.accession_d2 import plating_worker_process, accession_worker_process, save_accession_breakdown_png_plt
@@ -48,12 +51,13 @@ def _initialize_environment(seed, sim_days):
     env = simpy.Environment()
     env.run_seed = seed          # read by specimen_process to build per-specimen random streams
     tracker = SpecimenTracker()
+    validate_media_requirements(SPECIMEN_TYPES, MEDIA_CONFIG)   # unknown media names can never be supplied
     inventory = MediaInventory(env, MEDIA_CONFIG)
     active_counter = {"count": 0}
 
     routine_plating_store = simpy.Store(env)
     priority_plating_store = simpy.Store(env)
-    accession_incoming_store = simpy.Store(env)
+    accession_incoming_store = PriorityAccessionStore(env)   # STAT first, routine aged (was a FIFO simpy.Store)
     stores_to_track = {
         "accession_incoming_store": accession_incoming_store,
         "routine_plating_store": routine_plating_store,
@@ -188,6 +192,7 @@ def run_simulation(sim_days=None, seed=None,
             sim_days, seed, instrument_resources, shift_staffing_profile, initial_conditions_json,
             set_progress, save_plots, log_filename, export_diagnostics,
         )
+
 
 def _run_simulation_impl(sim_days, seed, instrument_resources, shift_staffing_profile,
                          initial_conditions_json, set_progress, save_plots, log_filename,

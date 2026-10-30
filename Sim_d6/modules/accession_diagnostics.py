@@ -5,6 +5,9 @@
       using the touch times, daily volumes, hourly arrival weights and staffing profile in your files.
       If daily utilisation (rho) is > 1 the queue grows forever no matter what else is right.
 
+  python accession_diagnostics.py media
+      Config only. Media names missing from MEDIA_CONFIG, and demand vs the reorder policy per medium.
+
   python accession_diagnostics.py run --sim-days 10 --seed 1 [--initial-conditions PATH]
       Runs ONE short replication and prints (a) the stage funnel (how many specimens reached each
       stage and where they stop), (b) accession-store wait by day, (c) arrivals/day per type vs
@@ -21,7 +24,7 @@ import re
 import numpy as np
 import pandas as pd
 
-from Sim_d6.params_config import event_name as EV
+from params_config import event_name as EV
 IN_STORE, TOUCH_START, TOUCH_DONE = EV.ACCESSION_STORE_WAIT, EV.ACCESSION_START, EV.ACCESSION_DONE
 
 
@@ -220,6 +223,23 @@ def priority_check(df_pivot: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def media_check(df_pivot: pd.DataFrame) -> pd.DataFrame:
+    """How many specimens hit a media stockout / were dropped for media, by type. Dropped specimens are not
+    'slow', they are removed from the TAT sample, so a high rate here means your TAT comparison is biased
+    before any capacity question."""
+    rows = []
+    for t, g in df_pivot.groupby("Type"):
+        n = len(g)
+        stock = int(g[EV.STOCKOUT_DELAY_START].notna().sum()) if EV.STOCKOUT_DELAY_START in g else 0
+        fail = int(g[EV.MEDIA_ALLOCATION_FAILED].notna().sum()) if EV.MEDIA_ALLOCATION_FAILED in g else 0
+        rows.append(dict(type=t, n=n, stockout_delayed=stock, dropped_media=fail,
+                         pct_dropped=round(100.0 * fail / n, 1) if n else np.nan))
+    out = pd.DataFrame(rows)
+    print("\n=== Media stockouts and drops ===")
+    print(out.to_string(index=False))
+    return out
+
+
 # ==================================================================================
 # CLI
 # ==================================================================================
@@ -227,6 +247,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("capacity")
+    sub.add_parser("media")
     r = sub.add_parser("run")
     r.add_argument("--sim-days", type=float, default=10)
     r.add_argument("--seed", type=int, default=1)
@@ -236,6 +257,14 @@ def main():
 
     from params_config.specimen_config_d2 import SPECIMEN_TYPES
 
+    if a.cmd == "media":
+        from params_config.media_config import MEDIA_CONFIG
+        from modules.media_checks import media_supply_report
+        import params_config.params_d3 as p
+        media_supply_report(SPECIMEN_TYPES, MEDIA_CONFIG,
+                            recheck_minutes=float(getattr(p, "inventory_stockout_recheck", 480.0)),
+                            rejection_frac=float(getattr(p, "rejection_percent", 0.0)))
+        return
     if a.cmd == "capacity":
         import params_config.params_d3 as p
         from params_config.staffing_config import SHIFT_STAFFING_PROFILE
@@ -252,6 +281,7 @@ def main():
         run_check(df_pivot, SPECIMEN_TYPES)
         accession_time_check(df_pivot, SPECIMEN_TYPES)
         priority_check(df_pivot)
+        media_check(df_pivot)
 
 
 if __name__ == "__main__":
