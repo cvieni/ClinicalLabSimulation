@@ -19,5 +19,12 @@ git branch -d experimental
 # pull changes from repo
 git pull /home/bob/myrepo master
 
+
+# How to back up:
+git add .
+
 # First:
-git commit -a
+git commit -m "Describe changes"
+
+# git push origin <branch-name>
+git push

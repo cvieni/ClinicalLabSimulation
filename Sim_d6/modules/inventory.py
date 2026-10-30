@@ -12,7 +12,29 @@ class MediaInventory:
         self.waste_log = defaultdict(int)
 
         for media, cfg in media_cfg.items():
-            self.add_lot(media, cfg["initial"])
+            self.add_lot(media, cfg["initial"] * self.unit(media))
+            # Standing order: a fixed quantity delivered on a fixed cycle, independent of stock level
+            # ("standing order 75 delivered once a week").
+            if cfg.get("standing_order_qty") and cfg.get("standing_order_interval_days"):
+                self.env.process(self._standing_order(media))
+
+    def unit(self, media):
+        """Plates (or tubes) per ordering unit. reorder_point / order_qty / initial / standing_order_qty in
+        MEDIA_CONFIG are in these units; all stock inside the inventory is counted in single plates.
+        Default 1, so an existing config in plates behaves exactly as before."""
+        return int(self.media_cfg[media].get("plates_per_unit", 1))
+
+    def lead_minutes(self, media):
+        d = self.media_cfg[media].get("lead_time_days")
+        return self.lead_time_mins if d is None else float(d) * 1440
+
+    def _standing_order(self, media):
+        cfg = self.media_cfg[media]
+        interval = float(cfg["standing_order_interval_days"]) * 1440
+        yield self.env.timeout(float(cfg.get("standing_order_first_day", cfg["standing_order_interval_days"])) * 1440)
+        while True:
+            self.add_lot(media, cfg["standing_order_qty"] * self.unit(media))
+            yield self.env.timeout(interval)
 
     def add_lot(self, media, qty):
         shelf_life_mins = self.media_cfg[media]["shelf_life"] * 1440
@@ -57,9 +79,9 @@ class MediaInventory:
         return True
 
     def place_order(self, media):
-        qty = self.media_cfg[media]["order_qty"]
+        qty = self.media_cfg[media]["order_qty"] * self.unit(media)
         self.pending_orders[media] += qty
-        self.env.process(self._delivery_process(media, qty, self.lead_time_mins))
+        self.env.process(self._delivery_process(media, qty, self.lead_minutes(media)))
 
     def _delivery_process(self, media, qty, delay_mins):
         yield self.env.timeout(delay_mins)
@@ -73,7 +95,7 @@ def inventory_manager_process(env, inventory, media_cfg, review_interval_mins=14
         for media, cfg in media_cfg.items():
             on_hand = inventory.total_inventory(media)
             on_order = inventory.pending_orders[media]
-            reorder_point = cfg["reorder_point"]
+            reorder_point = cfg["reorder_point"] * inventory.unit(media)
             
             if (on_hand + on_order) <= reorder_point:
                 inventory.place_order(media)

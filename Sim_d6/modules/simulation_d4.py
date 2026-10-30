@@ -84,6 +84,7 @@ def _initialize_resources(env, instrument_resources, shift_staffing_profile):
         "tech_accession": simpy.PriorityResource(env, capacity=initial_shift["tech_accession"]),
         "tech_plating": simpy.PriorityResource(env, capacity=initial_shift["tech_plating"]),
         "tech_blood": simpy.PriorityResource(env, capacity=initial_shift["tech_blood"]),
+        "tech_stool": simpy.PriorityResource(env, capacity=initial_shift["tech_stool"]),
         "tech_routine": simpy.PriorityResource(env, capacity=initial_shift["tech_routine"]),
         "tech_urine": simpy.PriorityResource(env, capacity=initial_shift["tech_urine"]),
         "tech_new": simpy.PriorityResource(env, capacity=initial_shift["tech_new"]),

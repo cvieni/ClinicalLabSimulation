@@ -5,10 +5,13 @@
       using the touch times, daily volumes, hourly arrival weights and staffing profile in your files.
       If daily utilisation (rho) is > 1 the queue grows forever no matter what else is right.
 
+  python accession_diagnostics.py media
+      Config only. Media names missing from MEDIA_CONFIG, and demand vs the reorder policy per medium.
+
   python accession_diagnostics.py run --sim-days 10 --seed 1 [--initial-conditions PATH]
       Runs ONE short replication and prints (a) the stage funnel (how many specimens reached each
       stage and where they stop), (b) accession-store wait by day, (c) arrivals/day per type vs
-      daily_volume_mean, (d) how many specimens were pre-loaded at t=0.
+      daily_volume_mean, (d) how many specimens were pre-loaded at t=0, (e) simulated accession time vs the JSON histogram, (f) STAT vs routine waits.
       Run it twice, with and without --initial-conditions, to see whether a pre-loaded backlog is the cause.
 
   In code:  from accession_diagnostics import run_check;  run_check(df_pivot, SPECIMEN_TYPES)
@@ -21,9 +24,8 @@ import re
 import numpy as np
 import pandas as pd
 
-IN_STORE = "1c. Waiting in Accession Store"
-TOUCH_START = "1d. Accessioning Started (Tech Touch)"
-TOUCH_DONE = "1d. Accessioning Completed"
+from params_config import event_name as EV
+IN_STORE, TOUCH_START, TOUCH_DONE = EV.ACCESSION_STORE_WAIT, EV.ACCESSION_START, EV.ACCESSION_DONE
 
 
 # ==================================================================================
@@ -118,8 +120,8 @@ def run_check(df_pivot: pd.DataFrame, spec_types: dict | None = None) -> None:
             flag = "   <-- count drops by >50% here"
         print(f"  {k:>8,}  {c}{flag}")
         prev = k
-    if not any("10. Completed" in c for c in df.columns):
-        print("  NOTE: no '10. Completed' stage was ever logged.")
+    if not any(EV.COMPLETED in c for c in df.columns):
+        print(f"  NOTE: no '{EV.COMPLETED}' stage was ever logged.")
     comp = df["Completed_Minute"].notna().sum() if "Completed_Minute" in df else 0
     print(f"  completed specimens: {comp:,} of {n:,}")
 
@@ -163,12 +165,93 @@ def run_check(df_pivot: pd.DataFrame, spec_types: dict | None = None) -> None:
 
 
 # ==================================================================================
+# 3. Histogram vs simulation, and STAT vs routine
+# ==================================================================================
+def accession_time_check(df_pivot: pd.DataFrame, spec_types: dict) -> pd.DataFrame:
+    """Compare, per type, the simulated arrival -> accessioned time with the JSON accession histogram.
+
+    The JSON histogram is a real elapsed time between two LIS timestamps. The simulation's equivalent is
+    hold + queue + touch = (1d. Completed) - (1c. Arrived at Pre-Accession Hold). If sim >> histogram the queue
+    is too long (capacity or double counting: try p.accession_hold_mode = 'histogram_minus_touch'); if the
+    sim is ~ histogram + queue, the histogram is being used as a pure delay on top of the queue.
+    """
+    rows = []
+    for t, g in df_pivot.groupby("Type"):
+        if EV.ACCESSION_DONE not in g or EV.PRE_ACCESSION_HOLD not in g:
+            continue
+        sim = (g[EV.ACCESSION_DONE] - g[EV.PRE_ACCESSION_HOLD]).dropna()
+        hold = (g[EV.ACCESSION_STORE_WAIT] - g[EV.PRE_ACCESSION_HOLD]).dropna()
+        q = (g[EV.ACCESSION_START] - g[EV.ACCESSION_STORE_WAIT]).dropna()
+        cfg = (spec_types or {}).get(t, {}).get("accession_time_config")
+        if cfg:
+            e, pr = np.asarray(cfg["bin_edges"], float), np.asarray(cfg["bin_probabilities"], float)
+            mids, pr = (e[:-1] + e[1:]) / 2, pr / pr.sum()
+            hist_mean = float((mids * pr).sum())
+            cdf = np.cumsum(pr)
+            hist_p50 = float(np.interp(0.5, cdf, e[1:]))
+            hist_p95 = float(np.interp(0.95, cdf, e[1:]))
+        else:
+            hist_mean = hist_p50 = hist_p95 = np.nan
+        rows.append(dict(type=t, n=len(sim), hold_mean=hold.mean(), queue_mean=q.mean(),
+                         sim_total_p50=sim.median(), sim_total_p95=sim.quantile(.95), sim_total_mean=sim.mean(),
+                         hist_p50=hist_p50, hist_p95=hist_p95, hist_mean=hist_mean))
+    out = pd.DataFrame(rows).round(1)
+    print("\n=== Simulated arrival->accessioned (minutes) vs JSON histogram ===")
+    print(out.to_string(index=False))
+    print("  sim_total = hold + queue + touch. Histogram approx p50/p95 are read from bin edges (coarse).")
+    return out
+
+
+def priority_check(df_pivot: pd.DataFrame) -> pd.DataFrame:
+    """STAT vs routine: queue wait (store entry -> tech starts) and total accession time, by priority tier."""
+    cols = [EV.PRIORITY_STAT, EV.PRIORITY_ROUTINE, EV.ACCESSION_STORE_WAIT, EV.ACCESSION_START, EV.ACCESSION_DONE]
+    if any(c not in df_pivot for c in (EV.ACCESSION_STORE_WAIT, EV.ACCESSION_START)):
+        print("priority_check: accession stages missing")
+        return pd.DataFrame()
+    df = df_pivot.copy()
+    stat = df[EV.PRIORITY_STAT].notna() if EV.PRIORITY_STAT in df else pd.Series(False, index=df.index)
+    df["tier"] = np.where(stat, "STAT", "routine")
+    df["queue_wait"] = df[EV.ACCESSION_START] - df[EV.ACCESSION_STORE_WAIT]
+    df["accession_total"] = df[EV.ACCESSION_DONE] - df[EV.PRE_ACCESSION_HOLD] if EV.PRE_ACCESSION_HOLD in df else np.nan
+    g = df.groupby("tier")
+    out = pd.DataFrame({"n": g.size(), "queue_wait_p50": g["queue_wait"].median(),
+                        "queue_wait_p95": g["queue_wait"].quantile(.95),
+                        "accession_total_p50": g["accession_total"].median(),
+                        "accession_total_p95": g["accession_total"].quantile(.95)}).round(1)
+    print("\n=== STAT vs routine at accession (minutes) ===")
+    print(out.to_string())
+    return out
+
+
+def media_check(df_pivot: pd.DataFrame) -> pd.DataFrame:
+    """How many specimens hit a media stockout / were dropped for media, by type. Dropped specimens are not
+    'slow', they are removed from the TAT sample, so a high rate here means your TAT comparison is biased
+    before any capacity question."""
+    rows = []
+    for t, g in df_pivot.groupby("Type"):
+        n = len(g)
+        stock = int(g[EV.STOCKOUT_DELAY_START].notna().sum()) if EV.STOCKOUT_DELAY_START in g else 0
+        fail = int(g[EV.MEDIA_ALLOCATION_FAILED].notna().sum()) if EV.MEDIA_ALLOCATION_FAILED in g else 0
+        rows.append(dict(type=t, n=n, stockout_delayed=stock, dropped_media=fail,
+                         pct_dropped=round(100.0 * fail / n, 1) if n else np.nan))
+    out = pd.DataFrame(rows)
+    print("\n=== Media stockouts and drops ===")
+    print(out.to_string(index=False))
+    return out
+
+
+# ==================================================================================
 # CLI
 # ==================================================================================
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("capacity")
+    mp = sub.add_parser("media")
+    mp.add_argument("--lead-days", type=float, default=3.0, help="supplier lead time used by MediaInventory (default 3)")
+    mp.add_argument("--safety", type=float, default=1.25)
+    mp.add_argument("--order-days", type=float, default=7.0, help="days of demand per order")
+    mp.add_argument("--simulate", action="store_true", help="also run your MediaInventory for 60 days against the demand")
     r = sub.add_parser("run")
     r.add_argument("--sim-days", type=float, default=10)
     r.add_argument("--seed", type=int, default=1)
@@ -178,6 +261,24 @@ def main():
 
     from params_config.specimen_config_d2 import SPECIMEN_TYPES
 
+    if a.cmd == "media":
+        from params_config.media_config import MEDIA_CONFIG
+        from modules.media_checks import (media_supply_report, suggest_media_config, simulate_stockouts,
+                                          media_demand_per_day)
+        import params_config.params_d3 as p
+        media_supply_report(SPECIMEN_TYPES, MEDIA_CONFIG,
+                            recheck_minutes=float(getattr(p, "inventory_stockout_recheck", 480.0)),
+                            rejection_frac=float(getattr(p, "rejection_percent", 0.0)),
+                            lead_time_days=a.lead_days, safety=a.safety, order_days=a.order_days)
+        rej = float(getattr(p, "rejection_percent", 0.0))
+        print("\n=== Suggested MEDIA_CONFIG (demand based; confirm against your real par levels) ===")
+        print(suggest_media_config(SPECIMEN_TYPES, MEDIA_CONFIG, lead_time_days=a.lead_days, safety=a.safety,
+                                   order_days=a.order_days, rejection_frac=rej))
+        if a.simulate:
+            dem = media_demand_per_day(SPECIMEN_TYPES, MEDIA_CONFIG, rej, 1.15)
+            print("\n=== YOUR current policy against that demand, 60 days (share of requests with no stock) ===")
+            print(simulate_stockouts(MEDIA_CONFIG, dem, lead_time_days=a.lead_days).to_string(index=False))
+        return
     if a.cmd == "capacity":
         import params_config.params_d3 as p
         from params_config.staffing_config import SHIFT_STAFFING_PROFILE
@@ -192,6 +293,9 @@ def main():
             parameter_overrides=json.loads(a.overrides) if a.overrides else None,
             save_plots=False, log_filename="accession_diag_run.log", export_diagnostics=False)
         run_check(df_pivot, SPECIMEN_TYPES)
+        accession_time_check(df_pivot, SPECIMEN_TYPES)
+        priority_check(df_pivot)
+        media_check(df_pivot)
 
 
 if __name__ == "__main__":

@@ -50,42 +50,37 @@ def req_resource(resource, priority=None):
 # 1. Check and Consume Inventory Helper Function
 # ==========================================
 def consume_media_inventory(env, inventory, tracker, spec_id, spec_type, media_req):
-    # Initialize variables
-    # media_allocated = False
-    stockout_start = None
-    attempts = 0
-    max_attempts = 5
+    """Take media for one specimen. If stock is short, wait (re-checking every p.inventory_stockout_recheck minutes)
+    for up to p.inventory_stockout_max_wait_minutes, then give up and abort the specimen.
 
-    while attempts < max_attempts:
-        can_fulfill = all(
-            inventory.total_inventory(media) >= qty 
-            for media, qty in media_req.items()
-        )
-        
+    The old version gave up after 5 re-checks, i.e. 5 x inventory_stockout_recheck minutes (40 h with the 480-minute
+    setting), which was shorter than a 2-3 day resupply, so every stockout turned into dropped specimens. The poll
+    interval and the longest tolerable wait are now separate settings."""
+    stockout_start = None
+    recheck = float(getattr(p, "inventory_stockout_recheck", 60.0))
+    max_wait = float(getattr(p, "inventory_stockout_max_wait_minutes", 7 * 1440.0))
+
+    while True:
+        can_fulfill = all(inventory.total_inventory(media) >= qty for media, qty in media_req.items())
+
         if can_fulfill:
             for media, qty in media_req.items():
                 inventory.try_consume_media(media, qty)
-                # Safely log media usage to tracker
                 if hasattr(tracker, 'log_media_usage'):
                     tracker.log_media_usage(media, qty)
                 else:
                     tracker.media_usage[media] = tracker.media_usage.get(media, 0) + qty
 
             if stockout_start is not None:
-                delay_duration = env.now - stockout_start
-                tracker.log_stockout_delay(spec_id, delay_duration)
+                tracker.log_stockout_delay(spec_id, env.now - stockout_start)
+            return True
 
-            return True  # Successfully allocated
-        else:
-            attempts += 1
-            if stockout_start is None:
-                stockout_start = env.now
-                tracker.log_event(spec_id, spec_type, EV.STOCKOUT_DELAY_START, env.now)
+        if stockout_start is None:
+            stockout_start = env.now
+            tracker.log_event(spec_id, spec_type, EV.STOCKOUT_DELAY_START, env.now)
+        if env.now - stockout_start >= max_wait:
+            break
+        yield env.timeout(recheck)
 
-            # Re-check inventory every N minutes during a stockout
-            recheck_interval = p.inventory_stockout_recheck
-            yield env.timeout(recheck_interval)
-
-    # Max attempts reached; log failure and return False without forcing consumption
     tracker.log_event(spec_id, spec_type, EV.MEDIA_ALLOCATION_FAILED, env.now)
     return False

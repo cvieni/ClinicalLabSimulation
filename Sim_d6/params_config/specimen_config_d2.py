@@ -215,7 +215,7 @@ SPECIMEN_TYPES = {
     # Per SOP: MICRO-PROC-045 ---------------------------
     # Test Directory: Test 0060103
     "Bone_Cx": {
-        "media_req": {"Blood_Agar": 1, "Chocolate_Agar": 1, "MacConkey": 1, "CNA_Agar": 1, "FastidiousBroth": 1},    
+        "media_req": {"Blood_Agar": 1, "Chocolate_Agar": 1, "MacConkey": 1, "CNA_Agar": 1, "GN_Broth": 1},    
         "plating_time_range": (0.1, 5.0),         
         "tech_review_range": (2.0, 4.0),  
         "initial_vol": 100,
@@ -270,7 +270,7 @@ SPECIMEN_TYPES = {
     # Per SOP: MICRO-PLATING-001A ---------------------------
     # Test Directory: Test 0060122
     "Respiratory": {
-        "media_req": {"Blood_Agar": 1, "Chocolate": 1, "MacConkey": 1, "GramStain": 1},
+        "media_req": {"Blood_Agar": 1, "Chocolate_Agar": 1, "MacConkey": 1},
         "plating_time_range": (0.1, 5.0),        
         "tech_review_range": (2.0, 4.0), 
         "initial_vol": 100,
@@ -288,7 +288,7 @@ SPECIMEN_TYPES = {
     # BCSA == Burkholderia cepacia Selective Agar
     # Test Directory: Test 0060130 (CF culture)
     "Resp_CystFibrosis": {
-        "media_req": {"Chocolate": 1, "Blood_Agar": 1, "MacConkey": 1, "CNA_Agar": 1, "BCSA_Agar": 1},
+        "media_req": {"Chocolate_Agar": 1, "Blood_Agar": 1, "MacConkey": 1, "CNA_Agar": 1, "BCSA_Agar": 1},
         "plating_time_range": (0.1, 5.0),        
         "tech_review_range": (2.0, 4.0), 
         "initial_vol": 100,
@@ -377,7 +377,7 @@ SPECIMEN_TYPES = {
     },
     # MICRO-PLATING-092B ---
     "Tissue_FNA": {
-        "media_req": {"FastidiousBroth": 1, "Chocolate_Agar": 1, "Blood_Agar": 1},    
+        "media_req": {"GN_Broth": 1, "Chocolate_Agar": 1, "Blood_Agar": 1},    
         "plating_time_range": (0.1, 5.0),           
         "tech_review_range": (4.0, 10.0), #
         "initial_vol": 100,
