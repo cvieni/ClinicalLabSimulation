@@ -19,7 +19,8 @@ class SpecimenTracker:
         })
 
     # def log_state(self, timestamp, active_specimens, plating_queue, tech_queue, busy_techs, active_techs):
-    def log_state(self, timestamp, active_specimens, plating_queue, tech_queue, busy_techs, active_techs, **kwargs):
+    def log_state(self, timestamp, active_specimens, plating_queue, tech_queue, busy_techs, active_techs,
+                  instrument_stats=None, **kwargs):
         """
         Logs simulation snapshots. Accepts explicit core metrics plus optional
         dynamic queues passed via **kwargs.
@@ -41,6 +42,11 @@ class SpecimenTracker:
             clean_key = key.replace("tech_", "").replace("_queue_length", "").replace("_queue", "")
             formatted_key = f"Tech_{clean_key.capitalize()}_Queue_Length"
             entry[formatted_key] = val
+
+        # Instruments / incubator / bench / store sizes: {"bc_instrument_in_use": 12, ...} -> columns "Res_<name>".
+        # Kept out of the Tech_*_Queue_Length naming above so tech-queue plots do not pick them up.
+        for key, val in (instrument_stats or {}).items():
+            entry[f"Res_{key}"] = val
 
         self.state_logs.append(entry)
 

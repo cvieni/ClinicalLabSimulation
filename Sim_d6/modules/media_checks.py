@@ -78,20 +78,33 @@ def media_supply_report(spec_types: dict, media_cfg: dict, lead_time_days: float
             rows.append(dict(medium=m, demand_per_day=round(d), status="NOT IN MEDIA_CONFIG"))
             continue
         u = float(c.get("plates_per_unit", 1))
-        rop, q, init = float(c["reorder_point"]) * u, float(c["order_qty"]) * u, float(c["initial"]) * u
-        lead = float(c.get("lead_time_days", lead_time_days))
-        stand = (float(c.get("standing_order_qty", 0)) * u / float(c["standing_order_interval_days"])
-                 if c.get("standing_order_qty") and c.get("standing_order_interval_days") else 0.0)   # plates/day
+        rop = float(c.get("reorder_point") or 0) * u
+        q, init = float(c["order_qty"]) * u, float(c["initial"]) * u
+        lead = float(c.get("lead_time_days") or lead_time_days)
+        s_days = c.get("standing_order_interval_days") or c.get("order_frequency")
+        s_qty = c.get("standing_order_qty") or (c["order_qty"] if c.get("order_frequency") else 0)
+        stand = float(s_qty) * u / float(s_days) if s_days and s_qty else 0.0                  # plates/day
         need_rop = d * (lead + review_days)
-        if rop >= need_rop:
-            sup_pct = 100.0
+        # Shortage orders are reviewed once per review interval, so they can add at most order_qty / review_days per day,
+        # however low the reorder point is (a 56-plate order per day can never feed 560 plates/day).
+        max_rate = q / review_days
+        if c.get("reorder_point") is None:
+            sup_pct = min(100.0, 100.0 * stand / d)                                  # standing orders only
+        elif rop >= need_rop:
+            sup_pct = min(100.0, 100.0 * (max_rate + stand) / d)                     # trigger is early enough; size limits it
         else:
-            cycle = lead + review_days / 2.0 + q / d       # days per replenishment cycle (min-reorder orders only)
-            sup_pct = min(100.0, 100.0 * (q / cycle + stand) / d)
+            cycle = lead + review_days / 2.0 + q / d                                 # trigger too late: stock-out each cycle
+            sup_pct = min(100.0, 100.0 * (min(q / cycle, max_rate) + stand) / d)
+        shelf = float(c.get("shelf_life", float("inf")))
+        peak_days = max(init, rop + q, float(s_qty or 0) * u) / d
+        if sup_pct >= 99 and peak_days > shelf:
+            status_override = f"EXPIRES (holds {peak_days:.0f} d > shelf life {shelf:g} d)"
+        else:
+            status_override = None
         rows.append(dict(medium=m, demand_per_day=round(d), initial_days_cover=round(init / d, 2),
                          reorder_point=rop, rop_needed=math.ceil(need_rop), order_qty_days=round(q / d, 1),
                          standing_per_day=round(stand),
-                         supply_pct_of_demand=round(sup_pct), status="OK" if sup_pct >= 99 else "STARVED"))
+                         supply_pct_of_demand=round(sup_pct), status=status_override or ("OK" if sup_pct >= 99 else "STARVED")))
     df = pd.DataFrame(rows)
     print(f"\n=== Media: demand vs replenishment policy (lead {lead_time_days:g} d, review every {review_days:g} d) ===")
     print(df.to_string(index=False))

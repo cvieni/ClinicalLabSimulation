@@ -90,7 +90,7 @@ def load_monthly_observed_data(data_path: str | Path | None = None) -> pd.DataFr
 
 
 def build_baseline_policy() -> dict[str, int]:
-    return {key: int(values.get("initial_stock", 10000)) for key, values in MEDIA_CONFIG.items()}
+    return {key: int(values.get("initial", 10000)) for key, values in MEDIA_CONFIG.items()}
 
 
 def run_monthly_validation(
@@ -245,10 +245,6 @@ def main() -> None:
     summary.to_csv(csv_summary_path, index=False)
     print(f"\nSaved validation summary CSV to: {csv_summary_path}")
     print(f"Saved figure to: {args.output_path}")
-
-    if args.initial_conditions is None and INITIAL_CONDITIONS_PATH.exists():
-        args.initial_conditions = str(INITIAL_CONDITIONS_PATH)
-        print(f"Initial conditions not provided, defaulting to \n {INITIAL_CONDITIONS_PATH}")
 
 
 if __name__ == "__main__":

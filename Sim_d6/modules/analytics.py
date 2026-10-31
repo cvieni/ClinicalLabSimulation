@@ -1,6 +1,10 @@
 # analytics.py
+from typing import Dict
+
 import pandas as pd
 import numpy as np
+
+from params_config import event_name as EV
 
 # ==================================================================================
 # == Helper Function to extract the specific metrics of each run  ++++++============
@@ -15,17 +19,14 @@ def extract_run_stochastic_metrics(df_raw: pd.DataFrame, total_specimens: int) -
         }
 
     # 1. Calculate observed rejection rate
-    rejections = (df_raw["Stage"] == "1b. Rejected (Pre-Analytical)").sum() if "Stage" in df_raw.columns else 0
+    rejections = df_raw["Stage"].astype(str).str.startswith(EV.REJECTED_PREFIX).sum() if "Stage" in df_raw.columns else 0
     rejection_rate = rejections / total_specimens if total_specimens > 0 else 0.0
 
     # 2. Calculate observed Blood Culture positivity rate
-    bcx_events = df_raw[df_raw["Stage"].isin([
-        "2A. Bactec Bottle Positive", 
-        "2A. Bactec Bottle Negative"
-    ])] if "Stage" in df_raw.columns else pd.DataFrame()
+    bcx_events = df_raw[df_raw["Stage"].isin([EV.BACTEC_POSITIVE, EV.BACTEC_NEGATIVE])] if "Stage" in df_raw.columns else pd.DataFrame()
     
     total_bcx = len(bcx_events)
-    pos_bcx = (bcx_events["Stage"] == "2A. Bactec Bottle Positive").sum() if total_bcx > 0 else 0
+    pos_bcx = (bcx_events["Stage"] == EV.BACTEC_POSITIVE).sum() if total_bcx > 0 else 0
     bcx_positivity_rate = pos_bcx / total_bcx if total_bcx > 0 else 0.0
 
     return {
@@ -46,7 +47,7 @@ def export_ai_training_dataset(df_raw, df_state, tracker):
     # 1. Aggregate daily specimen arrival counts by type
     df_raw["Day"] = (df_raw["Minute"] // 1440).astype(int)
     
-    daily_arrivals = df_raw[df_raw["Stage"] == "1. Arrived"].groupby(
+    daily_arrivals = df_raw[df_raw["Stage"].astype(str).str.startswith(EV.ARRIVED)].groupby(
         ["Day", "Type"]
     ).size().unstack(fill_value=0)
     

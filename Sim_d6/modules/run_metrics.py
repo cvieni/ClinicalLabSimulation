@@ -92,10 +92,16 @@ def build_results_frame(df_raw: pd.DataFrame, sim_minutes: float, initial_condit
         )
         warm, end, trimmed = 0.0, float(sim_minutes), False
     df_pivot["In_Window"] = (df_pivot["Arrival_Minute"] >= warm) & (df_pivot["Arrival_Minute"] < end)
+    # Specimens pre-loaded by the initial-conditions file have no specimen process behind them (they are plated or
+    # accessioned as background load and never log "10. Completed"), and their true arrival time is unknown. They were
+    # counted as in-window and incomplete; they are now excluded from TAT and from the incomplete count.
+    seeded_ids = df_raw.loc[stage.str.startswith(EV.ARRIVED_INITIAL), "Specimen_ID"].unique()
+    df_pivot["Seeded"] = df_pivot["Specimen_ID"].isin(seeded_ids)
+    df_pivot["In_Window"] = df_pivot["In_Window"] & ~df_pivot["Seeded"]
 
     # ---- diagnostics: how many in-window specimens never finished and why not --------
     rejected = df_raw.loc[stage.str.startswith(STAGE_REJECTED_PREFIX), "Specimen_ID"].unique()
-    aborted = df_raw.loc[stage == STAGE_ABORTED, "Specimen_ID"].unique()
+    aborted = df_raw.loc[stage.isin(EV.ABORT_MARKERS), "Specimen_ID"].unique()   # incl. "Media Allocation Failed - Aborted"
     excluded = set(rejected) | set(aborted)
     incomplete = (df_pivot["In_Window"] & df_pivot["Completed_Minute"].isna()
                   & ~df_pivot["Specimen_ID"].isin(excluded))
@@ -104,6 +110,7 @@ def build_results_frame(df_raw: pd.DataFrame, sim_minutes: float, initial_condit
         "window_end_min": float(end),
         "window_trimmed": bool(trimmed),
         "n_in_window": int(df_pivot["In_Window"].sum()),
+        "n_seeded_excluded": int(df_pivot["Seeded"].sum()),
         "n_rejected": int(len(rejected)),
         "n_aborted": int(len(aborted)),
         "n_incomplete_in_window": int(incomplete.sum()),   # >0 means the window is still censored

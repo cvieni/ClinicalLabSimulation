@@ -3,6 +3,7 @@ import numpy as np
 import params_config.params_d3 as p
 
 from modules.spec_proc_helpers import req_resource, get_least_busy_tech
+from params_config import event_name as EV
 
 def process_maldi_testing(env, spec_id, spec_type, resources, tracker, spec_priority, n_isolates):
     """Pathway D1: Reflex MALDI-TOF Identification."""
@@ -12,7 +13,7 @@ def process_maldi_testing(env, spec_id, spec_type, resources, tracker, spec_prio
     # Hold the tech throughout prep AND machine run (tech is dedicated/waiting)
     with chosen_tech.request(priority=spec_priority) as tech_req:
         yield tech_req
-        tracker.log_event(spec_id, spec_type, "6a. MALDI Target Spotting Started", env.now)
+        tracker.log_event(spec_id, spec_type, EV.MALDI_SPOT_START, env.now)
         
         # 1. Spotting / Prep
         min_maldi_prep_time = p.min_MALDI_prep_time
@@ -23,7 +24,7 @@ def process_maldi_testing(env, spec_id, spec_type, resources, tracker, spec_prio
         yield env.timeout(total_prep_time)
         # yield env.timeout(maldi_prep_time)
         # tracker.log_event(spec_id, spec_type, "6b. MALDI Target Spotting Completed", env.now)
-        tracker.log_event(spec_id, spec_type, f"6b. MALDI Target Spotting Completed ({n_isolates} isolates)", env.now)
+        tracker.log_event(spec_id, spec_type, EV.maldi_spot_done(n_isolates), env.now)
 
         # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         # Is it more realistic for tech to sit and wait for Maldi to finish? or do they leave and do something else???
@@ -31,14 +32,14 @@ def process_maldi_testing(env, spec_id, spec_type, resources, tracker, spec_prio
         # 2. Tech loads and waits for the MALDI-TOF instrument run
         with req_resource(maldi_res, spec_priority) as maldi_req:
             yield maldi_req
-            tracker.log_event(spec_id, spec_type, "6c. MALDI Instrument Run Started", env.now)
+            tracker.log_event(spec_id, spec_type, EV.MALDI_RUN_START, env.now)
             
             # Sample acquisition / laser fire / spectrum generation run time
             maldi_run_time = p.MALDI_runtime  # in minutes
             maldi_run_perColony = p.MALDI_runtime_per_colony
             yield env.timeout(maldi_run_time)
             
-            tracker.log_event(spec_id, spec_type, "6d. MALDI ID Completed", env.now)
+            tracker.log_event(spec_id, spec_type, EV.MALDI_ID_DONE, env.now)
             # Tech and MALDI instrument are both automatically released here
 
 
@@ -62,7 +63,7 @@ def process_GramStain(env, spec_id, spec_type, resources, tracker, spec_priority
     tech_GramStain = resources.get(requested_tech)
     with req_resource(tech_GramStain, spec_priority) as req:
         yield req
-        tracker.log_event(spec_id, spec_type, "Optional 1a: Gram Stain Setup", env.now)
+        tracker.log_event(spec_id, spec_type, EV.GRAM_STAIN_START, env.now)
         # Stochastic duration for smear prep, staining, reading, and rapid tests
         min_bio =  p.min_biochem_screen_time
         max_bio = p.max_biochem_screen_time
@@ -72,7 +73,7 @@ def process_GramStain(env, spec_id, spec_type, resources, tracker, spec_priority
         # bio_time = random.expovariate(1.0 / mean_bio)
         yield env.timeout(bio_time)
 
-        tracker.log_event(spec_id, spec_type, "Optional 1b: Gram Stain Completed", env.now)
+        tracker.log_event(spec_id, spec_type, EV.GRAM_STAIN_DONE, env.now)
 
 
 
@@ -86,7 +87,7 @@ def process_BioFire(env, spec_id, spec_type, resources, tracker, spec_priority, 
     tech_BioFire = resources.get(requested_tech)
     with req_resource(tech_BioFire, spec_priority) as req:
         yield req
-        tracker.log_event(spec_id, spec_type, "Optional 2a: BioFire Setup", env.now)
+        tracker.log_event(spec_id, spec_type, EV.BIOFIRE_START, env.now)
         # Stochastic duration for smear prep, staining, reading, and rapid tests
         min_bio =  p.min_BioFire_screen_time
         max_bio = p.max_BioFire_screen_time
@@ -98,4 +99,4 @@ def process_BioFire(env, spec_id, spec_type, resources, tracker, spec_priority, 
         # bio_time = random.expovariate(1.0 / mean_bio)
         yield env.timeout(bio_time)
 
-        tracker.log_event(spec_id, spec_type, "Optional 2b: BioFire Completed", env.now)
+        tracker.log_event(spec_id, spec_type, EV.BIOFIRE_DONE, env.now)

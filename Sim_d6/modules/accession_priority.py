@@ -32,8 +32,8 @@ import simpy
 
 import params_config.params_d3 as p
 import params_config.specimen_config_d2 as scfg
-
 from modules.specimen_priority import get_specimen_priority
+
 
 def _setting(names, default, spec_cfg=None):
     """First hit wins: the specimen's own config dict -> params_config/specimen_config_d2.py (module-level
@@ -47,8 +47,8 @@ def _setting(names, default, spec_cfg=None):
             if v is not None:
                 return v
     return default
- 
- 
+
+
 _CUTOFF_NAMES = ("stat_priority_cutoff",)
 _AGING_NAMES = ("accession_aging_minutes", "accession_aging_minutes_per_rank")
 
@@ -58,39 +58,40 @@ _AGING_NAMES = ("accession_aging_minutes", "accession_aging_minutes_per_rank")
 # ----------------------------------------------------------------------------------------------
 def stat_cutoff(spec_cfg=None) -> float:
     return float(_setting(_CUTOFF_NAMES, 4, spec_cfg))
- 
- 
-def classify_priority(spec_cfg) -> tuple[float, bool]:
+
+
+def classify_priority(spec_cfg, rank=None) -> tuple[float, bool]:
     """(rank, is_stat). Lower rank = more urgent (SPEC_PRIORITY_MAP: 1 whole blood/BM, 2 stat, 3 csf,
-    4 positive blood culture, 5 surgical/fna ... 16 studies)."""
-    rank = float(get_specimen_priority(spec_cfg))
+    4 positive blood culture, 5 surgical/fna ... 16 studies). Pass `rank` when the caller already resolved it
+    (e.g. after drawing whether THIS specimen was ordered STAT); otherwise it is looked up from the config."""
+    rank = float(get_specimen_priority(spec_cfg) if rank is None else rank)
     return rank, rank <= stat_cutoff(spec_cfg)
- 
- 
+
+
 # ----------------------------------------------------------------------------------------------
 # priority store
 # ----------------------------------------------------------------------------------------------
 class PriorityAccessionStore(simpy.Store):
     """simpy.Store whose get() returns the most urgent item. Items are dicts with at least
     'priority' (rank) and 'is_stat'. Capacity/blocking semantics are those of simpy.Store."""
- 
+
     def __init__(self, env, capacity=float("inf"), aging_minutes_per_rank: float | None = None):
         super().__init__(env, capacity)
         self._keys: list = []
         self._seq = itertools.count()
         self.aging = float(aging_minutes_per_rank if aging_minutes_per_rank is not None
                            else _setting(_AGING_NAMES, 15.0))
- 
+
     def _sort_key(self, item):
         seq = next(self._seq)
         rank = float(item.get("priority", 99.0))
         if item.get("is_stat"):
             return (0, rank, seq)
         return (1, rank + self._env_now() / self.aging, seq)
- 
+
     def _env_now(self) -> float:
         return float(self._env.now)
- 
+
     def _do_put(self, event):
         if len(self.items) < self._capacity:
             key = self._sort_key(event.item)
@@ -98,18 +99,18 @@ class PriorityAccessionStore(simpy.Store):
             self._keys.insert(i, key)
             self.items.insert(i, event.item)
             event.succeed()
- 
+
     def _do_get(self, event):
         if self.items:
             self._keys.pop(0)
             event.succeed(self.items.pop(0))
- 
+
     # ---- diagnostics ---------------------------------------------------------------------
     def counts(self) -> dict:
         n_stat = sum(1 for it in self.items if it.get("is_stat"))
         return {"stat": n_stat, "routine": len(self.items) - n_stat}
- 
- 
+
+
 # ----------------------------------------------------------------------------------------------
 # pre-accession hold (the JSON accession-time histogram)
 # ----------------------------------------------------------------------------------------------
@@ -117,15 +118,15 @@ def _hist_sample(acc_cfg) -> float:
     probs, edges = acc_cfg["bin_probabilities"], acc_cfg["bin_edges"]
     i = random.choices(range(len(probs)), weights=probs, k=1)[0]
     return random.uniform(edges[i], edges[i + 1])
- 
- 
+
+
 def mean_touch_minutes(spec_cfg) -> float:
     return (float(spec_cfg["accession_touch_time_min"]) + float(spec_cfg["accession_touch_time_max"])) / 2.0
- 
- 
+
+
 def sample_pre_accession_hold(spec_cfg, is_stat: bool, hold_multiplier: float = 1.0) -> float:
     """Minutes a specimen waits before it joins the accession queue (no tech involved).
- 
+
     p.accession_hold_mode
       "histogram"             hold = a draw from the JSON histogram (your current behaviour).
                               Correct ONLY if the LIS interval behind the histogram ends when a tech is

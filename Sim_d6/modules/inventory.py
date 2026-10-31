@@ -15,7 +15,7 @@ class MediaInventory:
             self.add_lot(media, cfg["initial"] * self.unit(media))
             # Standing order: a fixed quantity delivered on a fixed cycle, independent of stock level
             # ("standing order 75 delivered once a week").
-            if cfg.get("standing_order_qty") and cfg.get("standing_order_interval_days"):
+            if self.standing_interval_days(media) and self.standing_qty(media):
                 self.env.process(self._standing_order(media))
 
     def unit(self, media):
@@ -24,17 +24,28 @@ class MediaInventory:
         Default 1, so an existing config in plates behaves exactly as before."""
         return int(self.media_cfg[media].get("plates_per_unit", 1))
 
+    def standing_interval_days(self, media):
+        c = self.media_cfg[media]
+        return c.get("standing_order_interval_days") or c.get("order_frequency")
+
+    def standing_qty(self, media):
+        """Units per standing delivery: standing_order_qty if given, else order_qty when order_frequency is set."""
+        c = self.media_cfg[media]
+        if c.get("standing_order_qty"):
+            return c["standing_order_qty"]
+        return c["order_qty"] if c.get("order_frequency") else None
+
     def lead_minutes(self, media):
         d = self.media_cfg[media].get("lead_time_days")
         return self.lead_time_mins if d is None else float(d) * 1440
 
     def _standing_order(self, media):
         cfg = self.media_cfg[media]
-        interval = float(cfg["standing_order_interval_days"]) * 1440
-        yield self.env.timeout(float(cfg.get("standing_order_first_day", cfg["standing_order_interval_days"])) * 1440)
+        days = float(self.standing_interval_days(media))
+        yield self.env.timeout(float(cfg.get("standing_order_first_day", days)) * 1440)
         while True:
-            self.add_lot(media, cfg["standing_order_qty"] * self.unit(media))
-            yield self.env.timeout(interval)
+            self.add_lot(media, self.standing_qty(media) * self.unit(media))
+            yield self.env.timeout(days * 1440)
 
     def add_lot(self, media, qty):
         shelf_life_mins = self.media_cfg[media]["shelf_life"] * 1440
@@ -95,6 +106,8 @@ def inventory_manager_process(env, inventory, media_cfg, review_interval_mins=14
         for media, cfg in media_cfg.items():
             on_hand = inventory.total_inventory(media)
             on_order = inventory.pending_orders[media]
+            if cfg.get("reorder_point") is None:      # standing-order-only medium: no shortage trigger
+                continue
             reorder_point = cfg["reorder_point"] * inventory.unit(media)
             
             if (on_hand + on_order) <= reorder_point:

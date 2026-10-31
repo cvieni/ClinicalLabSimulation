@@ -3,6 +3,7 @@ import numpy as np
 import params_config.params_d3 as p
 
 from modules.spec_proc_helpers import get_least_busy_tech
+from params_config import event_name as EV
 
 def process_phoenix_testing(env, spec_id, spec_type, resources, tracker, spec_priority, num_colonies):
     """Pathway D2: Reflex Phoenix Automated Antimicrobial Susceptibility Testing (AST)."""
@@ -14,7 +15,8 @@ def process_phoenix_testing(env, spec_id, spec_type, resources, tracker, spec_pr
 
     with chosen_tech.request(priority=spec_priority) as tech_req:
         yield tech_req
-        tracker.log_event(spec_id, spec_type, "7a. Phoenix Prep Started", env.now)
+        # tracker.log_event(spec_id, spec_type, "7a. Phoenix Prep Started", env.now)
+        tracker.log_event(spec_id, spec_type, EV.PHOENIX_PREP_START, env.now)
         min_prep_t = p.min_PHENIXprep_time
         max_prep_t = p.max_PHENIXprep_time
         prep_time = random.uniform(min_prep_t, max_prep_t)
@@ -109,12 +111,12 @@ def process_phoenix_testing(env, spec_id, spec_type, resources, tracker, spec_pr
   
     if all_granted:
         # --- SUCCESS ---
-        tracker.log_event(spec_id, spec_type, "7b. Phoenix Incubation Started", env.now)
+        tracker.log_event(spec_id, spec_type, EV.PHOENIX_INCUBATION_START, env.now)
         phoenix_run_time = p.phoenix_run_time_hours * 60
         
         try:
             yield env.timeout(phoenix_run_time)
-            tracker.log_event(spec_id, spec_type, "7c. Phoenix AST Completed", env.now)
+            tracker.log_event(spec_id, spec_type, EV.PHOENIX_AST_DONE, env.now)
         finally:
             # Guaranteed release
             for req in slot_reqs:
@@ -132,7 +134,7 @@ def process_phoenix_testing(env, spec_id, spec_type, resources, tracker, spec_pr
                 except Exception:
                     pass
 
-        tracker.log_event(spec_id, spec_type, "Phoenix Slot Timeout - Deferred/Bypassed", env.now)
+        tracker.log_event(spec_id, spec_type, EV.PHOENIX_SLOT_TIMEOUT, env.now)
         print(f"⚠️ REAL TIMEOUT: t={env.now/60:.1f}h | {spec_id} waited full {timeout_limit}m without getting slots.")       
 
         # # -----------------------------------------------------------

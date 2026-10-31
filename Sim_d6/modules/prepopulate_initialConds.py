@@ -1,6 +1,9 @@
 import json
 
 from params_config.specimen_config_d2 import SPECIMEN_TYPES
+from params_config import event_name as EV
+from modules.specimen_priority import get_specimen_priority
+from modules.accession_priority import stat_cutoff
 
 
 def _coerce_float(value, default=0.0):
@@ -36,18 +39,25 @@ def _seed_queue_item(env, store, tracker, item, active_counter, default_store_na
         return
 
     arrival_offset = _coerce_float(item.get("arrival_time", 0.0), 0.0)
-    priority = int(item.get("priority", item.get("Priority", 1)))
     spec_cfg = item.get("spec_cfg") or SPECIMEN_TYPES.get(spec_type, {})
+    # Default rank comes from SPEC_PRIORITY_MAP via the specimen type. It used to default to 1 (the most urgent rank),
+    # which made every seeded specimen without an explicit priority jump the accession queue as a STAT.
+    default_priority = get_specimen_priority(spec_cfg) if spec_cfg else 99
+    priority = int(item.get("priority", item.get("Priority", default_priority)))
 
     def _deliver():
-        _log_seed_event(tracker, spec_id, spec_type, "1. Arrived (Initial State)", env.now)
-        _log_seed_event(tracker, spec_id, spec_type, f"2B. Queued in {default_store_name} (Seeded)", env.now)
-        active_counter["count"] += 1
+        _log_seed_event(tracker, spec_id, spec_type, EV.ARRIVED_INITIAL, env.now)
+        _log_seed_event(tracker, spec_id, spec_type, EV.seeded_queue(default_store_name), env.now)
+        # NOTE: no active_counter increment here. No specimen process exists for a seeded queue item, so nothing would
+        # ever decrement it and 'Active_Specimens_In_Lab' stayed inflated for the whole run.
         store.put({
             "spec_id": spec_id,
             "spec_type": spec_type,
             "spec_cfg": spec_cfg,
             "priority": priority,
+            "is_stat": priority <= stat_cutoff(spec_cfg),     # fields the accession worker / priority store read
+            "done_event": env.event(),
+            "arrival_time": env.now,
             "accession_completed_at": env.now,
         })
 
@@ -74,8 +84,8 @@ def _seed_incubating_item(env, item, tracker, active_counter, stores):
     remaining_time = _coerce_float(remaining_time, 0.0)
 
     active_counter["count"] += 1
-    _log_seed_event(tracker, spec_id, spec_type, "1. Arrived (Initial State)", env.now)
-    _log_seed_event(tracker, spec_id, spec_type, "3B-2. Incubation Started (Seeded)", env.now)
+    _log_seed_event(tracker, spec_id, spec_type, EV.ARRIVED_INITIAL, env.now)
+    _log_seed_event(tracker, spec_id, spec_type, EV.SEEDED_INCUBATION_START, env.now)
     env.process(_incubating_handoff_worker(env, spec_id, spec_type, remaining_time, tracker, active_counter, stores))
 
 
@@ -107,7 +117,7 @@ def load_initial_conditions_from_json(json_path, env, tracker, active_counter, s
 def _incubating_handoff_worker(env, spec_id, spec_type, remaining_time, tracker, active_counter, stores):
     """Waits for remaining incubation time, then logs completion and triggers downstream review."""
     yield env.timeout(max(0.0, remaining_time))
-    _log_seed_event(tracker, spec_id, spec_type, "3B-2. Incubation Completed", env.now)
+    _log_seed_event(tracker, spec_id, spec_type, EV.SEEDED_INCUBATION_DONE, env.now)
 
     if 'review_store' in stores:
         stores['review_store'].put({

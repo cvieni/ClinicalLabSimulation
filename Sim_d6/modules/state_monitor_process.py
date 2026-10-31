@@ -7,7 +7,7 @@ from modules.shift_manager_d2 import shift_handoff_process, shift_manager_proces
 # 2. in the plating queue
 # 3. tech queue
 # then log_state takes a snapshot of these metrics to produce the time series plots
-def state_monitor_process(env, resources, tracker, active_counter, shift_staffing_profile, interval=30):
+def state_monitor_process(env, resources, tracker, active_counter, shift_staffing_profile, interval=30, stores=None):
     """
     Periodically records simulation state metrics (queues, active specimens, 
     busy techs, and scheduled staffing levels).
@@ -22,6 +22,10 @@ def state_monitor_process(env, resources, tracker, active_counter, shift_staffin
         "tech_urine",
         "tech_new",
     ]
+
+    # Every non-tech resource (instruments, incubator, plating bench, ...) is logged too. The old monitor only saw
+    # techs and plating_bench, so a saturated Bactec / MALDI / Phoenix / incubator was invisible in the time series.
+    instrument_keys = [k for k in resources if k not in tech_keys and hasattr(resources[k], "queue")]
 
     while True:
         yield env.timeout(interval)
@@ -64,6 +68,16 @@ def state_monitor_process(env, resources, tracker, active_counter, shift_staffin
             if key in resources
         )
         
+        instrument_stats = {}
+        for key in instrument_keys:
+            r = resources[key]
+            instrument_stats[f"{key}_in_use"] = r.count
+            instrument_stats[f"{key}_queue_length"] = len(r.queue)
+            instrument_stats[f"{key}_capacity"] = r.capacity
+        # simpy.Store-like queues (accession store, plating stores): pass stores={"accession_store": store, ...}
+        for name, st in (stores or {}).items():
+            instrument_stats[f"{name}_items"] = len(st.items)
+
         tracker.log_state(
             timestamp=env.now,
             active_specimens=active_specs,
@@ -72,5 +86,6 @@ def state_monitor_process(env, resources, tracker, active_counter, shift_staffin
             busy_techs=busy_techs,
             active_techs=total_assigned_techs, 
             actual_simpy_capacity = actual_simpy_capacity,
-            **individual_tech_queues
+            **individual_tech_queues,
+            instrument_stats=instrument_stats,
         )

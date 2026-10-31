@@ -331,7 +331,10 @@ def _specimen_workflow(env, spec_id, spec_type, resources, inventory, tracker,
     flags = _get_specimen_flags(spec_type, spec_cfg)
     is_blood_culture = flags["is_blood_culture"]
     is_body_fluid = flags["is_body_fluid"]
-    spec_priority = get_specimen_priority(spec_cfg)
+    # STAT is an ORDER attribute: draw it per specimen from stat_fraction (0 = never; does not consume a random number).
+    stat_fraction = float(spec_cfg.get("stat_fraction", 0.0) or 0.0)
+    is_stat_order = stat_fraction > 0.0 and rng.py.random() < stat_fraction
+    spec_priority = get_specimen_priority(spec_cfg, is_stat=is_stat_order)
 
     # ---- 1. arrival & pre-analytical rejection --------------------------------------
     tracker.log_event(spec_id, spec_type, EV.ARRIVED, env.now)

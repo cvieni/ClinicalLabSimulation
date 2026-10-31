@@ -80,7 +80,8 @@ def process_accessioning(env, spec_id, spec_type, spec_cfg, resources, tracker, 
     # ==========================================
     # 1c. CENTRAL PROCESSING & ACCESSIONING
     # ==========================================
-    base_priority, IS_HIGH_PRIORITY_STAT = classify_priority(spec_cfg)
+    # spec_priority is resolved once per specimen by the caller (it includes the per-specimen STAT draw).
+    base_priority, IS_HIGH_PRIORITY_STAT = classify_priority(spec_cfg, rank=spec_priority)
     spec_priority = base_priority          # routine aging is done inside PriorityAccessionStore, from enqueue time
     tracker.log_event(spec_id, spec_type, EV.priority_label(IS_HIGH_PRIORITY_STAT), env.now)
     tracker.log_event(spec_id, spec_type, EV.PRE_ACCESSION_HOLD, env.now)
@@ -234,17 +235,18 @@ def accession_worker_process(env, resources, accession_incoming_store, routine_p
 
         spec_id, spec_type, spec_cfg = item['spec_id'], item['spec_type'], item['spec_cfg']
         tracker.log_event(spec_id, spec_type, EV.ACCESSION_START, env.now)
-        touch_time = _sample_accession_touch_time(spec_cfg, item['is_stat'], env.now)
+        touch_time = _sample_accession_touch_time(spec_cfg, item.get('is_stat', False), env.now)
         _debug_bottleneck(f"AccessionProcess worker={worker_id}", spec_id=spec_id, spec_type=spec_type,
-                          is_stat=item['is_stat'], touch_time_min=round(touch_time, 2),
+                          is_stat=item.get('is_stat', False), touch_time_min=round(touch_time, 2),
                           backlog=len(accession_incoming_store.items))
         yield env.timeout(touch_time)
         tracker.log_event(spec_id, spec_type, EV.ACCESSION_DONE, env.now)
 
-        if not item['done_event'].triggered:
-            item['done_event'].succeed()
+        done = item.get('done_event')       # seeded (initial-condition) items carry a dummy event
+        if done is not None and not done.triggered:
+            done.succeed()
         else:
-            print(f"CRITICAL [{env.now:.1f}m] Worker-{worker_id}: {spec_id} done_event already triggered")
+            print(f"CRITICAL [{env.now:.1f}m] Worker-{worker_id}: {spec_id} done_event missing or already triggered")
 
 
 
