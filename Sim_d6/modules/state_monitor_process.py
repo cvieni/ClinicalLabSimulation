@@ -74,6 +74,14 @@ def state_monitor_process(env, resources, tracker, active_counter, shift_staffin
             instrument_stats[f"{key}_in_use"] = r.count
             instrument_stats[f"{key}_queue_length"] = len(r.queue)
             instrument_stats[f"{key}_capacity"] = r.capacity
+        # Tech benches too: how many are actually working, the live simpy capacity, and what the shift profile asks for.
+        # in_use << capacity with a long queue = work blocked/starved; in_use == capacity = saturated;
+        # capacity < scheduled = slots removed (breaks / huddles / a leak).
+        for key in tech_keys:
+            if key in resources:
+                instrument_stats[f"{key}_in_use"] = resources[key].count
+                instrument_stats[f"{key}_capacity"] = resources[key].capacity
+                instrument_stats[f"{key}_scheduled"] = int(shift_cfg.get(key, 0))
         # simpy.Store-like queues (accession store, plating stores): pass stores={"accession_store": store, ...}
         for name, st in (stores or {}).items():
             instrument_stats[f"{name}_items"] = len(st.items)

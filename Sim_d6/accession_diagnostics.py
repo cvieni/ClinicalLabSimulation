@@ -250,6 +250,89 @@ def review_check(df_pivot: pd.DataFrame) -> pd.DataFrame:
     return by_day
 
 
+def review_pool(spec_type: str) -> str:
+    """Mirror of modules.spec_proc_helpers.get_tech_bench: bottles -> tech_blood, urine -> tech_urine,
+    everything else -> tech_new (stool follows p.stool_review_bench)."""
+    u = spec_type.upper()
+    if u.startswith("BCX") or u.startswith("BODYFLUID"):
+        return "tech_blood"
+    if u.startswith("URINE"):
+        return "tech_urine"
+    if u.startswith("STOOL"):
+        import params_config.params_d3 as p
+        return getattr(p, "stool_review_bench", "tech_new")
+    return "tech_new"
+
+
+# Per 8 h shift each tech loses 5+15+30 min of breaks (tech_breaks.py) and every bench loses a 15 min huddle
+# (shift_manager_d2.py): ~13.5% of the staffed minutes are not available for work.
+AVAILABILITY = 1.0 - (5 + 15 + 30 + 15) / 480.0
+
+
+def review_capacity_check(spec_types: dict, staffing_profile: dict, get_shift_cfg, sim_start_weekday: int = 0,
+                          rejection_frac: float = 0.0, default_range=(2.0, 4.0)) -> pd.DataFrame:
+    """Config only. Primary plate-review load vs staffed tech-minutes per bench (weekday and weekend).
+
+    Counts ONLY the first (day-2) plate read, done by tech_new / tech_urine. The comprehensive workup of subbed
+    specimens is on tech_routine and is NOT in this table; the day-2 read is (volume x (1-rejection) x mean tech_review_range). Repeat workups, biochem,
+    MALDI prep and manual plating also use these benches, so true utilisation is HIGHER than shown.
+    Bottle types (BCx, BodyFluid) are reviewed only when positive, so they are listed but not counted.
+    rho > 1 on a bench = its plates cannot all be read, whatever the priority rules say.
+    """
+    try:
+        from params_config.specimen_config_d2 import resolve_time_range_override as resolve
+    except Exception:
+        resolve = None
+    rows = []
+    for t, cfg in spec_types.items():
+        vol = cfg.get("daily_volume_mean")
+        if vol is None:
+            continue
+        rng = cfg.get("tech_review_range") or default_range
+        if isinstance(rng, dict):
+            rng = (rng["min"], rng["max"])
+        cfg_mean = (float(rng[0]) + float(rng[1])) / 2.0
+        # What the SIMULATION uses: the same call as specimen_process_d5 (tuning matrix by shift, else default_range),
+        # averaged over the 24 hours of a weekday.
+        mids = []
+        for h in range(24):
+            r = None
+            if resolve is not None:
+                r = resolve(cfg, "tech_review_range", sim_minutes=h * 60.0,
+                            default_range=cfg.get("tech_review_range") or default_range)
+            r = r if r is not None else default_range
+            mids.append((float(r[0]) + float(r[1])) / 2.0)
+        mean_min = float(np.mean(mids))
+        pool = review_pool(t)
+        load = 0.0 if pool == "tech_blood" else float(vol) * (1.0 - rejection_frac) * mean_min
+        rows.append(dict(type=t, pool=pool, vol_per_day=float(vol), cfg_review_min=cfg_mean, mean_review_min=mean_min,
+                         review_tech_min_day=load))
+    d = pd.DataFrame(rows)
+    print("\n=== Plate review load by specimen type ===")
+    print(d.round(1).to_string(index=False))
+
+    weekend_day = (5 - sim_start_weekday) % 7
+    out = []
+    for label, day_idx in (("weekday", 0), ("weekend", weekend_day)):
+        cap = {}
+        for h in range(24):
+            cfg = get_shift_cfg(day_idx * 1440.0 + h * 60.0, staffing_profile) or {}
+            for k in ("tech_blood", "tech_urine", "tech_stool", "tech_routine", "tech_new"):
+                cap[k] = cap.get(k, 0.0) + 60.0 * int(cfg.get(k, 0))
+        for pool, g in d.groupby("pool"):
+            c = sum(cap.get(k, 0.0) for k in pool.split("+"))
+            ld = g["review_tech_min_day"].sum()
+            rho = (ld / c) if c else (np.inf if ld else 0.0)
+            out.append(dict(daytype=label, pool=pool, demand_tech_min=ld, staffed_tech_min=c, rho=rho,
+                            rho_net=rho / AVAILABILITY))
+    o = pd.DataFrame(out)
+    print("\n=== Review demand vs staffed minutes (all 24 h, review only) ===")
+    print(o.round(2).to_string(index=False))
+    print(f"  rho_net = rho / {AVAILABILITY:.3f}: after breaks (5+15+30 min per tech) and the 15 min huddle per shift.")
+    print("  rho = inf means the bench has NO staff in the profile: plates routed there wait for ever.")
+    return o
+
+
 def media_check(df_pivot: pd.DataFrame) -> pd.DataFrame:
     """How many specimens hit a media stockout / were dropped for media, by type. Dropped specimens are not
     'slow', they are removed from the TAT sample, so a high rate here means your TAT comparison is biased
@@ -274,6 +357,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("capacity")
+    sub.add_parser("review", help="config only: plate-review load vs staffed minutes per bench")
     mp = sub.add_parser("media")
     mp.add_argument("--lead-days", type=float, default=3.0, help="supplier lead time used by MediaInventory (default 3)")
     mp.add_argument("--safety", type=float, default=1.25)
@@ -308,7 +392,16 @@ def main():
             print("\n=== YOUR current policy against that demand, 60 days (share of requests with no stock) ===")
             print(simulate_stockouts(MEDIA_CONFIG, dem, lead_time_days=a.lead_days).to_string(index=False))
         return
-    if a.cmd == "capacity":
+    if a.cmd == "review":
+        import params_config.params_d3 as p
+        from params_config.staffing_config import SHIFT_STAFFING_PROFILE
+        from modules.shift_manager_d2 import get_current_shift_config
+        review_capacity_check(SPECIMEN_TYPES, SHIFT_STAFFING_PROFILE, get_current_shift_config,
+                              sim_start_weekday=int(getattr(p, "sim_start_weekday", 0)),
+                              rejection_frac=float(getattr(p, "rejection_percent", 0.0)),
+                              default_range=(float(getattr(p, "min_tech_review_sub", 2.0)),
+                                             float(getattr(p, "max_tech_review_sub", 4.0))))
+    elif a.cmd == "capacity":
         import params_config.params_d3 as p
         from params_config.staffing_config import SHIFT_STAFFING_PROFILE
         from modules.shift_manager_d2 import get_current_shift_config

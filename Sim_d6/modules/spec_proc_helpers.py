@@ -8,19 +8,27 @@ from params_config import event_name as EV
 # ==========================================
 # Based on the Specific specimen route to a specific tech
 def get_tech_bench(spec_type, resources):
+    """Bench that does the FIRST plate read (day-2 tech review) for this specimen type.
+
+    Real workflow: blood/body-fluid bottles -> tech_blood; urine -> tech_urine; EVERYTHING else is read first by
+    tech_new on day 1. Only specimens that are subbed / go on to a second day get the comprehensive workup, and
+    that (subculture, biochem, repeat reads) is requested on tech_routine in specimen_process_d5, not here.
+    p.stool_review_bench (default "tech_new"): set to "tech_stool" if stool has its own first reader.
+    If the chosen bench has no staff on the current shift the request goes to the least busy of routine/new
+    instead of waiting for the next shift.
+    """
     spec_upper = spec_type.upper()
     if spec_upper.startswith("BCX") or spec_upper.startswith("BODYFLUID"):
         return resources["tech_blood"]
-    elif spec_type in ["Urine"]:
-        return resources["tech_urine"]
-    elif spec_type in ["Stool"]:
-        return resources["tech_stool"]
-    elif any(spec_upper.startswith(prefix) for prefix in ["TISSUE", "BONE_CX", "WOUND"]):
-        return resources["tech_routine"]
+    if spec_upper.startswith("URINE"):
+        key = "tech_urine"
+    elif spec_upper.startswith("STOOL"):
+        key = getattr(p, "stool_review_bench", "tech_new")
     else:
-        # return resources["tech_new"]
-        # Fallback to tech_new or load-balanced general techs
-        return get_least_busy_tech(resources, "tech_routine", "tech_new")
+        key = "tech_new"
+    if resources[key].capacity > 0:
+        return resources[key]
+    return get_least_busy_tech(resources, "tech_routine", "tech_new")
 
 
 def get_least_busy_tech(resources, primary_key="tech_routine", fallback_key="tech_new"):

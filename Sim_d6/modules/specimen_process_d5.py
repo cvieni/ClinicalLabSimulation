@@ -4,6 +4,7 @@ import zlib
 import numpy as np
 
 from modules.specimen_priority import get_specimen_priority
+from modules.accession_priority import stat_cutoff
 from modules.spec_proc_helpers import req_resource, get_tech_bench, get_least_busy_tech, consume_media_inventory
 from modules.subpathways import process_automated_bactec, process_automated_wasp, process_manual_plating
 from modules.MALDI_biochemicals import process_maldi_testing, process_BioFire, process_GramStain
@@ -305,6 +306,22 @@ def _handle_direct_plating_path(env, spec_id, spec_type, spec_cfg, rng, resource
     return True
 
 
+def _downstream_priority(rank, spec_cfg=None):
+    """Priority used for every tech/instrument request AFTER accessioning.
+
+    p.downstream_priority_mode
+      "tiered" (default): STAT-tier ranks (<= stat_priority_cutoff) keep their rank; everything else shares ONE routine
+                level, so the downstream PriorityResources serve routine work first-come-first-served.
+      "rank": use the full SOP rank everywhere (strict priority: a rank-14 urine plate is NEVER read while any
+              rank<14 request is waiting on the same bench, and PriorityResource has no aging).
+    The accession queue always uses the full rank plus aging (modules/accession_priority.py).
+    """
+    if getattr(p, "downstream_priority_mode", "tiered") == "rank":
+        return rank
+    cutoff = stat_cutoff(spec_cfg)
+    return rank if rank <= cutoff else cutoff + 1
+
+
 # ==================================================================================
 # Specimen workflow
 # ==================================================================================
@@ -348,6 +365,8 @@ def _specimen_workflow(env, spec_id, spec_type, resources, inventory, tracker,
     yield from process_accessioning(env, spec_id, spec_type, spec_cfg, resources, tracker, spec_priority,
                                     arrival_time, routine_plating_store, accession_incoming_store)
 
+    spec_priority = _downstream_priority(spec_priority, spec_cfg)
+
     # ---- 2. primary pathway ---------------------------------------------------------
     if is_blood_culture or is_body_fluid:
         path_ok = yield from _handle_blood_culture_path(
@@ -367,7 +386,7 @@ def _specimen_workflow(env, spec_id, spec_type, resources, inventory, tracker,
         tracker.log_event(spec_id, spec_type, EV.TECH_REVIEW, env.now)
         override_range = resolve_time_range_override(
             spec_cfg, "tech_review_range", sim_minutes=env.now,
-            default_range=(p.min_tech_review_sub, p.max_tech_review_sub))
+            default_range=spec_cfg.get("tech_review_range") or (p.min_tech_review_sub, p.max_tech_review_sub))
         min_time, max_time = override_range if override_range is not None else (p.min_tech_review_sub, p.max_tech_review_sub)
         yield env.timeout(rng.py.uniform(min_time, max_time))
 

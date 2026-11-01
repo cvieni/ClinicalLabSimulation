@@ -286,10 +286,20 @@ mean_biochem_screen_time = 10.0
 phoenix_max_wait = 12 * 60 # wait 12 hours max before timing out phoenix
 maldi_testing_percent = 0.70
 Phoenix_test_percent = 0.4
-min_MALDI_prep_time = 15.0
-max_MALDI_prep_time = 60.0
-MALDI_runtime = 20.0  # in minutes
-MALDI_runtime_per_colony = 0.15  # ~20 seconds per run?
+
+# minutes of tech time to spot ONE isolate
+min_MALDI_prep_time = 0.25 # 15 sec            
+max_MALDI_prep_time = 2.0 # to ~2 min
+maldi_batching_enabled = True        # False = every specimen is run alone, immediately
+# At ARUP we run a cartridge of MALDI plates.
+# Each plate probably takes ~30sec-1min to run, entire run takes ~20-30min?
+maldi_batch_isolates_range = (30, 50)   # isolates per cartridge, drawn per cartridge
+maldi_run_min_per_isolate = 0.5      # 30 s per isolate -> ~20 min for 40 isolates; a tech stays at the machine
+
+# Run a half catridge after ~2-3 hours
+maldi_batch_max_wait_minutes = 150   # ASSUMPTION: run a part-full cartridge once its first isolate has waited this long
+# MALDI_runtime and MALDI_runtime_per_colony are no longer used.
+
 min_PHENIXprep_time = 5.0
 max_PHENIXprep_time = 15.0
 phoenix_run_time_hours = 6.0 # in hours
