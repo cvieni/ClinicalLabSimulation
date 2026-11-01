@@ -6,7 +6,8 @@ is_positive_culture. All rules fell through to the default.
 
 Resolution order now:
   1. is_stat (this specimen was ordered STAT: drawn per specimen from spec_cfg["stat_fraction"])  -> "stat" rank
-  2. spec_cfg["priority_category"], a key of SPEC_PRIORITY_MAP (set per type, see the snippet for specimen_config_d2.py).
+  2a. spec_cfg["priority_mix"] {category: share}: one category is DRAWN per specimen (pass rng)
+  2b. spec_cfg["priority_category"], a key of SPEC_PRIORITY_MAP (set per type, see the snippet for specimen_config_d2.py).
      A misspelt category raises KeyError on purpose.
   3. your original rules on spec_cfg["specimen_type"] (kept as a fallback)
   4. SPEC_PRIORITY_MAP.get("default", 99)
@@ -14,12 +15,36 @@ Resolution order now:
 from params_config.specimen_config_d2 import SPEC_PRIORITY_MAP
 
 
-def get_specimen_priority(spec_cfg, is_stat=None):
+def draw_priority_category(spec_cfg, rng=None):
+    """Category name for ONE specimen from spec_cfg["priority_mix"] = {category: share}. Shares are normalised.
+    rng: any object with .random() (e.g. a random.Random). rng=None -> the most likely category (deterministic;
+    used for seeded initial-condition specimens)."""
+    mix = spec_cfg["priority_mix"]
+    bad = [k for k in mix if k not in SPEC_PRIORITY_MAP]
+    if bad:
+        raise KeyError(f"priority_mix has categories not in SPEC_PRIORITY_MAP: {bad}")
+    total = float(sum(mix.values()))
+    if total <= 0:
+        raise ValueError(f"priority_mix shares must sum > 0, got {mix}")
+    if rng is None:
+        return max(mix, key=mix.get)
+    r, acc = rng.random() * total, 0.0
+    for k, w in mix.items():
+        acc += float(w)
+        if r < acc:
+            return k
+    return list(mix)[-1]
+
+
+def get_specimen_priority(spec_cfg, is_stat=None, rng=None):
     """Priority integer based on SPEC_PRIORITY_MAP (1 = Highest)."""
     if is_stat is None:
         is_stat = spec_cfg.get("is_stat", False)
     if is_stat:
         return SPEC_PRIORITY_MAP["stat"]
+
+    if spec_cfg.get("priority_mix"):
+        return SPEC_PRIORITY_MAP[draw_priority_category(spec_cfg, rng)]
 
     category = spec_cfg.get("priority_category")
     if category is not None:

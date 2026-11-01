@@ -223,6 +223,33 @@ def priority_check(df_pivot: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def review_check(df_pivot: pd.DataFrame) -> pd.DataFrame:
+    """Plate incubation start -> tech review start, by day and by type. A backlog shows as wait climbing day over day
+    and a growing 'never_reviewed' count. Specimens that start incubating in the last 2 days are expected to be
+    unreviewed (right-censored), so look at earlier days."""
+    start = next((c for c in df_pivot.columns if c in (EV.PRIMARY_INCUBATION,)), None)
+    if start is None or EV.TECH_REVIEW not in df_pivot:
+        print("\nreview_check: stages missing (need", EV.PRIMARY_INCUBATION, "and", EV.TECH_REVIEW, ")")
+        return pd.DataFrame()
+    d = df_pivot.dropna(subset=[start]).copy()
+    d["wait_h"] = (d[EV.TECH_REVIEW] - d[start]) / 60.0
+    d["day"] = (d[start] // 1440).astype(int)
+    def tab(key):
+        g = d.groupby(key)
+        t = pd.DataFrame({"incubating": g.size(), "reviewed": g["wait_h"].count(),
+                          "median_h_to_review": g["wait_h"].median(), "p95_h_to_review": g["wait_h"].quantile(.95)})
+        t["never_reviewed"] = t["incubating"] - t["reviewed"]
+        return t.round(1)
+    by_day = tab("day")
+    print("\n=== Plate incubation start -> tech review start, by day incubation started ===")
+    print(by_day.to_string())
+    print("\n=== Same, by specimen type ===")
+    print(tab("Type").to_string())
+    print("  Healthy: median ~ configured incubation time and never_reviewed ~ 0 except the last 2 days. "
+          "Wait or never_reviewed climbing by day = review capacity < plate load.")
+    return by_day
+
+
 def media_check(df_pivot: pd.DataFrame) -> pd.DataFrame:
     """How many specimens hit a media stockout / were dropped for media, by type. Dropped specimens are not
     'slow', they are removed from the TAT sample, so a high rate here means your TAT comparison is biased
@@ -256,6 +283,8 @@ def main():
     r.add_argument("--sim-days", type=float, default=10)
     r.add_argument("--seed", type=int, default=1)
     r.add_argument("--initial-conditions", type=str, default=None)
+    r.add_argument("--stat-fraction", type=float, default=None,
+                   help="set stat_fraction for EVERY specimen type for this run only (e.g. 0.05) to exercise the priority path")
     r.add_argument("--overrides", type=str, default=None, help="JSON dict of parameter overrides")
     a = ap.parse_args()
 
@@ -287,6 +316,9 @@ def main():
                        sim_start_weekday=int(getattr(p, "sim_start_weekday", 0)))
     else:
         import json
+        if a.stat_fraction is not None:
+            for cfg in SPECIMEN_TYPES.values():
+                cfg["stat_fraction"] = a.stat_fraction
         from modules.simulation_d4 import run_simulation
         df_pivot, *_ = run_simulation(
             sim_days=a.sim_days, seed=a.seed, initial_conditions_json=a.initial_conditions,
@@ -295,6 +327,7 @@ def main():
         run_check(df_pivot, SPECIMEN_TYPES)
         accession_time_check(df_pivot, SPECIMEN_TYPES)
         priority_check(df_pivot)
+        review_check(df_pivot)
         media_check(df_pivot)
 
 

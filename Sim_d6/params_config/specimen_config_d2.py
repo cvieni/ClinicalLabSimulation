@@ -457,3 +457,49 @@ for specimen_name, shifts in SPECIMEN_TUNING_MATRIX.items():
         SPECIMEN_TYPES[specimen_name].setdefault("tuning_overrides", {})
         for shift_name, values in shifts.items():
             SPECIMEN_TYPES[specimen_name]["tuning_overrides"].setdefault(shift_name, {}).update(values)
+
+
+
+# ---- paste at the END of params_config/specimen_config_d2.py (after SPEC_PRIORITY_MAP) ----
+# priority_category: a key of SPEC_PRIORITY_MAP. These are MY GUESSES from the SOP list: review each line.
+#  * Categories with rank <= stat_priority_cutoff (1-4) are treated as the STAT tier (no pre-accession hold), so none
+#    of the type-level defaults below use them; STAT comes from stat_fraction instead.
+#  
+# This code maps the specimen type that I define from the LIS (i.e. BCx, bodyfluid, etc. in column 1)
+# mapped to the SOP STAT priority list (column 2, i.e. surgical fna, stool_in_transport, etc.), 
+# Specimen priority based off of SOP: MICRO-PROC-217 pg 4
+
+PRIORITY_CATEGORY_BY_TYPE = {
+    "BCx":               {"whole_blood_bone_marrow": 0.50, "positive_blood_culture": 0.50},
+    "BodyFluid":         {"csf": 0.10, "sterile_body_fluids_nonsurgical": 0.90},
+    "Bone_Cx":           {"whole_blood_bone_marrow": 1.0}, 
+    "Tissue_FNA":        {"surgical_fna": 1.0},
+    "Tissue":            {"tissues_nonsurgical": 0.6, "tracheal_gastric_aspirates": 0.1, "anaerobic_transport": 0.1, "invasive_respiratory": 0.2},
+    "Tissue_genital":    {"tissues_nonsurgical": 0.6, "genital_ureaplasma_mycoplasma": 0.4},
+    "Respiratory":       {"tracheal_gastric_aspirates": 0.4, "invasive_respiratory": 0.4, "stain_cultures": 0.2},                    
+    "Resp_CystFibrosis": {"tracheal_gastric_aspirates": 0.4, "invasive_respiratory": 0.4,  "stain_cultures": 0.2}, 
+    "Wound":             {"stain_cultures": 1.0},                    
+    "Wound_Genital":     {"tissues_nonsurgical": 0.6, "genital_ureaplasma_mycoplasma": 0.4},
+    "Stool":             {"stool_in_transport": 0.8, "short_stability_unpreserved": 0.2},
+    "Urine_Invasive":    {"urine": 1.0},
+    "Urine_NonInvasive": {"urine": 1.0},
+}
+
+
+# Fraction of each type ordered STAT (0-1), from the LIS STAT flag. 0.0 = none until you estimate it.
+STAT_FRACTION_BY_TYPE = {t: 0.0 for t in PRIORITY_CATEGORY_BY_TYPE}
+
+# The accession-time histogram was measured on the REAL mix of priorities, so it already includes the fast ones.
+# If high-priority specimens also skip the hold, the sim is faster than the LIS. Recommended: False.
+stat_skip_hold = False
+
+for _name, _cfg in SPECIMEN_TYPES.items():
+    _cat = PRIORITY_CATEGORY_BY_TYPE.get(_name)
+    if isinstance(_cat, dict):
+        _unknown = [k for k in _cat if k not in SPEC_PRIORITY_MAP]
+        assert not _unknown, f"{_name}: unknown SPEC_PRIORITY_MAP categories {_unknown}"
+        _cfg["priority_mix"] = dict(_cat)
+    elif _cat is not None:
+        assert _cat in SPEC_PRIORITY_MAP, f"{_name}: unknown category {_cat!r}"
+        _cfg.setdefault("priority_category", _cat)
+    _cfg.setdefault("stat_fraction", STAT_FRACTION_BY_TYPE.get(_name, 0.0))

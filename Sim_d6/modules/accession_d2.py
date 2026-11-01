@@ -131,17 +131,19 @@ def process_accessioning(env, spec_id, spec_type, spec_cfg, resources, tracker, 
         tracker.log_event(spec_id, spec_type, EV.BC_INSTRUMENT_LOAD_PENDING, env.now)
         yield env.timeout(random.uniform(0.1, 0.5))
         tracker.log_event(spec_id, spec_type, EV.BC_INSTRUMENT_LOADED, env.now)
+    # else:
+    #     # Route standard specimens asynchronously into FIFO plating store
+    #     tracker.log_event(spec_id, spec_type, EV.ROUTINE_PLATING_QUEUED, env.now)
+    #     item = {
+    #         'spec_id': spec_id,
+    #         'spec_type': spec_type,
+    #         'spec_cfg': spec_cfg,
+    #         'priority': spec_priority,
+    #         'accession_completed_at': env.now
+    #     }
+    #     yield routine_plating_store.put(item)
     else:
-        # Route standard specimens asynchronously into FIFO plating store
-        tracker.log_event(spec_id, spec_type, EV.ROUTINE_PLATING_QUEUED, env.now)
-        item = {
-            'spec_id': spec_id,
-            'spec_type': spec_type,
-            'spec_cfg': spec_cfg,
-            'priority': spec_priority,
-            'accession_completed_at': env.now
-        }
-        yield routine_plating_store.put(item)
+        pass   # plating for direct specimens happens in _handle_direct_plating_path
 
 
 

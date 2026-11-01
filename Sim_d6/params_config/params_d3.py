@@ -148,6 +148,12 @@ seed_input = 42
 stat_skip_hold = True                    # STAT skips the pre-accession hold
 accession_hold_mode = "histogram"        # "histogram" | "histogram_minus_touch" | "none"  (see accession_priority.py)
 
+# -------------------
+# Media Params ---
+# -------------------
+order_lead_time_days = 2.5 # days
+
+
 # -------------------------
 # Measurement window (items: warm-up and right-censoring)
 # -------------------------

@@ -334,7 +334,9 @@ def _specimen_workflow(env, spec_id, spec_type, resources, inventory, tracker,
     # STAT is an ORDER attribute: draw it per specimen from stat_fraction (0 = never; does not consume a random number).
     stat_fraction = float(spec_cfg.get("stat_fraction", 0.0) or 0.0)
     is_stat_order = stat_fraction > 0.0 and rng.py.random() < stat_fraction
-    spec_priority = get_specimen_priority(spec_cfg, is_stat=is_stat_order)
+    # Category mix is drawn from its own stream so it never shifts the other per-specimen draws.
+    spec_priority = get_specimen_priority(spec_cfg, is_stat=is_stat_order,
+                                          rng=random.Random(f"{env.run_seed}:{spec_type}:{spec_id}:priority"))
 
     # ---- 1. arrival & pre-analytical rejection --------------------------------------
     tracker.log_event(spec_id, spec_type, EV.ARRIVED, env.now)

@@ -53,6 +53,7 @@ def _initialize_environment(seed, sim_days):
     tracker = SpecimenTracker()
     validate_media_requirements(SPECIMEN_TYPES, MEDIA_CONFIG)   # unknown media names can never be supplied
     inventory = MediaInventory(env, MEDIA_CONFIG)
+    # MediaInventory(env, MEDIA_CONFIG, order_lead_time_days=getattr(p, "media_order_lead_time_days", 2.5))
     active_counter = {"count": 0}
 
     routine_plating_store = simpy.Store(env)
