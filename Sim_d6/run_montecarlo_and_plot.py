@@ -462,6 +462,13 @@ def main():
         from params_config.specimen_config_d2 import SPECIMEN_TYPES
         pd.DataFrame({"Type": list(SPECIMEN_TYPES), "P50": np.nan, "P95": np.nan}).to_csv(a.make_observed_template, index=False)
         sys.exit(f"Wrote {a.make_observed_template}. Fill P50 and P95 (HOURS, arrival -> final result) and pass it with --observed.")
+    if a.observed and Path(a.observed).exists():
+        _cols = list(pd.read_csv(a.observed, nrows=0).columns)
+        if not {"Type", "P50", "P95"} <= set(_cols):
+            sys.exit(f"--observed {a.observed} has columns {_cols}, but this script needs Type,P50,P95[,Shift].\n"
+                     f"Convert your LIS file first:\n"
+                     f"  python make_observed_csv.py --by-month <your_by_specimen_month.csv> --out observed_lis_month.csv\n"
+                     f"and pass  --observed observed_lis_month.csv")
     if a.observed and not Path(a.observed).exists():
         sys.exit(f"--observed file not found: {Path(a.observed).resolve()}\n"
                  f"Create a template with:  python run_montecarlo_and_plot.py --make-observed-template {a.observed}")

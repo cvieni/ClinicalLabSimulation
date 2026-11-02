@@ -34,6 +34,8 @@ def _seed_queue_item(env, store, tracker, item, active_counter, default_store_na
         return
 
     spec_id = item.get("spec_id") or item.get("specimen_id")
+    if spec_id is not None:
+        spec_id = f"SEED-{spec_id}"      # never collides with generated IDs
     spec_type = item.get("spec_type") or item.get("type") or "General"
     if spec_id is None:
         return
@@ -76,6 +78,8 @@ def _deliver_after_delay(env, delay_minutes, callback):
 def _seed_incubating_item(env, item, tracker, active_counter, stores):
     """Seed a specimen that is already incubating when the simulation starts."""
     spec_id = item.get("spec_id") or item.get("specimen_id")
+    if spec_id is not None:
+        spec_id = f"SEED-{spec_id}"      # never collides with generated IDs
     spec_type = item.get("spec_type") or item.get("type") or "General"
     if spec_id is None:
         return

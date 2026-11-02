@@ -142,7 +142,7 @@ def sample_time_to_positive(specimen_type="BloodCult", rng=None):
 # Overall Simulation Parameters
 # -------------------------
 # sim_max_time = 31
-sim_max_time = 43 # given 5 day warm up and 7 day cool down --> 43 - 5 - 7 = 31 total days
+sim_max_time = 60 # given 5 day warm up and 7 day cool down --> 43 - 5 - 7 = 31 total days
 seed_input = 42
 
 stat_skip_hold = True                    # STAT skips the pre-accession hold
@@ -164,8 +164,8 @@ order_lead_time_days = 2.5 # days
 #    biases completed-only TAT low in the tail. Set it >= your longest realistic workup chain.
 # The window is (sim_days - warmup - cooldown) long: with the defaults, use sim_days >= 37 for a
 # 30-day measured window. n_incomplete_in_window in the run stats should be ~0.
-warmup_days = 5.0
-cooldown_days = 7.0
+warmup_days = 7.0
+cooldown_days = 15.0
 sim_start_weekday = 0     # sim t=0 is midnight on this weekday (0=Mon). Must match shift_manager.
 
 # -------------------------
@@ -327,6 +327,13 @@ max_subculture_time = 3.0
 min_repeat_read_time = 0.5
 max_repeat_read_time = 3.0
 
+# params_d3.py additions (all ASSUMPTIONS, not LIS values):
+final_read_enabled = True
+min_final_read_time = 1.0                    # tech minutes for the verify
+max_final_read_time = 3.0
+final_read_delay_blood_hours = (1.0, 2.0)    # positive BCx / BodyFluid bottles
+final_read_delay_ast_hours = (8.0, 10.0)     # any other positive that had AST
+final_read_delay_other_hours = (1.0, 2.0)    # positive with no AST and no per-type override
 
 # ============================================================================== 
 # Repeat subculture / work-up calibration against observed LIS data

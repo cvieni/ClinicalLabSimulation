@@ -75,9 +75,12 @@ def build_results_frame(df_raw: pd.DataFrame, sim_minutes: float, initial_condit
 
     # Outcome: negatives and positives have very different TATs (a BCx final-negative is ~5 days),
     # so compare them separately to the LIS rather than as one pooled distribution.
-    neg_ids = df_raw.loc[stage.isin(STAGE_NEGATIVE_MARKERS), "Specimen_ID"].unique()
+    def _keys(mask):
+        return set(zip(df_raw.loc[mask, "Specimen_ID"], df_raw.loc[mask, "Type"]))   # (id, type): IDs may repeat across types
+    pair = pd.Series(list(zip(df_pivot["Specimen_ID"], df_pivot["Type"])), index=df_pivot.index)
+    neg_ids = _keys(stage.isin(STAGE_NEGATIVE_MARKERS))
     df_pivot["Outcome"] = np.where(
-        df_pivot["Specimen_ID"].isin(neg_ids), "neg",
+        pair.isin(neg_ids), "neg",
         np.where(df_pivot["Completed_Minute"].notna(), "pos", None),
     )
 
@@ -95,16 +98,14 @@ def build_results_frame(df_raw: pd.DataFrame, sim_minutes: float, initial_condit
     # Specimens pre-loaded by the initial-conditions file have no specimen process behind them (they are plated or
     # accessioned as background load and never log "10. Completed"), and their true arrival time is unknown. They were
     # counted as in-window and incomplete; they are now excluded from TAT and from the incomplete count.
-    seeded_ids = df_raw.loc[stage.str.startswith(EV.ARRIVED_INITIAL), "Specimen_ID"].unique()
-    df_pivot["Seeded"] = df_pivot["Specimen_ID"].isin(seeded_ids)
+    df_pivot["Seeded"] = pair.isin(_keys(stage.str.startswith(EV.ARRIVED_INITIAL)))
     df_pivot["In_Window"] = df_pivot["In_Window"] & ~df_pivot["Seeded"]
 
     # ---- diagnostics: how many in-window specimens never finished and why not --------
-    rejected = df_raw.loc[stage.str.startswith(STAGE_REJECTED_PREFIX), "Specimen_ID"].unique()
-    aborted = df_raw.loc[stage.isin(EV.ABORT_MARKERS), "Specimen_ID"].unique()   # incl. "Media Allocation Failed - Aborted"
-    excluded = set(rejected) | set(aborted)
-    incomplete = (df_pivot["In_Window"] & df_pivot["Completed_Minute"].isna()
-                  & ~df_pivot["Specimen_ID"].isin(excluded))
+    rejected = _keys(stage.str.startswith(STAGE_REJECTED_PREFIX))
+    aborted = _keys(stage.isin(EV.ABORT_MARKERS))   # incl. "Media Allocation Failed - Aborted"
+    excluded = rejected | aborted
+    incomplete = (df_pivot["In_Window"] & df_pivot["Completed_Minute"].isna() & ~pair.isin(excluded))
     diag = {
         "window_start_min": float(warm),
         "window_end_min": float(end),

@@ -105,7 +105,7 @@ def shift_manager_process(env, resources, shift_staffing_profile):
         "tech_accession", "tech_plating",
         "tech_blood", "tech_new",
         "tech_routine",
-        "tech_stool", "tech_urine",
+        "tech_stool", "tech_urine",  "tech_supervisor"
     ]
 
     while True:

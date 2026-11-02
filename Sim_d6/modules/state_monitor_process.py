@@ -21,6 +21,7 @@ def state_monitor_process(env, resources, tracker, active_counter, shift_staffin
         "tech_stool",
         "tech_urine",
         "tech_new",
+        "tech_supervisor"
     ]
 
     # Every non-tech resource (instruments, incubator, plating bench, ...) is logged too. The old monitor only saw

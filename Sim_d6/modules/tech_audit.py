@@ -74,7 +74,7 @@ def install():
 
 
 def report(sim_days: float, state=None, benches=("tech_new", "tech_urine", "tech_routine", "tech_stool", "tech_blood",
-                                                  "tech_plating", "tech_accession")):
+                                                  "tech_plating", "tech_accession", "tech_supervisor")):
     """tech-minutes per day by bench x activity. If df_state is given, also the share of that bench's mean capacity."""
     import pandas as pd
     rows = []

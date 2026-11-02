@@ -9,6 +9,7 @@ from modules.spec_proc_helpers import req_resource, get_tech_bench, get_least_bu
 from modules.subpathways import process_automated_bactec, process_automated_wasp, process_manual_plating
 from modules.MALDI_biochemicals import process_maldi_testing, process_BioFire, process_GramStain
 from modules.AST_phoenix import process_phoenix_testing
+from modules.final_read import process_final_read
 from modules.accession_d2 import process_accessioning
 from params_config import event_name as EV
 
@@ -30,10 +31,11 @@ class _SpecRng:
     Limitation: submodules (accession, MALDI, ...) still draw from the global generator.
     env.run_seed is set in run_simulation; there is deliberately no default.
     """
-    __slots__ = ("py", "np")
+    __slots__ = ("py", "np", "arrival_time")
 
     def __init__(self, env, spec_type, spec_id):
         key = f"{env.run_seed}:{spec_type}:{spec_id}"
+        self.arrival_time = None
         self.py = random.Random(key)                              # str seeds are hashed deterministically
         self.np = np.random.default_rng(zlib.crc32(key.encode("utf-8")))
 
@@ -222,6 +224,13 @@ def _run_workup_rounds(env, spec_id, spec_type, spec_cfg, rng, resources, invent
 
 # ==================================================================================
 # Pathways
+
+def _finish(env, spec_id, spec_type, spec_cfg, rng, resources, tracker, spec_priority, positive=False, n_ast=0):
+    """Final-report time (hold + tech verify, see modules/final_read.py), then log "10. Completed"."""
+    yield from process_final_read(env, spec_id, spec_type, spec_cfg, resources, tracker, spec_priority,
+                                  getattr(rng, "arrival_time", None), next_slot=_next_read_time, positive=positive, n_ast=n_ast)
+    tracker.log_event(spec_id, spec_type, EV.COMPLETED, env.now)
+
 # ==================================================================================
 def _handle_blood_culture_path(env, spec_id, spec_type, spec_cfg, rng, resources, inventory, tracker,
                                spec_priority, priority_plating_store):
@@ -236,7 +245,7 @@ def _handle_blood_culture_path(env, spec_id, spec_type, spec_cfg, rng, resources
         tracker.log_event(spec_id, spec_type, EV.BACTEC_NEGATIVE, env.now)
         # Negatives are finished specimens and must count toward TAT.
         # Assumes process_automated_bactec waits the full protocol for negatives.
-        tracker.log_event(spec_id, spec_type, EV.COMPLETED, env.now)
+        yield from _finish(env, spec_id, spec_type, spec_cfg, rng, resources, tracker, spec_priority)
         return False
     tracker.log_event(spec_id, spec_type, EV.BACTEC_POSITIVE, env.now)
 
@@ -345,6 +354,7 @@ def _specimen_workflow(env, spec_id, spec_type, resources, inventory, tracker,
     arrival_time = env.now
     spec_cfg = SPECIMEN_TYPES[spec_type]
     rng = _SpecRng(env, spec_type, spec_id)
+    rng.arrival_time = arrival_time
     flags = _get_specimen_flags(spec_type, spec_cfg)
     is_blood_culture = flags["is_blood_culture"]
     is_body_fluid = flags["is_body_fluid"]
@@ -412,7 +422,7 @@ def _specimen_workflow(env, spec_id, spec_type, resources, inventory, tracker,
 
     if not positive_specimen:
         tracker.log_event(spec_id, spec_type, EV.NO_SIGNIFICANT_GROWTH, env.now)
-        tracker.log_event(spec_id, spec_type, EV.COMPLETED, env.now)   # negatives count toward TAT
+        yield from _finish(env, spec_id, spec_type, spec_cfg, rng, resources, tracker, spec_priority)   # negatives count toward TAT
         return
 
     num_colonies = _sample_num_colonies(spec_cfg, rng, is_blood_culture)
@@ -462,4 +472,4 @@ def _specimen_workflow(env, spec_id, spec_type, resources, inventory, tracker,
         yield from process_phoenix_testing(env, spec_id, spec_type, resources, tracker, spec_priority, n_ast)
 
     # ---- 10. complete ---------------------------------------------------------------
-    tracker.log_event(spec_id, spec_type, EV.COMPLETED, env.now)
+    yield from _finish(env, spec_id, spec_type, spec_cfg, rng, resources, tracker, spec_priority, positive=True, n_ast=n_ast)

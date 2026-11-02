@@ -89,6 +89,7 @@ def _initialize_resources(env, instrument_resources, shift_staffing_profile):
         "tech_routine": simpy.PriorityResource(env, capacity=initial_shift["tech_routine"]),
         "tech_urine": simpy.PriorityResource(env, capacity=initial_shift["tech_urine"]),
         "tech_new": simpy.PriorityResource(env, capacity=initial_shift["tech_new"]),
+        "tech_supervisor": simpy.PriorityResource(env, capacity=max(1, initial_shift.get("tech_supervisor", 1))),
     }
 
 

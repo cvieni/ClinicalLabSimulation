@@ -97,7 +97,7 @@ def specimen_generator(env, full_id, spec_type, resources, inventory, tracker, a
         
         # 2. Spawn specimen process
         spec_id += 1
-        full_id = f"{spec_type[:3].upper()}-{spec_id:05d}"
+        full_id = f"{spec_type}-{spec_id:05d}"   # was spec_type[:3]: URI-/TIS-/WOU-/RES- collided across types
         
         # env.process(specimen_process(
         #     env, full_id, spec_type, resources, inventory, tracker, 

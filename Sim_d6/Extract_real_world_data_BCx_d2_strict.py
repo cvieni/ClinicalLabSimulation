@@ -495,8 +495,8 @@ if __name__ == "__main__":
     # =========================================================================
     # TOGGLE YEAR HERE ("2024" or "2025")
     # =========================================================================
-    TARGET_YEAR = "2024"
-    # TARGET_YEAR = "2025"
+    # TARGET_YEAR = "2024"
+    TARGET_YEAR = "2025"
 
     BASE_DIR = Path(__file__).resolve().parent.parent
     # print("BASE_DIR == :", BASE_DIR_parent)

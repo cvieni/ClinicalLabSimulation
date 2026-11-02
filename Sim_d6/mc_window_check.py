@@ -27,11 +27,34 @@ out = pd.DataFrame({
     "arrived_in_window": g["arrived_in_window"].sum(),
     "completed(all)": g["completed"].sum(),
     "in_window_flag": g["in_win"].sum(),
+    "in_win_NOT_completed": g.apply(lambda x: (x["in_win"] & ~x["completed"]).sum()),
     "in_win_&_has_TAT": g.apply(lambda x: (x["in_win"] & x["Total_TAT_Hours"].notna()).sum()),
     "first_arrival_day": g["arr_day"].min().round(1),
     "last_arrival_day": g["arr_day"].max().round(1),
 })
 print(out.to_string())
+import re
+stage_cols = [c for c in s.columns if re.match(r"^\d+[A-Za-z]?\.", str(c))]
+if not stage_cols:
+    print("\n(no stage columns in specimens csv; columns are:)", list(s.columns)[:60])
+else:
+    bad = [c for c in stage_cols if re.search(r"abort|reject|fail|cancel", c, re.I)]
+    if bad:
+        t = pd.DataFrame({c: s[c].notna().groupby(s["Type"]).sum() for c in bad})
+        t.insert(0, "arrived", g.size()); t.insert(1, "completed", g["completed"].sum())
+        print("\nSpecimens that logged an abort/reject/fail event, per type (all arrivals):")
+        print(t.to_string())
+    nc = s[~s["completed"]]
+    if len(nc):
+        sc = nc[stage_cols].apply(pd.to_numeric, errors="coerce")
+        has = sc.notna().any(axis=1)
+        last = sc[has].idxmax(axis=1)           # latest-timestamp stage reached
+        out2 = nc[has].assign(last_stage=last).groupby(["Type", "last_stage"]).size().sort_values(ascending=False)
+        print("\nNOT completed (all arrivals): last stage reached, top 25")
+        print(out2.head(25).to_string())
+for c in ("n_rejected", "n_aborted", "n_incomplete_in_window", "n_in_window"):
+    if c in rt.columns:
+        print(f"run_table {c}: mean {rt[c].mean():.0f}  (min {rt[c].min():.0f}, max {rt[c].max():.0f})")
 print("\nOutcome values:", s["Outcome"].astype(str).value_counts(dropna=False).head(8).to_dict())
 small = [t for t in ("Urine_Invasive", "Resp_CystFibrosis", "Bone_Cx") if t in set(s["Type"])]
 for t in small:

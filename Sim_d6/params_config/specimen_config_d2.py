@@ -503,3 +503,33 @@ for _name, _cfg in SPECIMEN_TYPES.items():
         assert _cat in SPEC_PRIORITY_MAP, f"{_name}: unknown category {_cat!r}"
         _cfg.setdefault("priority_category", _cat)
     _cfg.setdefault("stat_fraction", STAT_FRACTION_BY_TYPE.get(_name, 0.0))
+
+
+# ===== paste at the END of specimen_config_d2.py (after PRIORITY/STAT snippet) =====================================
+# Final-report timing per type, hours AFTER ARRIVAL.  STARTING VALUES taken from the LIS quantiles you posted
+# (2024: hold = about P5..P25 of the non-extended part, extended_fraction = share of TATs above ~250-300 h).
+# Re-derive them from the raw file:   python calibrate_final_read.py --raw data/observed_2024_lis_clean.csv
+# extended_fraction is an UPPER BOUND for "final waits for an AFB/fungal culture": the LIS cannot separate that from
+# other long finals (anaerobes, slow growers, positives with long workups).  Set it lower if you know the lab's rate.
+FINAL_READ_BY_TYPE = {
+    # BCx finals are the Bactec 120 h protocol and match the LIS: no entry.
+    "BodyFluid":         {"hold_hours": (75, 127),     "extended_fraction": 0.12, "extended_hours": (318, 356)},
+    "Bone_Cx":           {"hold_hours": (94, 175), "extended_fraction": 0.361, "extended_hours": (328, 357), "positive_delay_hours": (8, 12)},
+    "Tissue":            {"hold_hours": (75, 137), "extended_fraction": 0.391, "extended_hours": (327, 350), "positive_delay_hours": (8, 12)},
+    "Tissue_FNA":        {"hold_hours": (98, 127), "extended_fraction": 0.122, "extended_hours": (268, 358)},
+    "Tissue_genital":    {"hold_hours": (68, 142), "extended_fraction": 0.123, "extended_hours": (330, 412)},
+    "Wound":             {"hold_hours": (62, 125), "extended_fraction": 0.08, "extended_hours": (327, 351), "positive_delay_hours": (8, 12)},
+    "Wound_Genital":     {"hold_hours": (63, 119), "extended_fraction": 0.022, "extended_hours": (260, 356), "positive_delay_hours": (6, 8)},
+    "Respiratory":       {"hold_hours": (42, 56),   "extended_fraction": 0.0,  "extended_hours": (0, 0)},
+    "Resp_CystFibrosis": {"hold_hours": (42, 56),   "extended_fraction": 0.0,  "extended_hours": (0, 0)},
+    "Stool":             {"hold_hours": (72, 91), "extended_fraction": 0.0, "extended_hours": (0, 0), "positive_delay_hours": (5, 10)},
+    "Urine_Invasive":    {"hold_hours": (22, 68), "extended_fraction": 0.0, "extended_hours": (0, 0)},
+    "Urine_NonInvasive": {"hold_hours": (21, 29),   "extended_fraction": 0.0,  "extended_hours": (0, 0)},
+}
+
+for _t, _fr in FINAL_READ_BY_TYPE.items():
+    if _t in SPECIMEN_TYPES:
+        SPECIMEN_TYPES[_t]["final_read"] = _fr
+    else:
+        print(f"WARNING FINAL_READ_BY_TYPE: '{_t}' is not in SPECIMEN_TYPES (typo?)")
+
