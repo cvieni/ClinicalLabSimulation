@@ -114,7 +114,7 @@ def _run_one(task):
 # ==================================================================================
 def _load_concat(rep_dir: Path, prefix: str) -> pd.DataFrame:
     files = sorted(rep_dir.glob(f"{prefix}_*.csv.gz"))
-    return pd.concat([pd.read_csv(f) for f in files], ignore_index=True) if files else pd.DataFrame()
+    return pd.concat([pd.read_csv(f, low_memory=False) for f in files], ignore_index=True) if files else pd.DataFrame()
 
 
 def _window(run_table: pd.DataFrame, sim_days: float):
@@ -449,12 +449,22 @@ def main():
     ap.add_argument("--initial-conditions", type=str, default=None)
     ap.add_argument("--overrides", type=str, default=None, help="JSON dict of parameter overrides")
     ap.add_argument("--overrides-file", type=str, default=None)
-    ap.add_argument("--observed", type=str, default=None, help="CSV: Type,P50,P95[,Shift]")
+    ap.add_argument("--observed", type=str, default=None, help="CSV: Type,P50,P95[,Shift] (hours)")
+    ap.add_argument("--make-observed-template", type=str, default=None, metavar="PATH",
+                    help="write an empty Type,P50,P95 CSV with one row per specimen type, then exit")
     ap.add_argument("--timeline-rep", type=int, default=0)
     ap.add_argument("--timeline-days", type=int, default=7)
     ap.add_argument("--util-filter", type=str, default="tech", help="regex selecting resources for the utilization plot")
     ap.add_argument("--plots-only", action="store_true", help="re-plot an existing --out directory")
     a = ap.parse_args()
+
+    if a.make_observed_template:
+        from params_config.specimen_config_d2 import SPECIMEN_TYPES
+        pd.DataFrame({"Type": list(SPECIMEN_TYPES), "P50": np.nan, "P95": np.nan}).to_csv(a.make_observed_template, index=False)
+        sys.exit(f"Wrote {a.make_observed_template}. Fill P50 and P95 (HOURS, arrival -> final result) and pass it with --observed.")
+    if a.observed and not Path(a.observed).exists():
+        sys.exit(f"--observed file not found: {Path(a.observed).resolve()}\n"
+                 f"Create a template with:  python run_montecarlo_and_plot.py --make-observed-template {a.observed}")
 
     if a.initial_conditions is None and INITIAL_CONDITIONS_PATH.exists():
         a.initial_conditions = str(INITIAL_CONDITIONS_PATH)
