@@ -7,6 +7,12 @@ from modules.shift_manager_d2 import shift_handoff_process, shift_manager_proces
 # 2. in the plating queue
 # 3. tech queue
 # then log_state takes a snapshot of these metrics to produce the time series plots
+def _qlen(r):
+    """Queue length counting each waiting REQUEST once.  A pooled request (see PoolRequest) waits in every member's queue;
+    only its copy on the preferred member is counted, so Total_Tech_Queue_Length is not inflated 2-3x."""
+    return sum(1 for q in r.queue if not getattr(q, "_pool_dup", False))
+
+
 def state_monitor_process(env, resources, tracker, active_counter, shift_staffing_profile, interval=30, stores=None):
     """
     Periodically records simulation state metrics (queues, active specimens, 
@@ -21,7 +27,9 @@ def state_monitor_process(env, resources, tracker, active_counter, shift_staffin
         "tech_stool",
         "tech_urine",
         "tech_new",
-        "tech_supervisor"
+        "tech_supervisor",
+        "tech_float_accession",
+        "tech_float_newroutine",
     ]
 
     # Every non-tech resource (instruments, incubator, plating bench, ...) is logged too. The old monitor only saw
@@ -39,7 +47,7 @@ def state_monitor_process(env, resources, tracker, active_counter, shift_staffin
 
         # 1. Sum queue lengths across all active tech benches
         tech_q = sum(
-            len(resources[key].queue) 
+            _qlen(resources[key]) 
             for key in tech_keys 
             if key in resources
         )
@@ -59,7 +67,7 @@ def state_monitor_process(env, resources, tracker, active_counter, shift_staffin
 
         # Build dictionary of individual technician queue lengths
         individual_tech_queues = {
-            f"{key}_queue_length": len(resources[key].queue) if key in resources else 0
+            f"{key}_queue_length": _qlen(resources[key]) if key in resources else 0
             for key in tech_keys
         }
         # Sum real-time SimPy capacity across active tech resources

@@ -160,6 +160,8 @@ SPECIMEN_TUNING_MATRIX = {
 # Define Configuration
 # ---------------------------------
 
+# most speciemsn I set to 0.1 to 5.0 mins originally. lowering to 4min
+typical_max_plating_time = 4.0
 
 SPECIMEN_TYPES = {
     # ------------------------------------------
@@ -216,7 +218,7 @@ SPECIMEN_TYPES = {
     # Test Directory: Test 0060103
     "Bone_Cx": {
         "media_req": {"Blood_Agar": 1, "Chocolate_Agar": 1, "MacConkey": 1, "CNA_Agar": 1, "GN_Broth": 1},    
-        "plating_time_range": (0.1, 5.0),         
+        "plating_time_range": (0.1, typical_max_plating_time),         
         "tech_review_range": (2.0, 4.0),  
         "initial_vol": 100,
         "daily_volume_mean": get_param("Bone", "daily_volume_mean"),
@@ -239,7 +241,7 @@ SPECIMEN_TYPES = {
         "accession_touch_time_min": 0.5,
         "accession_touch_time_max": 2.5,
         "cancel_rate_percent": loaded_data["Urine_Inv"]["cancellation_metrics"]["lab_cancel_rate_pct"],
-        "plating_time_range": (0.1, 5.0),
+        "plating_time_range": (0.1, typical_max_plating_time),
         "tech_review_range": (1.0, 3.0), 
         # Arrival probability weights across 24 hours (Surges at 09:00 and 15:00)
         "hourly_arrival_weights": {
@@ -250,13 +252,13 @@ SPECIMEN_TYPES = {
     },
     "Urine_NonInvasive": {
         "media_req": {"ChromeAgar": 1, "Blood_Agar": 1},
+        "plating_time_range": (0.1, typical_max_plating_time),
+        "tech_review_range": (1.0, 3.0), 
         "daily_volume_mean": get_param("Urine_NonInv", "daily_volume_mean"),
         "accession_time_config": get_accession_config("Urine_NonInv"),
         "accession_touch_time_min": 0.5,
         "accession_touch_time_max": 2.5,
         "cancel_rate_percent": loaded_data["Urine_NonInv"]["cancellation_metrics"]["lab_cancel_rate_pct"],
-        "plating_time_range": (0.1, 5.0),
-        "tech_review_range": (1.0, 3.0), 
         "hourly_arrival_weights": {
             "weekday": get_param("Urine_NonInv", "hourly_weights_weekday"),
             "weekend": get_param("Urine_NonInv", "hourly_weights_weekend"),          
@@ -271,7 +273,7 @@ SPECIMEN_TYPES = {
     # Test Directory: Test 0060122
     "Respiratory": {
         "media_req": {"Blood_Agar": 1, "Chocolate_Agar": 1, "MacConkey": 1},
-        "plating_time_range": (0.1, 5.0),        
+        "plating_time_range": (0.1, typical_max_plating_time),        
         "tech_review_range": (2.0, 4.0), 
         "initial_vol": 100,
         "daily_volume_mean": get_param("Resp_NonCF", "daily_volume_mean"),
@@ -289,7 +291,7 @@ SPECIMEN_TYPES = {
     # Test Directory: Test 0060130 (CF culture)
     "Resp_CystFibrosis": {
         "media_req": {"Chocolate_Agar": 1, "Blood_Agar": 1, "MacConkey": 1, "CNA_Agar": 1, "BCSA_Agar": 1},
-        "plating_time_range": (0.1, 5.0),        
+        "plating_time_range": (0.1, typical_max_plating_time),        
         "tech_review_range": (2.0, 4.0), 
         "initial_vol": 100,
         "daily_volume_mean": get_param("Resp_CF", "daily_volume_mean"),
@@ -311,8 +313,8 @@ SPECIMEN_TYPES = {
     # Test Directory: Test 0060132
     "Wound": {
         "media_req": {"Blood_Agar": 1, "Chocolate_Agar": 1, "MacConkey": 1, "CNA_Agar": 1},
-        "plating_time_range": (0.1, 5.0),         
-        "tech_review_range": (3.0, 5.0), 
+        "plating_time_range": (0.1, typical_max_plating_time),         
+        "tech_review_range": (2.0, 5.0), 
         "initial_vol": 100,
         "daily_volume_mean": get_param("Wound_other", "daily_volume_mean"),
         "accession_time_config": get_accession_config("Wound_other"),
@@ -326,8 +328,8 @@ SPECIMEN_TYPES = {
     },
     "Wound_Genital": {
         "media_req": {"Blood_Agar": 1, "Chocolate_Agar": 1, "MacConkey": 1, "CNA_Agar": 1, "ThayerMartin": 1},
-        "plating_time_range": (0.1, 5.0),               
-        "tech_review_range": (3.0, 5.0), 
+        "plating_time_range": (0.1, typical_max_plating_time),               
+        "tech_review_range": (2.0, 5.0), 
         "initial_vol": 100,
         "daily_volume_mean": get_param("Wound_genital", "daily_volume_mean"),
         "accession_time_config": get_accession_config("Wound_genital"),
@@ -347,7 +349,7 @@ SPECIMEN_TYPES = {
     # Test Directory: Test 0060127
     "Tissue": {
         "media_req": {"Blood_Agar": 1, "Chocolate_Agar": 1, "MacConkey": 1, "CNA_Agar": 1},
-        "plating_time_range": (0.1, 5.0),                
+        "plating_time_range": (0.1, typical_max_plating_time),                
         "tech_review_range": (4.0, 10.0), #
         "initial_vol": 100,
         "daily_volume_mean": get_param("Tissue_other", "daily_volume_mean"),
@@ -362,7 +364,7 @@ SPECIMEN_TYPES = {
     },
     "Tissue_genital": {
         "media_req": {"Blood_Agar": 1, "Chocolate_Agar": 1, "MacConkey": 1, "MTM":1, "CNA_Agar": 1}, 
-        "plating_time_range": (0.1, 5.0),            
+        "plating_time_range": (0.1, typical_max_plating_time),            
         "tech_review_range": (4.0, 10.0), 
         "initial_vol": 100,
         "daily_volume_mean": get_param("Tissue_genital", "daily_volume_mean"),
@@ -378,7 +380,7 @@ SPECIMEN_TYPES = {
     # MICRO-PLATING-092B ---
     "Tissue_FNA": {
         "media_req": {"GN_Broth": 1, "Chocolate_Agar": 1, "Blood_Agar": 1},    
-        "plating_time_range": (0.1, 5.0),           
+        "plating_time_range": (0.1, typical_max_plating_time),           
         "tech_review_range": (4.0, 10.0), #
         "initial_vol": 100,
         "daily_volume_mean": get_param("Tissue_FNA", "daily_volume_mean"),
@@ -402,7 +404,7 @@ SPECIMEN_TYPES = {
     "Stool": {
         "media_req": {"Blood_Agar": 1, "MacConkey": 1, "HE_Agar": 1, "Campy_CVA": 1, "CT-SMAC": 1, "GN_Broth": 1},      
         "cancel_rate_percent":0.02,     
-        "plating_time_range": (0.1, 5.0),   
+        "plating_time_range": (0.1, typical_max_plating_time),   
         "tech_review_range": (0.5, 4.0), 
         "initial_vol": 100,
         "daily_volume_mean": get_param("Stool", "daily_volume_mean"),
@@ -524,9 +526,10 @@ FINAL_READ_BY_TYPE = {
     "Resp_CystFibrosis": {"hold_hours": (42, 56),   "extended_fraction": 0.0,  "extended_hours": (0, 0)},
     "Stool":             {"hold_hours": (72, 91), "extended_fraction": 0.0, "extended_hours": (0, 0), "positive_delay_hours": (5, 10)},
     "Urine_Invasive":    {"hold_hours": (22, 68), "extended_fraction": 0.0, "extended_hours": (0, 0)},
-    "Urine_NonInvasive": {"hold_hours": (21, 29),   "extended_fraction": 0.0,  "extended_hours": (0, 0)},
+    "Urine_NonInvasive": {"hold_hours": (22, 68),   "extended_fraction": 0.0,  "extended_hours": (0, 0)},
 }
 
+               
 for _t, _fr in FINAL_READ_BY_TYPE.items():
     if _t in SPECIMEN_TYPES:
         SPECIMEN_TYPES[_t]["final_read"] = _fr

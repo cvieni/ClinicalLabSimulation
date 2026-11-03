@@ -1,0 +1,23 @@
+python inspect_initial_conditions.py --raw .\data\observed_2025_lis_clean.csv
+params_config/initial_conditions.json: top-level keys ['seed_plating_queue', 'seed_incubating_specimens']
+
+python make_observed_csv.py --by-month .\data\observed_2025_lis_by_specimen_month.csv --out observed_lis_month.csv
+$d = Get-ChildItem .\results_experiments\mc_* -Directory | Sort-Object LastWriteTime | Select-Object -Last 1
+python run_montecarlo_and_plot.py --plots-only --out $d.FullName --observed .\observed_lis_month.csv
+
+python make_observed_csv.py --by-month .\data\observed_2025_lis_by_specimen_month.csv --out observed_lis_month.csv
+python run_montecarlo_and_plot.py --iterations 10 --sim-days 60 --seed 1 --workers 4 --observed .\observed_lis_month.csv
+python mc_window_check.py
+
+Then run various scenarios -> 
+1. drop the float tech
+2. add an evening routine tech
+3. double the amount of time required for stool biochemicals (i.e. add an extra biochemical)
+
+python run_scenarios.py --iterations 30 --sim-days 60 --seed 42
+
+python make_manuscript_figures_micro.py --mc-dir results_experiments/scn_baseline `
+  --obs-2025 data/observed_2025_lis_clean.csv data/Respiratory_NonCF_2025.csv data/Respiratory_CF_2025.csv `
+  --scenario baseline=results_experiments/scn_baseline --scenario no_float=results_experiments/scn_no_float `
+  --scenario evening_routine_plus1=results_experiments/scn_evening_routine_plus1 `
+  --scenario stool_biochem_x2=results_experiments/scn_stool_biochem_x2

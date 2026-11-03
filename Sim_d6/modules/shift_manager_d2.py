@@ -103,9 +103,11 @@ def shift_manager_process(env, resources, shift_staffing_profile):
     # Complete list of tech bench keys in resources & staffing_config
     ALL_TECH_BENCHES = [
         "tech_accession", "tech_plating",
-        "tech_blood", "tech_new",
-        "tech_routine",
-        "tech_stool", "tech_urine",  "tech_supervisor"
+        "tech_float_accession",
+        "tech_blood", "tech_urine",
+        "tech_new", "tech_float_newroutine",
+        "tech_routine", "tech_stool",
+        "tech_supervisor"
     ]
 
     while True:

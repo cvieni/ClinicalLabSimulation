@@ -185,6 +185,9 @@ shift_2_start, shift_2_end = 15, 23
 break1_wind_min = 30
 break1_wind_max = 90
 
+# Point at which accession_float helps
+float_accession_surge_backlog = 10
+
 # -------------------------
 # Run_simulation Module & class BatchAccumulator
 # -------------------------
@@ -390,3 +393,7 @@ max_reincubate_time = 6.0
 
 # Shift variables:
 handoff_time = 10 # minutes
+
+# --- scenario hooks (set per run through --overrides; see run_scenarios.py) ---
+scenario_staffing_json = ""          # JSON list of staffing ops, see modules/scenario_staffing.py
+stool_biochem_time_multiplier = 1.0  # multiplies the rapid-biochemical time for Stool only

@@ -18,6 +18,7 @@ from params_config.config_d2 import Instrument_resources
 from params_config.media_config import MEDIA_CONFIG
 from params_config.specimen_config_d2 import SPECIMEN_TYPES
 from params_config.staffing_config import SHIFT_STAFFING_PROFILE
+from modules.scenario_staffing import apply_staffing_changes
 
 # -------------------------------
 # ----- Module import -----------
@@ -90,6 +91,8 @@ def _initialize_resources(env, instrument_resources, shift_staffing_profile):
         "tech_urine": simpy.PriorityResource(env, capacity=initial_shift["tech_urine"]),
         "tech_new": simpy.PriorityResource(env, capacity=initial_shift["tech_new"]),
         "tech_supervisor": simpy.PriorityResource(env, capacity=max(1, initial_shift.get("tech_supervisor", 1))),
+        "tech_float_accession":  simpy.PriorityResource(env, capacity=max(1, initial_shift.get("tech_float_accession", 1))),
+        "tech_float_newroutine": simpy.PriorityResource(env, capacity=max(1, initial_shift.get("tech_float_newroutine", 1))),
     }
 
 
@@ -107,8 +110,8 @@ def _get_active_worker_pool(shift_staffing_profile):
         for shift_cfg in day_profile.values():
             if not isinstance(shift_cfg, dict):
                 continue
-            accession = max(accession, int(shift_cfg.get("tech_accession", 1)))
-            plating = max(plating, int(shift_cfg.get("tech_plating", 1)))
+            accession = max(accession, int(shift_cfg.get("tech_accession", 1)) + int(shift_cfg.get("tech_float_accession", 0)))
+            plating = accession = max(accession, int(shift_cfg.get("tech_plating", 1)) + int(shift_cfg.get("tech_float_accession", 0)))
     return {"tech_accession": accession, "tech_plating": plating}
 
 
@@ -202,6 +205,7 @@ def _run_simulation_impl(sim_days, seed, instrument_resources, shift_staffing_pr
                          export_diagnostics):
     if shift_staffing_profile is None:
         shift_staffing_profile = SHIFT_STAFFING_PROFILE
+    shift_staffing_profile = apply_staffing_changes(shift_staffing_profile, getattr(p, 'scenario_staffing_json', ''))
     if instrument_resources is None:
         instrument_resources = Instrument_resources
     if export_diagnostics is None:

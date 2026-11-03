@@ -212,7 +212,8 @@ def _run_workup_rounds(env, spec_id, spec_type, spec_cfg, rng, resources, invent
             with req_resource(tech, spec_priority) as req:
                 yield req
                 tracker.log_event(spec_id, spec_type, EV.RAPID_BIOCHEM_SCREEN, env.now)
-                yield env.timeout(rng.py.uniform(p.min_biochem_screen_time, p.max_biochem_screen_time) * batch_size)
+                yield env.timeout(rng.py.uniform(p.min_biochem_screen_time, p.max_biochem_screen_time) * batch_size
+                                  * (getattr(p, 'stool_biochem_time_multiplier', 1.0) if spec_type == 'Stool' else 1.0))
                 tracker.log_event(spec_id, spec_type, EV.DIRECT_BIOCHEM_DONE, env.now)
         ok = yield from _perform_repeat_workup_batch(
             env, spec_id, spec_type, spec_cfg, rng, resources, inventory, tracker,

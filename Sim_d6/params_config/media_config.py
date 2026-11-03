@@ -44,11 +44,11 @@ real_world_media_orders = {
 }
 
 base_media_config = {
-    "Blood_Agar":      {"cost": 1.0, "shelf_life": 90, "reorder_point": 8000, "order_qty": 11000, "initial": 13735},
-    "MacConkey":       {"cost": 1.0, "shelf_life": 60, "reorder_point": 3000, "order_qty": 5000,  "initial": 6000},
-    "CNA_Agar":        {"cost": 1.0, "shelf_life": 60, "reorder_point": 3000, "order_qty": 5000,  "initial": 6000},
-    "Chocolate_Agar":  {"cost": 1.0, "shelf_life": 60, "reorder_point": 3500, "order_qty": 5000,  "initial": 6000},
-    "ThayerMartin":    {"cost": 1.0, "shelf_life": 60, "reorder_point": 20,   "order_qty": 48,    "initial": 30},
+    "Blood_Agar":      {"cost": 1.0, "shelf_life": 90, "reorder_point": 9600, "order_qty": 13500, "initial": 16400},
+    "MacConkey":       {"cost": 1.0, "shelf_life": 60, "reorder_point": 5400, "order_qty": 7500,  "initial": 9200},
+    "CNA_Agar":        {"cost": 1.0, "shelf_life": 60, "reorder_point": 4000, "order_qty": 5600,  "initial": 6800},
+    "Chocolate_Agar":  {"cost": 1.0, "shelf_life": 60, "reorder_point": 5400, "order_qty": 7500,  "initial": 9200},
+    "ThayerMartin":    {"cost": 1.0, "shelf_life": 60, "reorder_point": 120,   "order_qty": 100,    "initial": 200},
     "ChromeAgar":      {"cost": 2.0, "shelf_life": 60, "reorder_point": 3220, "order_qty": 56,  "initial": 5470},
     "GN_Broth":        {"cost": 1.0, "shelf_life": 150, "reorder_point": 1500,  "order_qty": 1000,   "initial": 2500}, # fastidious organism broth
     "CT-SMAC":         {"cost": 1.0, "shelf_life": 30, "reorder_point": 1000, "order_qty": 1000,  "initial": 1200},
@@ -61,6 +61,7 @@ base_media_config = {
     "MTM":             {"cost": 1.0, "shelf_life": 30, "reorder_point": 250,  "order_qty": 250,   "initial": 500},
     # "IMA":             {"cost": 1.0, "shelf_life": 20, "reorder_point": 10,   "order_qty": 10,    "initial": 15},
 }
+
 
 _NO_ORDER_INFO = {"minimum_order_qnty": None, "plates_per_order": None, "order_frequency": None}
 

@@ -3,6 +3,98 @@ import simpy
 import params_config.params_d3 as p
 from params_config import event_name as EV
 
+
+# ==========================================
+# Shared tech pools (tech_new / tech_float_newroutine / tech_routine, tech_plating / tech_float_accession / ...)
+# ==========================================
+class PoolRequest(simpy.Event):
+    """One request that races several resources and is served by whichever has a free tech first.
+
+    Members are tried in PREFERENCE ORDER: if more than one is free at the moment of the request the first listed wins;
+    if none is free the request waits in every member's queue and the first slot to open serves it (the other queued
+    copies are cancelled).  Works exactly like a normal request: `with pool.request(priority=p) as req: yield req`.
+    """
+
+    def __init__(self, members, priority=None):
+        super().__init__(members[0]._env if hasattr(members[0], "_env") else members[0].env)
+        self.granted = None
+        self._pairs = []
+        for idx, r in enumerate(members):
+            if isinstance(r, simpy.PriorityResource) and priority is not None:
+                q = r.request(priority=priority)
+            else:
+                q = r.request()
+            q._pool_dup = idx > 0          # only the preferred member's copy is counted in queue-length statistics
+            self._pairs.append((r, q))
+        for r, q in self._pairs:                       # already-free member, in preference order
+            if q.triggered:
+                self._choose(r, q)
+                break
+        else:
+            for r, q in self._pairs:
+                q.callbacks.append(lambda ev, r=r, q=q: self._on_grant(r, q))
+
+    def _choose(self, r, q):
+        self.granted = (r, q)
+        for r2, q2 in self._pairs:
+            if q2 is q:
+                continue
+            if q2.triggered:
+                r2.release(q2)
+            else:
+                q2.cancel()
+        self.succeed()
+
+    def _on_grant(self, r, q):
+        if self.granted is None and not self.triggered:
+            self._choose(r, q)
+
+    def release(self):
+        if self.granted is not None:
+            r, q = self.granted
+            self.granted = None
+            r.release(q)
+        elif not self.triggered:
+            for r2, q2 in self._pairs:
+                q2.cancel()
+            self._pairs = []
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.release()
+        return False
+
+
+class TechPool:
+    """Looks like a resource to callers (request / queue / capacity / count) but is served by several resources."""
+
+    def __init__(self, members):
+        self.members = list(members)
+
+    def request(self, priority=None):
+        return PoolRequest(self.members, priority)
+
+    @property
+    def queue(self):
+        return [q for r in self.members for q in r.queue]
+
+    @property
+    def capacity(self):
+        return sum(r.capacity for r in self.members)
+
+    @property
+    def count(self):
+        return sum(r.count for r in self.members)
+
+
+def make_pool(resources, keys):
+    """TechPool over the listed resource keys that exist (returns the plain resource when only one exists)."""
+    members = [resources[k] for k in keys if k in resources]
+    return members[0] if len(members) == 1 else TechPool(members)
+
+
 # ==========================================
 # Helper to pick the right tech resource based on specimen type
 # ==========================================
@@ -26,29 +118,33 @@ def get_tech_bench(spec_type, resources):
         key = getattr(p, "stool_review_bench", "tech_new")
     else:
         key = "tech_new"
+    if key == "tech_new":
+        # new-plate reads: tech_new first, then the float tech between new and routine, then tech_routine
+        return make_pool(resources, ["tech_new", "tech_float_newroutine", "tech_routine"])
     if resources[key].capacity > 0:
         return resources[key]
     return get_least_busy_tech(resources, "tech_routine", "tech_new")
 
 
 def get_least_busy_tech(resources, primary_key="tech_routine", fallback_key="tech_new"):
-    """Load-balances tech requests across available benches based on queue/capacity."""
-    r_tech = resources.get(primary_key, resources[fallback_key])
-    g_tech = resources[fallback_key]
-    r_ratio = len(r_tech.queue) / max(1, r_tech.capacity)
-    g_ratio = len(g_tech.queue) / max(1, g_tech.capacity)
-    return r_tech if r_ratio <= g_ratio else g_tech
+    """Tech for routine-side work (workup, MALDI spotting, AST prep): primary bench, then the float tech that
+    covers new/routine, then the fallback bench -- whichever has a free tech first (see PoolRequest)."""
+    keys = [primary_key]
+    if {primary_key, fallback_key} == {"tech_routine", "tech_new"}:
+        keys.append("tech_float_newroutine")
+    keys.append(fallback_key)
+    return make_pool(resources, [k for k in keys if k in resources] or [fallback_key])
+
 
 def get_least_busy_tech_accession(resources, primary_key="tech_plating", fallback_key="tech_accession"):
-    r_tech = resources[primary_key]
-    g_tech = resources[fallback_key]
-    r_ratio = len(r_tech.queue) / max(1, r_tech.capacity)
-    g_ratio = len(g_tech.queue) / max(1, g_tech.capacity)
-    return r_tech if r_ratio <= g_ratio else g_tech
+    """Plating tech: tech_plating, then the float tech that helps accession/plating, then tech_accession."""
+    return make_pool(resources, [primary_key, "tech_float_accession", fallback_key])
 
 
 def req_resource(resource, priority=None):
     """Safely request a standard or PriorityResource."""
+    if isinstance(resource, TechPool):
+        return resource.request(priority)
     if isinstance(resource, simpy.PriorityResource) and priority is not None:
         return resource.request(priority=priority)
     return resource.request()

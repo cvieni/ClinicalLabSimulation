@@ -3,7 +3,7 @@ import numpy as np
 import params_config.params_d3 as p
 from params_config.specimen_config_d2 import resolve_specimen_tuning_value
 from modules.specimen_priority import get_specimen_priority
-from modules.spec_proc_helpers import req_resource
+from modules.spec_proc_helpers import req_resource, make_pool
 from modules.shift_manager_d2 import get_current_shift_config
 from modules.accession_priority import classify_priority, sample_pre_accession_hold
 from params_config import event_name as EV
@@ -131,19 +131,17 @@ def process_accessioning(env, spec_id, spec_type, spec_cfg, resources, tracker, 
         tracker.log_event(spec_id, spec_type, EV.BC_INSTRUMENT_LOAD_PENDING, env.now)
         yield env.timeout(random.uniform(0.1, 0.5))
         tracker.log_event(spec_id, spec_type, EV.BC_INSTRUMENT_LOADED, env.now)
-    # else:
-    #     # Route standard specimens asynchronously into FIFO plating store
-    #     tracker.log_event(spec_id, spec_type, EV.ROUTINE_PLATING_QUEUED, env.now)
-    #     item = {
-    #         'spec_id': spec_id,
-    #         'spec_type': spec_type,
-    #         'spec_cfg': spec_cfg,
-    #         'priority': spec_priority,
-    #         'accession_completed_at': env.now
-    #     }
-    #     yield routine_plating_store.put(item)
     else:
-        pass   # plating for direct specimens happens in _handle_direct_plating_path
+        # Route standard specimens asynchronously into FIFO plating store
+        tracker.log_event(spec_id, spec_type, EV.ROUTINE_PLATING_QUEUED, env.now)
+        item = {
+            'spec_id': spec_id,
+            'spec_type': spec_type,
+            'spec_cfg': spec_cfg,
+            'priority': spec_priority,
+            'accession_completed_at': env.now
+        }
+        yield routine_plating_store.put(item)
 
 
 
@@ -182,15 +180,13 @@ def plating_worker_process(env, resources, routine_plating_store, priority_plati
 
         tracker.log_event(spec_id, spec_type, EV.PLATING_TECH_WAIT, env.now)
 
-        # Select tech pool
-        candidate_keys = ['tech_plating', 'tech_urine', 'tech_routine']
-        valid_pools = [resources[k] for k in candidate_keys if k in resources and resources[k].capacity > 0]
+        # Plating tech: tech_plating first, then the float tech that helps accession/plating, then urine/routine benches --
+        # whichever has a free tech first (one request races them all; see PoolRequest).
+        tech_pool = make_pool(resources, ['tech_plating', 'tech_float_accession', 'tech_urine', 'tech_routine'])
 
-        tech_pool = min(valid_pools, key=lambda r: len(r.queue) / r.capacity) if valid_pools else resources['tech_plating']
-
-        with tech_pool.request(priority=spec_priority) as req:
+        with req_resource(tech_pool, spec_priority) as req:
             yield req
-            
+
             tracker.log_event(spec_id, spec_type, EV.plating_started(is_priority), env.now)
             
             plating_time = spec_cfg.get("plating_touch_time", random.uniform(1.0, 3.0))
@@ -220,18 +216,32 @@ def accession_worker_process(env, resources, accession_incoming_store, routine_p
       once per loop). It now waits on get() OR a 15-minute timeout and re-checks the roster each time.
     """
     RECHECK = 15.0
+    FLOAT_RECHECK = 5.0
+    float_key = "tech_float_accession"
     while True:
+        float_req = None
+        recheck = RECHECK
         if shift_staffing_profile is not None:
             cfg = get_current_shift_config(env.now, shift_staffing_profile)
             active_techs = int(cfg.get("tech_accession", 0)) if cfg else 0
+            float_n = int(cfg.get(float_key, 0)) if cfg else 0
             if worker_id > active_techs:
-                yield env.timeout(RECHECK)
-                continue
+                # Extra worker slots belong to the float tech(s) and only work during a SURGE (backlog in the store).
+                eligible = float_key in resources and worker_id <= active_techs + float_n
+                surge = len(accession_incoming_store.items) >= int(getattr(p, "float_accession_surge_backlog", 8))
+                if not (eligible and surge):
+                    yield env.timeout(FLOAT_RECHECK if eligible else RECHECK)
+                    continue
+                recheck = FLOAT_RECHECK
+                float_req = resources[float_key].request(priority=0)   # the float may be plating: wait for them
+                yield float_req
 
         get_evt = accession_incoming_store.get()
-        yield get_evt | env.timeout(RECHECK)
+        yield get_evt | env.timeout(recheck)
         if not get_evt.triggered:
             get_evt.cancel()
+            if float_req is not None:
+                resources[float_key].release(float_req)
             continue                      # re-check the roster, then wait again
         item = get_evt.value
 
@@ -242,6 +252,8 @@ def accession_worker_process(env, resources, accession_incoming_store, routine_p
                           is_stat=item.get('is_stat', False), touch_time_min=round(touch_time, 2),
                           backlog=len(accession_incoming_store.items))
         yield env.timeout(touch_time)
+        if float_req is not None:
+            resources[float_key].release(float_req)
         tracker.log_event(spec_id, spec_type, EV.ACCESSION_DONE, env.now)
 
         done = item.get('done_event')       # seeded (initial-condition) items carry a dummy event
