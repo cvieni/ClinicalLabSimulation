@@ -19,6 +19,8 @@ from params_config.media_config import MEDIA_CONFIG
 from params_config.specimen_config_d2 import SPECIMEN_TYPES
 from params_config.staffing_config import SHIFT_STAFFING_PROFILE
 from modules.scenario_staffing import apply_staffing_changes
+from modules.scenario_media import apply_media_scenario, media_lead_time_days
+from modules.scenario_volume import apply_instrument_changes
 
 # -------------------------------
 # ----- Module import -----------
@@ -53,7 +55,9 @@ def _initialize_environment(seed, sim_days):
     env.run_seed = seed          # read by specimen_process to build per-specimen random streams
     tracker = SpecimenTracker()
     validate_media_requirements(SPECIMEN_TYPES, MEDIA_CONFIG)   # unknown media names can never be supplied
-    inventory = MediaInventory(env, MEDIA_CONFIG)
+    _media_json = getattr(p, 'scenario_media_json', '')
+    inventory = MediaInventory(env, apply_media_scenario(MEDIA_CONFIG, _media_json),
+                               order_lead_time_days=media_lead_time_days(_media_json))
     # MediaInventory(env, MEDIA_CONFIG, order_lead_time_days=getattr(p, "media_order_lead_time_days", 2.5))
     active_counter = {"count": 0}
 
@@ -208,6 +212,7 @@ def _run_simulation_impl(sim_days, seed, instrument_resources, shift_staffing_pr
     shift_staffing_profile = apply_staffing_changes(shift_staffing_profile, getattr(p, 'scenario_staffing_json', ''))
     if instrument_resources is None:
         instrument_resources = Instrument_resources
+    instrument_resources = apply_instrument_changes(instrument_resources, getattr(p, 'scenario_instrument_json', ''))
     if export_diagnostics is None:
         export_diagnostics = p.export_diagnostic_timeseries
 
@@ -269,7 +274,7 @@ def _run_simulation_impl(sim_days, seed, instrument_resources, shift_staffing_pr
         )
 
     # Start Processes
-    env.process(inventory_manager_process(env, inventory, MEDIA_CONFIG))
+    env.process(inventory_manager_process(env, inventory, inventory.media_cfg))
     env.process(state_monitor_process(env, resources, tracker, active_counter, shift_staffing_profile, interval=30))
     env.process(shift_manager_process(env, resources, shift_staffing_profile))
 

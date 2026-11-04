@@ -6,7 +6,10 @@
   1. params_config/params_d3.py     + scenario_staffing_json = ""   + stool_biochem_time_multiplier = 1.0
   2. modules/simulation_d4.py       staffing profile copy with the scenario changes applied
   3. modules/specimen_process_d5.py stool biochemical time * stool_biochem_time_multiplier
-Also copy modules/scenario_staffing.py next to the others.
+  4. modules/specimen_generator.py  arrival volume scenarios (global x, per-type x, +N per day)
+  5. modules/simulation_d4.py       instrument capacity scenarios
+  6. modules/simulation_d4.py       media stock scaling (reorder point / order qty / initial stock, lead time)
+Also copy modules/scenario_staffing.py and modules/scenario_volume.py and modules/scenario_media.py next to the others.
 """
 import shutil
 import sys
@@ -60,5 +63,40 @@ patch("modules/specimen_process_d5.py", [
      "yield env.timeout(rng.py.uniform(p.min_biochem_screen_time, p.max_biochem_screen_time) * batch_size\n"
      "                                  * (getattr(p, 'stool_biochem_time_multiplier', 1.0) if spec_type == 'Stool' else 1.0))"),
 ], marker="stool_biochem_time_multiplier")
+
+patch("modules/simulation_d4.py", [
+    ("from modules.scenario_staffing import apply_staffing_changes\n",
+     "from modules.scenario_staffing import apply_staffing_changes\n"
+     "from modules.scenario_volume import apply_instrument_changes\n"),
+    ("    if instrument_resources is None:\n        instrument_resources = Instrument_resources\n",
+     "    if instrument_resources is None:\n        instrument_resources = Instrument_resources\n"
+     "    instrument_resources = apply_instrument_changes(instrument_resources, getattr(p, 'scenario_instrument_json', ''))\n"),
+], marker="apply_instrument_changes")
+
+patch("modules/specimen_generator.py", [
+    ("from modules.specimen_process_d5 import specimen_process\n",
+     "from modules.specimen_process_d5 import specimen_process\nimport params_config.params_d3 as p\n"
+     "from modules.scenario_volume import apply_volume_scenario\n"),
+    ('daily_vol = spec_cfg["daily_volume_mean"]',
+     'daily_vol = apply_volume_scenario(spec_type, spec_cfg["daily_volume_mean"], getattr(p, "scenario_volume_json", ""))'),
+], marker="apply_volume_scenario")
+
+patch("params_config/params_d3.py", [], marker="scenario_volume_json",
+      append='scenario_volume_json = ""           # {"global":1.5,"multipliers":{"BCx":2},"add_per_day":{"BCx":2000}}\n'
+             'scenario_instrument_json = ""       # {"bc_instrument": 864}\n')
+
+patch("modules/simulation_d4.py", [
+    ("from modules.scenario_staffing import apply_staffing_changes\n",
+     "from modules.scenario_staffing import apply_staffing_changes\n"
+     "from modules.scenario_media import apply_media_scenario, media_lead_time_days\n"),
+    ("    inventory = MediaInventory(env, MEDIA_CONFIG)\n",
+     "    _media_json = getattr(p, 'scenario_media_json', '')\n"
+     "    inventory = MediaInventory(env, apply_media_scenario(MEDIA_CONFIG, _media_json),\n"
+     "                               order_lead_time_days=media_lead_time_days(_media_json))\n"),
+    ("inventory_manager_process(env, inventory, MEDIA_CONFIG)", "inventory_manager_process(env, inventory, inventory.media_cfg)"),
+], marker="apply_media_scenario")
+
+patch("params_config/params_d3.py", [], marker="scenario_media_json",
+      append='scenario_media_json = ""            # {"global":1.5,"per_media":{"Blood_Agar":2},"lead_time_days":3}\n')
 
 print("\nDONE" if ok else "\nSOME PATCHES FAILED - send me the messages above")

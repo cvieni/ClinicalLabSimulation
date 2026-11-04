@@ -7,7 +7,8 @@
 
 Each scenario -> results_experiments/scn_<name>/  (resumable: finished folders are skipped).
 Finishes by printing the make_manuscript_figures_micro.py command that uses all of them.
-Edit SCENARIOS below to add more; staffing ops are described in modules/scenario_staffing.py.
+Define scenarios in scenarios_def.py (helpers: volume_x, volume_add, volume_all, staff_add, staff_set, instrument, param,
+sweep_volume, combine) or ad hoc with --quick.
 """
 import argparse
 import json
@@ -17,28 +18,51 @@ import sys
 import time
 from pathlib import Path
 
-SCENARIOS = {
-    "baseline": {},
-    # remove BOTH float techs (accession/plating float and new/routine float) in every shift
-    "no_float": {"staffing": [{"bench": "tech_float_accession", "set": 0},
-                              {"bench": "tech_float_newroutine", "set": 0}]},
-    # one extra routine-bench tech on the evening shift (weekday and weekend)
-    "evening_routine_plus1": {"staffing": [{"bench": "tech_routine", "add": 1, "shift_contains": "Evening"}]},
-    # new stool biochemical test: stool biochemical time doubled
-    "stool_biochem_x2": {"overrides": {"stool_biochem_time_multiplier": 2.0}},
-}
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import scenarios_def as sd
+SCENARIOS = sd.SCENARIOS
+
+
+def parse_quick(spec):
+    """--quick "name=op;op"   ops: volume_x:BCx:2 | volume_add:BCx:2000 | volume_all:1.5 | staff_add:tech_routine:1[:Evening]
+    | staff_set:tech_float_accession:0[:shift] | media_x:1.5[:Blood_Agar] | instrument:bc_instrument:864 | param:name:value"""
+    name, ops = spec.split("=", 1)
+    parts = []
+    for op in ops.split(";"):
+        k, *v = [x.strip() for x in op.split(":")]
+        if k == "param":
+            parts.append(sd.param(**{v[0]: float(v[1]) if v[1].replace(".", "", 1).lstrip("-").isdigit() else v[1]}))
+        elif k in ("volume_x", "volume_add"):
+            parts.append(getattr(sd, k)(v[0], float(v[1])))
+        elif k == "volume_all":
+            parts.append(sd.volume_all(float(v[0])))
+        elif k in ("staff_add", "staff_set"):
+            parts.append(getattr(sd, k)(v[0], int(v[1]), v[2] if len(v) > 2 else None))
+        elif k == "media_x":
+            parts.append(sd.media_x(float(v[0]), v[1] if len(v) > 1 and v[1] else None))
+        elif k == "instrument":
+            parts.append(sd.instrument(v[0], int(v[1])))
+        else:
+            raise SystemExit(f"unknown quick op '{k}'")
+    return name.strip(), sd.combine(*parts)
+
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--iterations", type=int, default=30)
 ap.add_argument("--sim-days", type=float, default=60)
 ap.add_argument("--seed", type=int, default=42)
 ap.add_argument("--workers", type=int, default=None)
+ap.add_argument("--quick", action="append", default=[], help='one-off scenario, e.g. --quick "bcx_plus2000=volume_add:BCx:2000;instrument:bc_instrument:864"')
 ap.add_argument("--only", default=None, help="comma-separated scenario names")
 ap.add_argument("--force", action="store_true")
 ap.add_argument("--results-dir", default="results_experiments")
 ap.add_argument("--mc-script", default="run_montecarlo_and_plot.py")
 ap.add_argument("--mc-args", default="", help='extra args passed through, e.g. "--initial-conditions none"')
 a = ap.parse_args()
+
+for q in a.quick:
+    n_, c_ = parse_quick(q)
+    SCENARIOS[n_] = c_
 
 names = [n.strip() for n in a.only.split(",")] if a.only else list(SCENARIOS)
 unknown = [n for n in names if n not in SCENARIOS]
@@ -56,6 +80,14 @@ for n in names:
     ov = dict(cfg.get("overrides", {}))
     if cfg.get("staffing"):
         ov["scenario_staffing_json"] = json.dumps(cfg["staffing"])
+    v = cfg.get("volume", {})
+    if v.get("global", 1.0) != 1.0 or v.get("multipliers") or v.get("add_per_day"):
+        ov["scenario_volume_json"] = json.dumps(v)
+    m = cfg.get("media", {})
+    if m.get("global", 1.0) != 1.0 or m.get("per_media") or "lead_time_days" in m:
+        ov["scenario_media_json"] = json.dumps(m)
+    if cfg.get("instruments"):
+        ov["scenario_instrument_json"] = json.dumps(cfg["instruments"])
     out.mkdir(parents=True, exist_ok=True)
     cmd = [sys.executable, a.mc_script, "--iterations", str(a.iterations), "--sim-days", str(a.sim_days),
            "--seed", str(a.seed), "--out", str(out)]

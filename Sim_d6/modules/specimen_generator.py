@@ -3,6 +3,8 @@ import random
 # Dictionaries
 from params_config.specimen_config_d2 import SPECIMEN_TYPES
 from modules.specimen_process_d5 import specimen_process
+import params_config.params_d3 as p
+from modules.scenario_volume import apply_volume_scenario
 
 # ---------------------------------------------------------------------------
 # Helper function to extract correct 24-hour weight vector regardless of configuration format
@@ -83,7 +85,7 @@ def specimen_generator(env, full_id, spec_type, resources, inventory, tracker, a
     spec_id = 0
     spec_cfg = SPECIMEN_TYPES[spec_type]
     raw_weights = spec_cfg["hourly_arrival_weights"]
-    daily_vol = spec_cfg["daily_volume_mean"]
+    daily_vol = apply_volume_scenario(spec_type, spec_cfg["daily_volume_mean"], getattr(p, "scenario_volume_json", ""))
 
     while True:
         # Dynamically fetch current 24-hr weights based on simulation time (env.now)

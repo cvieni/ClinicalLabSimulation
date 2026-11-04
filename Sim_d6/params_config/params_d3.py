@@ -397,3 +397,6 @@ handoff_time = 10 # minutes
 # --- scenario hooks (set per run through --overrides; see run_scenarios.py) ---
 scenario_staffing_json = ""          # JSON list of staffing ops, see modules/scenario_staffing.py
 stool_biochem_time_multiplier = 1.0  # multiplies the rapid-biochemical time for Stool only
+scenario_volume_json = ""           # {"global":1.5,"multipliers":{"BCx":2},"add_per_day":{"BCx":2000}}
+scenario_instrument_json = ""       # {"bc_instrument": 864}
+scenario_media_json = ""            # {"global":1.5,"per_media":{"Blood_Agar":2},"lead_time_days":3}

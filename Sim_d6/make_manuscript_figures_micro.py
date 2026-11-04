@@ -46,7 +46,8 @@ from scipy import stats
 GROUPS = {
     "Blood culture": ["BCx"], "Body fluid": ["BodyFluid"], "Bone": ["Bone_Cx"], "Tissue": ["Tissue"],
     "Tissue (FNA)": ["Tissue_FNA"], "Tissue (genital)": ["Tissue_genital"], "Wound": ["Wound"],
-    "Wound (genital)": ["Wound_Genital"], "Stool": ["Stool"], "Respiratory": ["Respiratory", "Resp_CystFibrosis"],
+    "Wound (genital)": ["Wound_Genital"], "Stool": ["Stool"],
+    "Respiratory (non-CF)": ["Respiratory", "Resp_NonCF"], "Respiratory (CF)": ["Resp_CystFibrosis", "Resp_CF"],
     "Urine": ["Urine_Invasive", "Urine_NonInvasive"],
 }
 SIM_TO_GROUP = {s: g for g, ss in GROUPS.items() for s in ss}
@@ -54,7 +55,8 @@ SIM_TO_GROUP = {s: g for g, ss in GROUPS.items() for s in ss}
 OBS_TO_GROUP = {"bloodculture": "Blood culture", "bodyfluid": "Body fluid", "bone": "Bone", "tissue": "Tissue",
                 "fnatissue": "Tissue (FNA)", "genitaltissue": "Tissue (genital)", "wound": "Wound",
                 "genitalwound": "Wound (genital)", "woundgenital": "Wound (genital)", "stool": "Stool",
-                "respiratory": "Respiratory", "invasiveurine": "Urine", "urine": "Urine"}
+                "respiratory": "Respiratory (non-CF)", "respiratorynoncf": "Respiratory (non-CF)", "respnoncf": "Respiratory (non-CF)", "noncf": "Respiratory (non-CF)",
+                "respiratorycf": "Respiratory (CF)", "respcf": "Respiratory (CF)", "cf": "Respiratory (CF)", "cysticfibrosis": "Respiratory (CF)", "invasiveurine": "Urine", "urine": "Urine"}
 SHIFTS = ["Day", "Evening", "Night"]
 SHIFT_HOURS = {"Day": (7, 15), "Evening": (15, 23)}          # everything else = Night
 BENCH_LABELS = {  # state-file resource -> manuscript label (rows of the utilisation heat-map, in this order)
@@ -76,7 +78,7 @@ INK, INK2, MUTED, GRID = "#0b0b0b", "#52514e", "#898781", "#e1e0d9"
 SIM_C, OBS_C, OBS24_C = "#2a78d6", "#0b0b0b", "#eb6834"
 SHIFT_COLORS = {"Day": "#2a78d6", "Evening": "#eb6834", "Night": "#1baf7a"}
 SPEC_FALLBACK = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"]
-SEQ = LinearSegmentedColormap.from_list("seq_blue", ["#cde2fb", "#6da7ec", "#256abf", "#104281"])
+SEQ = LinearSegmentedColormap.from_list("blue_red", ["#1f5fb4", "#8ec1ee", "#f5f1e8", "#f2a38b", "#c62828"])  # 0 % blue -> 100 % red
 
 plt.rcParams.update({
     "font.family": "sans-serif", "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"],
@@ -93,11 +95,24 @@ OUT, TAB = Path("manuscript_png"), Path("manuscript_tables")
 # ----------------------------------------------------------------------------
 # helpers
 # ----------------------------------------------------------------------------
+BARE = False   # --bare: unlabelled versions also lose legends, panel titles and in-plot text
+
+
 def save_both(fig, stem):
     fig.savefig(OUT / f"{stem}_labelled.png", dpi=DPI, facecolor="white")
     for ax in fig.axes:
         ax.set_xlabel("")
         ax.set_ylabel("")
+        ax.tick_params(labelbottom=False, labelleft=False, labelright=False, labeltop=False)   # keep the tick MARKS
+        if BARE:
+            ax.set_title("")
+            if ax.get_legend():
+                ax.get_legend().remove()
+            for t in ax.texts:
+                t.set_visible(False)
+    if BARE:
+        for lg in list(fig.legends):
+            lg.remove()
     fig.savefig(OUT / f"{stem}_unlabelled.png", dpi=DPI, facecolor="white")
     plt.close(fig)
     print(f"  wrote {stem}")
@@ -179,19 +194,49 @@ def load_state(mc_dir, rt):
     return st
 
 
+def _file_group(path):
+    """Group forced by the FILE NAME for the respiratory files: ...NonCF... -> non-CF, ...CF... -> CF."""
+    n = Path(path).name.lower().replace("-", "").replace("_", "")
+    if "respir" in n or "resp" in n:
+        return "Respiratory (non-CF)" if "noncf" in n else ("Respiratory (CF)" if "cf" in n else None)
+    return None
+
+
+def _find_col(d, wanted):
+    low = {c.lower(): c for c in d.columns}
+    for w in wanted:
+        if w.lower() in low:
+            return low[w.lower()]
+    return None
+
+
 def load_obs(paths):
-    """paths: one or more LIS csv files (e.g. the main 2025 file plus Respiratory_NonCF_2025.csv and
-    Respiratory_CF_2025.csv). A file whose NAME contains 'respir' is assigned to the Respiratory group
-    regardless of its specimen_type labels."""
+    """One or more LIS csv files. A file named like Respiratory_NonCF_2025.csv / Respiratory_CF_2025.csv is assigned to
+    'Respiratory (non-CF)' / 'Respiratory (CF)' regardless of its specimen_type values. Prints what it loaded per file."""
     frames = []
     for path in ([paths] if isinstance(paths, str) else paths):
         d = pd.read_csv(path, low_memory=False)
-        forced = "Respiratory" if "respir" in Path(path).name.lower() else None
-        d["group"] = forced if forced else d["specimen_type"].map(lambda x: OBS_TO_GROUP.get(norm(x)))
-        miss = d[d["group"].isna()]["specimen_type"].value_counts()
-        if len(miss):
-            print(f"  WARNING {Path(path).name}: unmapped specimen_type labels dropped: {dict(miss.head(8))}")
-        frames.append(d.dropna(subset=["group"]))
+        tcol = _find_col(d, ["TAT_Hours", "tat_hours", "Total_TAT_Hours", "TAT", "tat_h"])
+        if tcol is None:
+            raise SystemExit(f"{path}: no TAT column. Columns are: {list(d.columns)}")
+        d = d.rename(columns={tcol: "TAT_Hours"})
+        forced = _file_group(path)
+        if forced:
+            d["group"] = forced
+        else:
+            scol = _find_col(d, ["specimen_type", "Type", "specimen"])
+            if scol is None:
+                raise SystemExit(f"{path}: no specimen_type column. Columns are: {list(d.columns)}")
+            d["group"] = d[scol].map(lambda x: OBS_TO_GROUP.get(norm(x)))
+            miss = d[d["group"].isna()][scol].value_counts()
+            if len(miss):
+                print(f"  WARNING {Path(path).name}: unmapped specimen_type labels dropped: {dict(miss.head(8))}")
+        d = d.dropna(subset=["group"])
+        print(f"  {Path(path).name}: {len(d):,} rows -> {dict(d['group'].value_counts())}")
+        acol = _find_col(d, ["arrival_datetime", "arrival", "collected_datetime"])
+        if acol:
+            d = d.rename(columns={acol: "arrival_datetime"})
+        frames.append(d)
     d = pd.concat(frames, ignore_index=True)
     d["tat_h"] = pd.to_numeric(d["TAT_Hours"], errors="coerce")
     d = d.dropna(subset=["tat_h"])
@@ -199,7 +244,6 @@ def load_obs(paths):
         t = pd.to_datetime(d["arrival_datetime"], errors="coerce")
         d["hour"] = t.dt.hour
         d["shift"] = np.where(t.notna(), shift_of_hour(t.dt.hour.fillna(0).astype(int)), None)
-    print("  LIS rows per group: " + ", ".join(f"{g}={n}" for g, n in d["group"].value_counts().items()))
     return d
 
 
@@ -337,12 +381,17 @@ def fig_ecdf_grid(sim, obs25, obs24):
     for i, g in enumerate(groups):
         ax = axs[i // ncol][i % ncol]
         s = np.sort(sim[sim.group == g]["tat_h"].values)
+        allv = [s]
         ax.step(s, np.arange(1, len(s) + 1) / len(s), where="post", color=SIM_C, linewidth=1.4)
         for o, c, ls in ((obs25, OBS_C, "--"), (obs24, OBS24_C, ":")):
             if o is not None and g in set(o["group"]):
                 v = np.sort(o[o.group == g]["tat_h"].values)
+                allv.append(v)
                 ax.step(v, np.arange(1, len(v) + 1) / len(v), where="post", color=c, linewidth=1.2, linestyle=ls)
-        ax.set_xscale("log")
+        cat = np.concatenate(allv)
+        lo, hi = np.percentile(cat, 0.5), np.percentile(cat, 99.8)      # crop absurd LIS outliers (0 h, 1000 h)
+        pad = 0.04 * (hi - lo)
+        ax.set_xlim(max(0, lo - pad), hi + pad)
         ax.set_ylim(0, 1.02)
         ax.set_title(g, fontsize=7.5, fontweight="bold", loc="left")
         if obs25 is not None and g in set(obs25["group"]):
@@ -350,9 +399,9 @@ def fig_ecdf_grid(sim, obs25, obs24):
             rng = np.random.default_rng(0)
             ks = stats.ks_2samp(rng.choice(s, min(len(s), 20000), replace=False),
                                 rng.choice(x, min(len(x), 20000), replace=False)).statistic
-            ax.text(0.97, 0.06, f"D = {ks:.2f}", transform=ax.transAxes, ha="right", fontsize=6.5, color=INK2)
+            ax.text(0.03, 0.95, f"D = {ks:.2f}", transform=ax.transAxes, ha="left", va="top", fontsize=6.5, color=INK2)
         if i // ncol == nrow - 1 or i + ncol >= len(groups):
-            ax.set_xlabel("TAT (h, log scale)")
+            ax.set_xlabel("TAT (h)")
         if i % ncol == 0:
             ax.set_ylabel("Cumulative proportion")
     for j in range(len(groups), nrow * ncol):
@@ -557,19 +606,186 @@ def fig_scenarios(scn):
 
 
 # ----------------------------------------------------------------------------
+# breaking point (capacity headroom) from sweep scenarios
+# ----------------------------------------------------------------------------
+SWEEP_RE = re.compile(r"^(?P<prefix>.+?)_(?P<kind>[xp])(?P<val>[0-9]+(?:\.[0-9]+)?)$")
+
+
+def _find_sweeps(specs):
+    """specs [(name, folder)] -> {prefix: {"kind": "x"|"p", "x0": baseline value, "points": {value: folder}}}.
+    Names look like BCx_x1.5 (multiplier) or BCx_p1000 (+1000/day). The scenario called 'baseline' is the reference point."""
+    base = dict(specs).get(BASELINE_SCENARIO)
+    sweeps = {}
+    for name, folder in specs:
+        m = SWEEP_RE.match(name)
+        if m:
+            sw = sweeps.setdefault(m["prefix"], {"kind": m["kind"], "points": {}})
+            sw["points"][float(m["val"])] = folder
+    for pre, sw in sweeps.items():
+        sw["x0"] = 1.0 if sw["kind"] == "x" else 0.0
+        if base is None:
+            raise RuntimeError("breaking point needs a scenario named 'baseline'")
+        sw["points"][sw["x0"]] = base
+    return sweeps
+
+
+def _sweep_frames(sw):
+    rows, unf = [], []
+    for x, folder in sorted(sw["points"].items()):
+        s, rt, _ = load_sim(folder)
+        r = s.groupby(["group", "rep"])["tat_h"].quantile(0.95).rename("p95").reset_index()
+        r["x"] = x
+        rows.append(r)
+        fin = s.groupby("rep").size()
+        if "n_aborted" in rt or "n_incomplete" in rt:
+            rr = rt.set_index("rep") if "rep" in rt else rt.reset_index(drop=True).rename_axis("rep")
+            bad = rr.reindex(fin.index).reindex(columns=["n_aborted", "n_incomplete"]).fillna(0).sum(axis=1)
+            u = (100 * bad / (bad + fin)).rename("unfinished_pct").reset_index()
+            u["x"] = x
+            unf.append(u)
+    return pd.concat(rows, ignore_index=True), (pd.concat(unf, ignore_index=True) if unf else None)
+
+
+def _cross(xs, ys, thr):
+    """first x where the curve rises through thr (linear interpolation); NaN if it never does."""
+    xs, ys = np.asarray(xs, float), np.asarray(ys, float)
+    if ys[0] > thr:
+        return xs[0]
+    for i in range(1, len(xs)):
+        if ys[i] > thr >= ys[i - 1]:
+            return xs[i - 1] + (thr - ys[i - 1]) * (xs[i] - xs[i - 1]) / (ys[i] - ys[i - 1])
+    return np.nan
+
+
+def breaking_points(curves, unf, x0, tol, unf_limit):
+    """per group: mean-curve crossing of baseline P95 x (1+tol); replicate-level 95% range of the crossing."""
+    out = []
+    for g in [g for g in GROUPS if g in set(curves["group"])]:
+        d = curves[curves.group == g]
+        piv = d.pivot(index="rep", columns="x", values="p95").sort_index(axis=1)
+        mean = piv.mean()
+        base = mean.loc[x0]
+        thr = base * (1 + tol)
+        bx = _cross(mean.index, mean.values, thr)
+        per = np.array([_cross(piv.columns, piv.loc[r].values, piv.loc[r, x0] * (1 + tol)) for r in piv.index])
+        fin = per[np.isfinite(per)]
+        out.append(dict(group=g, baseline_p95=base, threshold_p95=thr, breaking_x=bx, max_tested=piv.columns.max(),
+                        rep_lo=np.percentile(fin, 2.5) if len(fin) else np.nan,
+                        rep_hi=np.percentile(fin, 97.5) if len(fin) else np.nan,
+                        n_reps=len(per), n_reps_not_broken=int(np.isnan(per).sum())))
+    t = pd.DataFrame(out)
+    ub = np.nan
+    if unf is not None:
+        um = unf.groupby("x")["unfinished_pct"].mean().sort_index()
+        ub = _cross(um.index, um.values, unf_limit)
+    return t, ub
+
+
+def fig_breaking_point(specs, tol=0.25, unf_limit=1.0):
+    sweeps = _find_sweeps(specs)
+    if not sweeps:
+        raise RuntimeError("no sweep scenarios found (names like BCx_x1.5, all_x2, BCx_p1000)")
+    all_tabs, summary = [], {}
+    for pre, sw in sweeps.items():
+        curves, unf = _sweep_frames(sw)
+        tab, ub = breaking_points(curves, unf, sw["x0"], tol, unf_limit)
+        tab.insert(0, "sweep", pre)
+        tab["unfinished_breaking_x"] = ub
+        all_tabs.append(tab)
+        summary[pre] = (sw, tab, ub)
+        xlab = ("Volume multiplier (x baseline)" if sw["kind"] == "x" else "Added specimens per day")
+        groups = list(tab["group"])
+        piv = curves.groupby(["group", "x"])["p95"].agg(["mean", "std", "count"]).reset_index()
+        ncol_ = 2 if unf is not None else 1
+        fig = plt.figure(figsize=(7.2 if ncol_ == 2 else 3.8, 3.1))
+        gs = fig.add_gridspec(1, ncol_, left=0.10 if ncol_ == 2 else 0.17, right=0.98, bottom=0.17, top=0.74, wspace=0.28)
+        ax = fig.add_subplot(gs[0, 0])
+        ax.axhline(100 * tol, color=INK2, linewidth=0.8, linestyle="--", zorder=1)
+        handles = []
+        for k, g in enumerate(groups):
+            d = piv[piv.group == g].sort_values("x")
+            b = d.loc[d.x == sw["x0"], "mean"].iloc[0]
+            col, ls = SPEC_FALLBACK[k % 8], ("-" if k < 8 else "--")
+            y = 100 * (d["mean"] - b) / b
+            ax.plot(d["x"], y, color=col, linestyle=ls, linewidth=1.5, marker="o", markersize=3)
+            handles.append(Line2D([0], [0], color=col, linestyle=ls, linewidth=1.5, label=g))
+            bx = tab.loc[tab.group == g, "breaking_x"].iloc[0]
+            if np.isfinite(bx):
+                ax.scatter(bx, 100 * tol, marker="D", s=22, facecolor="white", edgecolor=col, linewidth=1.1, zorder=5)
+        ax.set_xlabel(xlab)
+        ax.set_ylabel("Change in 95th percentile TAT (%)")
+        ax.set_ylim(bottom=min(-5, ax.get_ylim()[0]))
+        if unf is not None:
+            ax2 = fig.add_subplot(gs[0, 1])
+            u = unf.groupby("x")["unfinished_pct"].agg(["mean", "std", "count"]).reset_index().sort_values("x")
+            se = (u["std"] / np.sqrt(u["count"])).fillna(0)
+            ax2.plot(u["x"], u["mean"], color=INK, linewidth=1.5, marker="o", markersize=3)
+            ax2.fill_between(u["x"], u["mean"] - 1.96 * se, u["mean"] + 1.96 * se, color=INK, alpha=0.12, lw=0)
+            ax2.axhline(unf_limit, color=INK2, linewidth=0.8, linestyle="--")
+            if np.isfinite(ub):
+                ax2.scatter(ub, unf_limit, marker="D", s=22, facecolor="white", edgecolor=INK, linewidth=1.1, zorder=5)
+            ax2.set_ylim(bottom=0)
+            ax2.set_xlabel(xlab)
+            ax2.set_ylabel("Unfinished specimens (%)")
+        fig.legend(handles=handles, loc="upper center", ncol=4, frameon=False, bbox_to_anchor=(0.5, 1.0), fontsize=6.5)
+        save_both(fig, f"10_breaking_point_{re.sub(r'[^A-Za-z0-9]+', '_', pre)}")
+    pd.concat(all_tabs).to_csv(TAB / "table5_breaking_points.csv", index=False, float_format="%.2f")
+
+    # headroom summary: one panel per sweep, a dot per specimen type at the load where P95 exceeds baseline x (1+tol)
+    n = len(summary)
+    allg = [g for g in GROUPS if any(g in set(v[1]["group"]) for v in summary.values())]
+    fig, axs = plt.subplots(1, n, figsize=(max(4.4, min(7.2, 2.9 * n + 1.2)), 0.3 * len(allg) + 1.7), squeeze=False, sharey=True)
+    fig.subplots_adjust(left=0.27 if n > 1 else 0.36, right=0.97, bottom=0.16, top=0.78, wspace=0.12)
+    for j, (pre, (sw, tab, ub)) in enumerate(summary.items()):
+        ax = axs[0][j]
+        ax.axvline(sw["x0"], color=INK, linewidth=0.8)
+        for k, g in enumerate(allg):
+            r = tab[tab.group == g]
+            if r.empty:
+                continue
+            r = r.iloc[0]
+            if np.isfinite(r.breaking_x):
+                if np.isfinite(r.rep_lo):
+                    ax.plot([r.rep_lo, r.rep_hi], [k, k], color=GRID, linewidth=3, zorder=1, solid_capstyle="round")
+                ax.scatter(r.breaking_x, k, s=26, color=SIM_C, zorder=3, edgecolor="white", linewidth=0.6)
+            else:   # never exceeded within the tested range
+                ax.scatter(r.max_tested, k, marker=">", s=30, color=SIM_C, zorder=3)
+        if np.isfinite(ub):
+            ax.axvline(ub, color=OBS24_C, linewidth=1.0, linestyle="--")
+        ax.set_yticks(range(len(allg)))
+        ax.set_yticklabels(allg)
+        ax.set_ylim(-0.6, len(allg) - 0.4)
+        ax.invert_yaxis()
+        ax.grid(axis="y", visible=False)
+        ax.set_title(pre.replace("_", " "), fontsize=7.5, fontweight="bold", loc="left")
+        ax.set_xlabel("Volume multiplier" if sw["kind"] == "x" else "Added specimens / day")
+        if j == 0:
+            ax.set_ylabel("Specimen type")
+    h = [Line2D([0], [0], marker="o", color="w", markerfacecolor=SIM_C, markersize=5, label=f"P95 +{int(100*tol)}% (mean; bar = 95% of reps)"),
+         Line2D([0], [0], marker=">", color="w", markerfacecolor=SIM_C, markersize=5, label="not reached in tested range"),
+         Line2D([0], [0], color=OBS24_C, linestyle="--", label=f"unfinished > {unf_limit:g}%")]
+    fig.legend(handles=h, loc="upper center", ncol=1, frameon=False, bbox_to_anchor=(0.5, 1.0), fontsize=6.5)
+    save_both(fig, "11_breaking_point_summary")
+
+
+# ----------------------------------------------------------------------------
 def main():
-    global OUT, TAB
+    global OUT, TAB, BARE
     ap = argparse.ArgumentParser()
     ap.add_argument("--mc-dir", required=True)
-    ap.add_argument("--obs-2025", nargs="+", help="one or more LIS 2025 csv files (add Respiratory_NonCF_2025.csv Respiratory_CF_2025.csv here)")
+    ap.add_argument("--obs-2025", nargs="+", help="one or more LIS 2025 csv files (include Respiratory_NonCF_2025.csv and Respiratory_CF_2025.csv)")
     ap.add_argument("--obs-2024", nargs="+")
     ap.add_argument("--obs-month-2024")
     ap.add_argument("--obs-month-2025")
     ap.add_argument("--scenario", action="append", default=[], help="NAME=<mc folder> (repeat); 'baseline' is the reference")
+    ap.add_argument("--breaking-point", action="store_true", help="breaking-point figures from sweep scenarios named like BCx_x1.5 / all_x2 / BCx_p1000")
+    ap.add_argument("--bp-tol", type=float, default=0.25, help="breaking point = baseline P95 x (1+tol); default 0.25")
+    ap.add_argument("--bp-unfinished", type=float, default=1.0, help="also flag the load where unfinished specimens exceed this %%; default 1")
+    ap.add_argument("--bare", action="store_true", help="unlabelled versions also drop legends, panel titles and in-plot text")
     ap.add_argument("--out", default="manuscript_png")
     ap.add_argument("--tables", default="manuscript_tables")
     a = ap.parse_args()
-    OUT, TAB = Path(a.out), Path(a.tables)
+    OUT, TAB, BARE = Path(a.out), Path(a.tables), a.bare
     OUT.mkdir(parents=True, exist_ok=True)
     TAB.mkdir(parents=True, exist_ok=True)
 
@@ -579,6 +795,10 @@ def main():
     obs24 = load_obs(a.obs_2024) if a.obs_2024 else None
     print(f"sim: {len(sim):,} in-window specimens, {sim.rep.nunique()} replications, {n_days:.0f} measured days")
 
+    if obs25 is not None:
+        miss = [g for g in GROUPS if g in set(sim["group"]) and g not in set(obs25["group"])]
+        if miss:
+            print(f"  NOTE: no LIS 2025 rows for: {miss}  (pass their files to --obs-2025)")
     print("Tables")
     tab = validation_table(sim, obs25, obs24, n_days)
     utilization_table(st)
@@ -597,6 +817,8 @@ def main():
     if a.scenario:
         specs = [tuple(s.split("=", 1)) for s in a.scenario]
         run("scenarios", lambda: fig_scenarios(scenario_frames(specs)))
+    if a.breaking_point and a.scenario:
+        run("breaking point", fig_breaking_point, [tuple(x.split("=", 1)) for x in a.scenario], a.bp_tol, a.bp_unfinished)
     print(f"\nDone. PNGs in {OUT}/  tables in {TAB}/")
 
 

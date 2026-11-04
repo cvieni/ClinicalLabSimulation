@@ -18,6 +18,8 @@ from params_config.config_d2 import Instrument_resources
 from params_config.media_config import MEDIA_CONFIG
 from params_config.specimen_config_d2 import SPECIMEN_TYPES
 from params_config.staffing_config import SHIFT_STAFFING_PROFILE
+from modules.scenario_staffing import apply_staffing_changes
+from modules.scenario_volume import apply_instrument_changes
 
 # -------------------------------
 # ----- Module import -----------
@@ -204,8 +206,10 @@ def _run_simulation_impl(sim_days, seed, instrument_resources, shift_staffing_pr
                          export_diagnostics):
     if shift_staffing_profile is None:
         shift_staffing_profile = SHIFT_STAFFING_PROFILE
+    shift_staffing_profile = apply_staffing_changes(shift_staffing_profile, getattr(p, 'scenario_staffing_json', ''))
     if instrument_resources is None:
         instrument_resources = Instrument_resources
+    instrument_resources = apply_instrument_changes(instrument_resources, getattr(p, 'scenario_instrument_json', ''))
     if export_diagnostics is None:
         export_diagnostics = p.export_diagnostic_timeseries
 
