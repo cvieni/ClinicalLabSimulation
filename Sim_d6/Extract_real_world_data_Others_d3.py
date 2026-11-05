@@ -345,12 +345,17 @@ if __name__ == "__main__":
         "Urine_NonInv_UofU": data_dir / f"NonInv_Urine_UofU_{TARGET_YEAR}.csv",
         "Resp_NonCF": data_dir / f"Respiratory_NonCF_{TARGET_YEAR}.csv",
         "Resp_CF": data_dir / f"Respiratory_CF_{TARGET_YEAR}.csv",
-        "Stool": data_dir / f"Stool_{TARGET_YEAR}.csv",
+        # "Stool": data_dir / f"Stool_{TARGET_YEAR}.csv",
         "Tissue_genital": data_dir / f"Tiss_genital_{TARGET_YEAR}.csv",
         "Tissue_FNA": data_dir / f"Tiss_FNA_{TARGET_YEAR}.csv",
         "Tissue_other": data_dir / f"TissueCleaned_{TARGET_YEAR}.csv",
         "Wound_genital": data_dir / f"Wound_genital_{TARGET_YEAR}.csv",
         "Wound_other": data_dir / f"Wound_Cleaned_{TARGET_YEAR}.csv",
+        
+        "Stool_Ecoli": data_dir / f"Stool_Ecoli_{TARGET_YEAR}.csv",
+        "Stool_Campy": data_dir / f"Stool_Campy_{TARGET_YEAR}.csv",
+        "Stool_Vibrio": data_dir / f"Stool_Vibrio_{TARGET_YEAR}.csv",
+        "Stool_Yersinia": data_dir / f"Stool_Yersinia_{TARGET_YEAR}.csv",
     }
 
     results = {}

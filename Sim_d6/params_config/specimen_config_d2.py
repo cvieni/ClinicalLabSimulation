@@ -401,21 +401,109 @@ SPECIMEN_TYPES = {
     # Stool Culture, Vibrio, Test Directory: Test 0060136
     # Stool Culture, Yersinia, Test Directory: Test 0060137
 
-    "Stool": {
+    # "Stool": {
+    #     "media_req": {"Blood_Agar": 1, "MacConkey": 1, "HE_Agar": 1, "Campy_CVA": 1, "CT-SMAC": 1, "GN_Broth": 1},      
+    #     "cancel_rate_percent":0.02,     
+    #     "plating_time_range": (0.1, typical_max_plating_time),   
+    #     "tech_review_range": (0.5, 4.0), 
+    #     "initial_vol": 100,
+    #     "daily_volume_mean": get_param("Stool", "daily_volume_mean"),
+    #     "accession_time_config": get_accession_config("Stool"),
+    #     "accession_touch_time_min": 0.5,
+    #     "accession_touch_time_max": 3.0,
+    #     "cancel_rate_percent": loaded_data["Stool"]["cancellation_metrics"]["lab_cancel_rate_pct"],
+    #     "hourly_arrival_weights": {
+    #         "weekday": get_param("Stool", "hourly_weights_weekday"),
+    #         "weekend": get_param("Stool", "hourly_weights_weekend"),          
+    #     },
+
+
+    "Stool_EcoliRoutine": {
         "media_req": {"Blood_Agar": 1, "MacConkey": 1, "HE_Agar": 1, "Campy_CVA": 1, "CT-SMAC": 1, "GN_Broth": 1},      
         "cancel_rate_percent":0.02,     
         "plating_time_range": (0.1, typical_max_plating_time),   
         "tech_review_range": (0.5, 4.0), 
         "initial_vol": 100,
-        "daily_volume_mean": get_param("Stool", "daily_volume_mean"),
+        "daily_volume_mean": get_param("Stool_Ecoli", "daily_volume_mean"),
+        "accession_time_config": get_accession_config("Stool_Ecoli"),
+        "accession_touch_time_min": 0.5,
+        "accession_touch_time_max": 3.0,
+        "cancel_rate_percent": loaded_data["Stool_Ecoli"]["cancellation_metrics"]["lab_cancel_rate_pct"],
+        "hourly_arrival_weights": {
+            "weekday": get_param("Stool_Ecoli", "hourly_weights_weekday"),
+            "weekend": get_param("Stool_Ecoli", "hourly_weights_weekend"),          
+        },
+    },
+
+    "Stool_Campy": {
+        # "media_req": {"Blood_Agar": 1, "MacConkey": 1, "HE_Agar": 1, "Campy_CVA": 1, "CT-SMAC": 1, "GN_Broth": 1},      
+        "media_req": {"Campy_CVA": 1},      
+        "cancel_rate_percent":0.02,     
+        "plating_time_range": (0.1, typical_max_plating_time),   
+        "tech_review_range": (0.5, 4.0), 
+        "initial_vol": 100,
+        "daily_volume_mean": get_param("Stool_Campy", "daily_volume_mean"),
+        "accession_time_config": get_accession_config("Stool_Campy"),
+        "accession_touch_time_min": 0.5,
+        "accession_touch_time_max": 3.0,
+        "cancel_rate_percent": loaded_data["Stool_Campy"]["cancellation_metrics"]["lab_cancel_rate_pct"],
+        "hourly_arrival_weights": {
+            "weekday": get_param("Stool_Campy", "hourly_weights_weekday"),
+            "weekend": get_param("Stool_Campy", "hourly_weights_weekend"),          
+        },
+    },
+
+    "Stool_Vibrio": {
+        "media_req": {"Blood_Agar": 1, "MacConkey": 1, "TCBS": 1,},      
+        "cancel_rate_percent":0.02,     
+        "plating_time_range": (0.1, typical_max_plating_time),   
+        "tech_review_range": (0.5, 4.0), 
+        "initial_vol": 100,
+        "daily_volume_mean": get_param("Stool_Vibrio", "daily_volume_mean"),
+        "accession_time_config": get_accession_config("Stool_Vibrio"),
+        "accession_touch_time_min": 0.5,
+        "accession_touch_time_max": 3.0,
+        "cancel_rate_percent": loaded_data["Stool_Vibrio"]["cancellation_metrics"]["lab_cancel_rate_pct"],
+        "hourly_arrival_weights": {
+            "weekday": get_param("Stool_Vibrio", "hourly_weights_weekday"),
+            "weekend": get_param("Stool_Vibrio", "hourly_weights_weekend"),          
+        },
+    },
+
+    "Stool_Yersinia": {
+        "media_req": {"MacConkey": 1},      
+        "cancel_rate_percent":0.02,     
+        "plating_time_range": (0.1, typical_max_plating_time),   
+        "tech_review_range": (0.5, 4.0), 
+        "initial_vol": 100,
+        "daily_volume_mean": get_param("Stool_Yersinia", "daily_volume_mean"),
         "accession_time_config": get_accession_config("Stool"),
         "accession_touch_time_min": 0.5,
         "accession_touch_time_max": 3.0,
-        "cancel_rate_percent": loaded_data["Stool"]["cancellation_metrics"]["lab_cancel_rate_pct"],
+        "cancel_rate_percent": loaded_data["Stool_Yersinia"]["cancellation_metrics"]["lab_cancel_rate_pct"],
         "hourly_arrival_weights": {
-            "weekday": get_param("Stool", "hourly_weights_weekday"),
-            "weekend": get_param("Stool", "hourly_weights_weekend"),          
+            "weekday": get_param("Stool_Yersinia", "hourly_weights_weekday"),
+            "weekend": get_param("Stool_Yersinia", "hourly_weights_weekend"),          
         },
+    },
+
+
+# Update the STOOL config -----
+# Path 1: Stool
+# Path 2: Stool + Campy -> requires 72 hours before reading the campy plate
+# --	Stools (0060134; 0060135; 0060136; 0060137) -------------
+# 0060137 = Stool Culture Yersinia
+# 0060134 = E. coli shiga toxin
+# 0060135 = Campylobacter
+# 0060136 = Vibrio
+
+# For E. coli -> after MALDI -> perform E. coli latex agglutination biochemical
+# Plate from GN Broth gets at least 2 days even if no growth
+# All plates discarded at 2 days if no growth except for CVA
+
+# Vibrio culture requires TCBS agar - incubate 18 hours at 35C - swwep oxidase -> -> if positive TSI, if negative discard -> after TSI if K/A then phoenix and or Maldi
+# Yersinia culture -> incubate at room temperature (no incubator slot) -> examine MAC plate at 48 hours -> no biochemicals until after 48 hours -> if colonies present innoculate TSI and incubate at 37 + innoculate two MIO tubes
+# -> if rule out Y. pestis then do Oxidase, catalse, indole, and urease -> then perform Phoenix ID / AST -> confirm with MALDI or 16S sequencing
 
     }
 }

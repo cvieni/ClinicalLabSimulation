@@ -400,3 +400,271 @@ stool_biochem_time_multiplier = 1.0  # multiplies the rapid-biochemical time for
 scenario_volume_json = ""           # {"global":1.5,"multipliers":{"BCx":2},"add_per_day":{"BCx":2000}}
 scenario_instrument_json = ""       # {"bc_instrument": 864}
 scenario_media_json = ""            # {"global":1.5,"per_media":{"Blood_Agar":2},"lead_time_days":3}
+
+
+
+# -----------------------------------------------------------------------------------------------------
+# ----- Params from: Gerada et al., 2024 - Simulation to optimize the lab diagnosis of bacteremia -----
+# Table 1: Observational data w/ statistics for n observations per taks
+# -----------------------------------------------------------------------------------------------------
+
+# 1. Label with lab number
+label_with_lab_number_task_time = {
+    "median": 5.23,
+    "iqr_min": 2.30, "iqr_max": 8.60,
+}
+# label_with_lab_number_batch_size = {"mean": 5.59, "range": [1.00, 13.00],}
+label_with_lab_number_distrib = {"distribution": "uniform", "a": 22, "b": 700}
+
+# 2. LIMS (Laboratory Information Management System)
+lims_task_time = {
+    "median": 2.93,
+    "iqr_min": 1.08, "iqr_max": 5.70,
+}
+# lims_batch_size = {"mean": 5.59, "range": [1.00, 13.00],}
+lims_distrib = {"distribution": "uniform", "a": 21, "b": 548}
+
+# 3. Combine labels
+combine_labels_task_time = {
+    "median": 4.05,
+    "iqr_min": 2.58, "iqr_max": 7.90,
+}
+# combine_labels_batch_size = {"mean": 3.53, "range": [1.00, 7.00],}
+combine_labels_distrib = {"distribution": "uniform", "a": 31, "b": 838}
+
+# 4. Scan request form
+scan_request_form_task_time = {
+    "median": 0.78,
+    "iqr_min": 0.67, "iqr_max": 1.60,
+}
+# scan_request_form_batch_size = {"mean": 4.29, "range": [2.00, 7.00],}
+scan_request_form_distrib = {"distribution": "uniform", "a": 37, "b": 109}
+
+# 5. Move location
+move_location_task_time = {
+    "median": 0.65,
+    "iqr_min": 0.55, "iqr_max": 0.80,
+    }
+# move_location_batch_size = {"mean": 5.24, "range": [1.00, 13.00],}
+move_location_distrib = {"distribution": "lognormal", "mean": 3.736, "sd": 0.385,}
+
+# 6. Load onto analyzer
+load_onto_analyzer_task_time = {
+    "median": 1.08, 
+    "iqr_min": 0.57, "iqr_max": 2.42,
+}
+# load_onto_analyzer_batch_size = {"mean": 4.63,"range": [1.00, 13.00],}
+load_onto_analyzer_distrib = {"distribution": "gamma", "shape": 1.493, "rate": 0.017,}
+
+# 7. Unload from analyzer
+unload_from_analyzer_task_time = {
+    "median": 1.30,
+    "iqr_min": 0.78, "iqr_max": 1.62,
+    }
+unload_from_analyzer_batch_size = {"mean": 1.17, "range": [1.00, 3.00],}
+unload_from_analyzer_distrib = {"distribution": "lognormal", "mean": 4.219, "sd": 0.785,}
+
+# 8. Hazard check
+hazard_check_task_time = {
+    "median": 1.60,
+    "iqr_min": 1.00, "iqr_max": 2.17,
+}
+# hazard_check_batch_size = {"mean": 1.15, "range": [1.00, 3.00],}
+hazard_check_distrib = {"distribution": "lognormal", "mean": 4.482, "sd": 0.639}
+
+# 9. Vent sample
+vent_sample_task_time = {
+    "median": 3.75,
+    "iqr_min": 2.78, "iqr_max": 5.23, 
+}
+# vent_sample_batch_size = {"mean": 1.13,"range": [1.00, 3.00],}
+vent_sample_distrib = {"distribution": "lognormal", "mean": 5.452, "sd": 0.499}
+
+# 10. Prepare initial culture/smear
+prep_initial_culture_smear_task_time = {
+    "median": 3.98,
+    "iqr_min": 2.38, "iqr_max": 6.28,
+}
+# prep_initial_culture_smear_batch_size = {"mean": 1.13, "range": [1.00, 3.00],}
+prep_initial_culture_smear_distrib = {"distribution": "lognormal", "mean": 5.467, "sd": 0.499,}
+
+# 11. Gram stain smear
+gram_stain_smear_task_time = {
+    "median": 4.68,
+    "iqr_min": 3.73, "iqr_max": 5.38,
+}
+# gram_stain_smear_batch_size = {"mean": 1.13, "range": [1.00, 3.00],}
+gram_stain_smear_distrib = {"distribution": "lognormal", "mean": 5.595, "sd": 0.416,}
+
+# 12. Dry Gram smear
+dry_gram_smear_task_time = {
+    "median": 3.38,
+    "iqr_min": 2.15, "iqr_max": 5.58,
+}
+# dry_gram_smear_batch_size = {"mean": 1.13, "range": [1.00, 3.00],}
+dry_gram_smear_distrib = {"distribution": "lognormal", "mean": 5.37, "sd": 0.785,}
+
+# 13. Read & report Gram smear
+read_report_gram_smear_task_time = {
+    "median": 2.77,
+    "iqr_min": 1.78, "iqr_max": 5.52,
+}
+# read_report_gram_smear_batch_size = {"mean": 1.00, "range": [1.00, 1.00],}
+read_report_gram_smear_distrib = {"distribution": "lognormal", "mean": 5.185, "sd": 0.758,}
+
+# -----------------------------------------------------------------------------------------------------
+# ----- Params from: Gerada et al., 2024 - Simulation to optimize the lab diagnosis of bacteremia -----
+# Table 2: Process times, collection methods, sample sizes, and fitted distributions
+
+# 1. Collection — receipt
+collection_receipt_process_time = {
+    "median": 2.77,  # hours
+    "unit": "hours",
+}
+collection_receipt_meta = {
+    "collection_method": "Data pull",
+    "obs_n": 1369,
+}
+collection_receipt_distrib = {
+    "distribution": "gamma",
+    "shape": 0.99,
+    "rate": 0.003,
+}
+
+# 2. Receipt — load incubator
+receipt_load_incubator_process_time = {
+    "median": 10.0,  # minutes
+    "unit": "minutes",
+}
+receipt_load_incubator_meta = {
+    "collection_method": "Data pull",
+    "obs_n": 1403,
+}
+receipt_load_incubator_distrib = {
+    "distribution": "gamma",
+    "shape": 0.542,
+    "rate": 0.015,
+}
+
+# 3. Load incubator — flag positive
+load_incubator_flag_positive_process_time = {
+    "median": 16.07,  # hours
+    "unit": "hours",
+}
+load_incubator_flag_positive_meta = {
+    "collection_method": "Data pull",
+    "obs_n": 2926,
+}
+load_incubator_flag_positive_distrib = {
+    "distribution": "weibull",
+    "shape": 1.383,
+    "scale": 1417.0,
+}
+
+# 4. Flag positive — unload
+flag_positive_unload_process_time = {
+    "median": 13.0,  # minutes
+    "unit": "minutes",
+}
+flag_positive_unload_meta = {
+    "collection_method": "Data pull",
+    "obs_n": 2926,
+}
+flag_positive_unload_distrib = {
+    "distribution": "weibull",
+    "shape": 0.59,
+    "scale": 23.796,
+}
+
+# 5. Unload — Gram stain
+unload_gram_stain_process_time = {
+    "median": 1.18,  # hours
+    "unit": "hours",
+}
+unload_gram_stain_meta = {
+    "collection_method": "Manual audit",
+    "obs_n": 314,
+}
+unload_gram_stain_distrib = {
+    "distribution": "gamma",
+    "shape": 1.665,
+    "rate": 0.017,
+}
+
+# 6. Unload — Gram stain (hub)
+unload_gram_stain_hub_process_time = {
+    "median": 46.0,  # minutes
+    "unit": "minutes",
+}
+unload_gram_stain_hub_meta = {
+    "collection_method": "Manual audit",
+    "obs_n": 205,
+}
+unload_gram_stain_hub_distrib = {
+    "distribution": "gamma",
+    "shape": 1.837,
+    "rate": 0.028,
+}
+
+# 7. Unload — Gram stain (satellite)
+unload_gram_stain_satellite_process_time = {
+    "median": 2.2,  # hours
+    "unit": "hours",
+}
+unload_gram_stain_satellite_meta = {
+    "collection_method": "Manual audit",
+    "obs_n": 109,
+}
+unload_gram_stain_satellite_distrib = {
+    "distribution": "gamma",
+    "shape": 4.029,
+    "rate": 0.026,
+}
+
+# 8. Gram stain — 24 h report
+gram_stain_24h_report_process_time = {
+    "median": 23.27,  # hours
+    "unit": "hours",
+}
+gram_stain_24h_report_meta = {
+    "collection_method": "Manual audit",
+    "obs_n": 297,
+}
+gram_stain_24h_report_distrib = {
+    "distribution": "lognormal",
+    "mean": 7.228,
+    "sd": 0.221,
+}
+
+# 9. 24 h report — 48 h report
+report_24h_48h_report_process_time = {
+    "median": 1.03,  # days
+    "unit": "days",
+}
+report_24h_48h_report_meta = {
+    "collection_method": "Manual audit",
+    "obs_n": 97,
+}
+report_24h_48h_report_distrib = {
+    "distribution": "lognormal",
+    "mean": 7.282,
+    "sd": 0.109,
+}
+
+# 10. 48 h report — final report
+report_48h_final_report_process_time = {
+    "median": 1.46,  # days
+    "unit": "days",
+}
+report_48h_final_report_meta = {
+    "collection_method": "Manual audit",
+    "obs_n": 60,
+}
+report_48h_final_report_distrib = {
+    "distribution": "lognormal",
+    "mean": 7.859,
+    "sd": 0.772,
+}
+
+
+# Did I do  Approximate Bayesian Calibration (ABC) for parameter optimization against my 2025 data?
