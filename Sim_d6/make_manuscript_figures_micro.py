@@ -46,7 +46,8 @@ from scipy import stats
 GROUPS = {
     "Blood culture": ["BCx"], "Body fluid": ["BodyFluid"], "Bone": ["Bone_Cx"], "Tissue": ["Tissue"],
     "Tissue (FNA)": ["Tissue_FNA"], "Tissue (genital)": ["Tissue_genital"], "Wound": ["Wound"],
-    "Wound (genital)": ["Wound_Genital"], "Stool": ["Stool"],
+    "Wound (genital)": ["Wound_Genital"],
+    "Stool": ["Stool", "Stool_Ecoli", "Stool_EcoliRoutine", "Stool_Campy", "Stool_Vibrio", "Stool_Yersinia"],   # LIS has one stool label: the 4 sim configs are pooled for validation
     "Respiratory (non-CF)": ["Respiratory", "Resp_NonCF"], "Respiratory (CF)": ["Resp_CystFibrosis", "Resp_CF"],
     "Urine": ["Urine_Invasive", "Urine_NonInvasive"],
 }
@@ -769,6 +770,111 @@ def fig_breaking_point(specs, tol=0.25, unf_limit=1.0):
 
 
 # ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# counts per specimen configuration, and the literature benchmark for positive blood cultures
+# ----------------------------------------------------------------------------
+def load_counts(mc_dir):
+    """Every in-window specimen (completed or not) per replication: Type, Outcome, N_Isolates (0 for culture-negatives)."""
+    mc = Path(mc_dir)
+    frames = []
+    for f in sorted(glob.glob(str(mc / "replications" / "specimens_*.csv.gz"))):
+        d = pd.read_csv(f, low_memory=False)
+        d = d[d["In_Window"].astype(bool)]
+        if "rep" not in d.columns:
+            d["rep"] = int(re.findall(r"(\d+)", Path(f).name)[0])
+        if "N_Isolates" not in d.columns:
+            d["N_Isolates"] = np.nan
+        frames.append(d[["Type", "Outcome", "N_Isolates", "rep"]])
+    if not frames:
+        raise SystemExit(f"no replications/specimens_*.csv.gz in {mc}")
+    return pd.concat(frames, ignore_index=True)
+
+
+def counts_table(cnt, n_days):
+    """Per specimen configuration: mean (and 95 % CI) over replications of the window totals."""
+    g = cnt.assign(pos=(cnt["Outcome"] == "pos").astype(int)).groupby(["Type", "rep"]).agg(
+        samples=("Type", "size"), positive=("pos", "sum"), isolates=("N_Isolates", "sum")).reset_index()
+    rows = []
+    for t, d in g.groupby("Type"):
+        r = {"Type": t}
+        for k in ("samples", "positive", "isolates"):
+            m, h = tci(d[k])
+            r[k], r[k + "_ci95"] = m, h
+        r["samples_per_day"] = r["samples"] / max(n_days, 1e-9)
+        r["positive_pct"] = 100 * r["positive"] / r["samples"] if r["samples"] else np.nan
+        r["isolates_per_positive"] = r["isolates"] / r["positive"] if r["positive"] else np.nan
+        rows.append(r)
+    out = pd.DataFrame(rows).sort_values("samples", ascending=False)
+    out.to_csv(TAB / "table6_specimen_counts.csv", index=False)
+    return out
+
+
+def fig_specimen_counts(cnt, n_days):
+    tb = counts_table(cnt, n_days)
+    has_iso = tb["isolates"].fillna(0).sum() > 0
+    if not has_iso:
+        print("  NOTE: no N_Isolates column in the replications (apply apply_v3_hooks.py and re-run the Monte Carlo): isolate bars skipped")
+    tb = tb.iloc[::-1]                                              # largest at the top of a horizontal chart
+    y = np.arange(len(tb))
+    h = 0.38 if has_iso else 0.6
+    fig, ax = plt.subplots(figsize=(4.6, 0.30 * len(tb) + 1.2))
+    fig.subplots_adjust(left=0.30, right=0.93, bottom=0.14, top=0.90)
+    ax.barh(y + (h / 2 if has_iso else 0), tb["samples"], h, xerr=tb["samples_ci95"].fillna(0), color=SIM_C, label="Total samples",
+            error_kw=dict(lw=0.7, ecolor=INK2, capsize=1.5))
+    if has_iso:
+        ax.barh(y - h / 2, tb["isolates"].replace(0, np.nan), h, xerr=tb["isolates_ci95"].fillna(0), color=OBS24_C, label="Positive isolates",
+                error_kw=dict(lw=0.7, ecolor=INK2, capsize=1.5))
+    for yi, v, e in zip(y + (h / 2 if has_iso else 0), tb["samples"], tb["samples_ci95"].fillna(0)):
+        ax.text((v + e) * 1.15, yi, f"{v:,.0f}", va="center", fontsize=6, color=INK2)
+    if has_iso:
+        for yi, v, e in zip(y - h / 2, tb["isolates"], tb["isolates_ci95"].fillna(0)):
+            if v > 0:
+                ax.text((v + e) * 1.15, yi, f"{v:,.0f}", va="center", fontsize=6, color=INK2)
+    ax.set_xscale("log")
+    ax.set_yticks(y)
+    ax.set_yticklabels(tb["Type"])
+    ax.set_xlim(left=max(0.5, float(np.nanmin(tb[["samples"] + (["isolates"] if has_iso else [])].replace(0, np.nan).values)) * 0.5),
+                right=float(tb["samples"].max()) * 4)
+    ax.grid(axis="y", visible=False)
+    ax.set_xlabel(f"Specimens per {n_days:.0f}-day window (log scale)")
+    top_legend(ax, ncol=2)
+    save_both(fig, "12_specimen_counts")
+
+
+def _ecdf(x):
+    x = np.sort(np.asarray(x, float))
+    return x, np.arange(1, len(x) + 1) / len(x)
+
+
+def fig_literature_bcx(sim, n_draw=20000):
+    """Positive blood cultures: simulated receipt -> final report vs the Gerada et al. 2024 process chain (params_d3 Table 2)."""
+    import random
+    from modules import literature_times as lt
+    d = sim[(sim["Type"] == "BCx") & (sim["Outcome"] == "pos")]
+    if len(d) < 20:
+        raise RuntimeError("fewer than 20 positive BCx in the window")
+    rng = random.Random(7)
+    lit = np.array([lt.bcx_chain_hours(rng, include_ttp=True) for _ in range(n_draw)])
+    sm = d["tat_h"].to_numpy(float)
+    qs = (5, 25, 50, 75, 95)
+    pd.DataFrame({"percentile": qs, "sim_positive_BCx_h": np.percentile(sm, qs), "literature_chain_h": np.percentile(lit, qs)}).round(1).to_csv(
+        TAB / "table7_bcx_literature_benchmark.csv", index=False)
+    fig, ax = plt.subplots(figsize=(3.6, 2.8))
+    fig.subplots_adjust(left=0.16, right=0.98, bottom=0.17, top=0.80)
+    lo, hi = np.percentile(np.r_[sm, lit], [0.5, 99.5])
+    for x, c, lab in ((sm, SIM_C, "Simulation (positive BCx)"), (lit, OBS24_C, "Literature chain (Gerada 2024)")):
+        xs, ys = _ecdf(x)
+        ax.step(xs, ys, where="post", color=c, lw=1.6, label=lab)
+    D = stats.ks_2samp(sm, lit).statistic
+    ax.text(0.03, 0.95, f"D = {D:.2f}", transform=ax.transAxes, va="top", fontsize=7)
+    ax.set_xlim(lo, hi)
+    ax.set_ylim(0, 1.01)
+    ax.set_xlabel("Receipt to final report (h)")
+    ax.set_ylabel("Cumulative proportion")
+    top_legend(ax, ncol=1)
+    save_both(fig, "13_bcx_vs_literature")
+
+
 def main():
     global OUT, TAB, BARE
     ap = argparse.ArgumentParser()
@@ -812,6 +918,8 @@ def main():
     run("utilisation heat-map", fig_utilization_heatmap, st)
     run("queues", fig_queues, st)
     run("p95 by shift", fig_shift_p95, sim, obs25)
+    run("specimen counts", lambda: fig_specimen_counts(load_counts(a.mc_dir), n_days))
+    run("bcx vs literature", fig_literature_bcx, sim)
     if a.obs_month_2024 and a.obs_month_2025:
         run("bcx monthly", fig_bcx_monthly, a.obs_month_2024, a.obs_month_2025)
     if a.scenario:

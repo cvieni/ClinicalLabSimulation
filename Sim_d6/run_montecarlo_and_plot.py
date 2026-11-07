@@ -61,7 +61,7 @@ RESULTS_DIR = PROJECT_ROOT / "results_experiments"
 # --------------------------------------------------------------------------------------------------
 
 SPEC_COLS = ["Specimen_ID", "Type", "Arrival_Minute", "Completed_Minute",
-             "Total_TAT_Hours", "Arrival_Shift", "Outcome", "In_Window"]
+             "Total_TAT_Hours", "Arrival_Shift", "Outcome", "In_Window", "N_Isolates"]
 SHIFT_COLORS = {"Day": "#FFE98A", "Evening": "#FFB86B", "Night": "#9DB4F0"}
 SHIFT_ORDER = ["Day", "Evening", "Night"]
 MIN_N = 5            # fewer specimens than this in a bin -> no percentile drawn

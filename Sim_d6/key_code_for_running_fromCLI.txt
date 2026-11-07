@@ -21,3 +21,9 @@ python make_manuscript_figures_micro.py --mc-dir results_experiments/scn_baselin
   --scenario baseline=results_experiments/scn_baseline --scenario no_float=results_experiments/scn_no_float `
   --scenario evening_routine_plus1=results_experiments/scn_evening_routine_plus1 `
   --scenario stool_biochem_x2=results_experiments/scn_stool_biochem_x2
+
+
+# Check the predicted tech review time per specimen
+python accession_diagnostics.py review
+# Check the predicted media usage per specimen type
+python accession_diagnostics.py media

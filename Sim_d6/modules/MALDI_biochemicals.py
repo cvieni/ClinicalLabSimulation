@@ -4,6 +4,7 @@ import params_config.params_d3 as p
 
 from modules.spec_proc_helpers import req_resource, get_least_busy_tech
 from params_config import event_name as EV
+from modules.literature_times import gram_stain_minutes
 
 # ==================================================================================
 # MALDI-TOF: tech spots isolates, isolates from several specimens share one cartridge, a tech stays at the machine
@@ -118,7 +119,8 @@ def process_GramStain(env, spec_id, spec_type, resources, tracker, spec_priority
         min_bio =  p.min_biochem_screen_time
         max_bio = p.max_biochem_screen_time
         # For gram stain a uniform distribution of a tight time window is probably most accurate
-        bio_time = random.uniform(min_bio, max_bio)
+        bio_time = (gram_stain_minutes(random) if getattr(p, 'use_literature_task_times', False)   # smear + stain + dry + read, Gerada 2024
+                    else random.uniform(min_bio, max_bio))
         # mean_bio = p.mean_biochem_screen_time
         # bio_time = random.expovariate(1.0 / mean_bio)
         yield env.timeout(bio_time)

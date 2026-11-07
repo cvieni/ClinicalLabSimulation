@@ -39,12 +39,17 @@ configs_to_load = {
     "Urine_NonInv": f"NonInv_Urine_{json_year}_calibrated_params.json",
     "Resp_NonCF": f"Respiratory_NonCF_{json_year}_calibrated_params.json",
     "Resp_CF": f"Respiratory_CF_{json_year}_calibrated_params.json",
-    "Stool": f"Stool_{json_year}_calibrated_params.json",
+    # "Stool": f"Stool_{json_year}_calibrated_params.json",
     "Tissue_genital": f"Tiss_genital_{json_year}_calibrated_params.json",
     "Tissue_FNA": f"Tiss_FNA_{json_year}_calibrated_params.json",
     "Tissue_other": f"TissueCleaned_{json_year}_calibrated_params.json",
     "Wound_genital": f"Wound_genital_{json_year}_calibrated_params.json",
     "Wound_other": f"Wound_Cleaned_{json_year}_calibrated_params.json",
+
+    "Stool_Ecoli": f"Stool_Ecoli_{json_year}_calibrated_params.json",
+    "Stool_Campy": f"Stool_Campy_{json_year}_calibrated_params.json",
+    "Stool_Vibrio": f"Stool_Vibrio_{json_year}_calibrated_params.json",
+    "Stool_Yersinia": f"Stool_Yersinia_{json_year}_calibrated_params.json",
 }
 
 loaded_data = {}

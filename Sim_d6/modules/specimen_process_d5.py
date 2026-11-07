@@ -10,6 +10,8 @@ from modules.subpathways import process_automated_bactec, process_automated_wasp
 from modules.MALDI_biochemicals import process_maldi_testing, process_BioFire, process_GramStain
 from modules.AST_phoenix import process_phoenix_testing
 from modules.final_read import process_final_read
+from modules.biochem_tests import process_biochem_phase, hold_primary_incubation, start_parallel_biochem, join_parallel
+from modules.isolates import get_isolates, PyRng, rate_for
 from modules.accession_d2 import process_accessioning
 from params_config import event_name as EV
 
@@ -213,7 +215,7 @@ def _run_workup_rounds(env, spec_id, spec_type, spec_cfg, rng, resources, invent
                 yield req
                 tracker.log_event(spec_id, spec_type, EV.RAPID_BIOCHEM_SCREEN, env.now)
                 yield env.timeout(rng.py.uniform(p.min_biochem_screen_time, p.max_biochem_screen_time) * batch_size
-                                  * (getattr(p, 'stool_biochem_time_multiplier', 1.0) if spec_type == 'Stool' else 1.0))
+                                  * (getattr(p, 'stool_biochem_time_multiplier', 1.0) if spec_type.upper().startswith('STOOL') else 1.0))
                 tracker.log_event(spec_id, spec_type, EV.DIRECT_BIOCHEM_DONE, env.now)
         ok = yield from _perform_repeat_workup_batch(
             env, spec_id, spec_type, spec_cfg, rng, resources, inventory, tracker,
@@ -267,7 +269,11 @@ def _handle_blood_culture_path(env, spec_id, spec_type, spec_cfg, rng, resources
     yield plating_done_event
 
     yield from process_BioFire(env, spec_id, spec_type, resources, tracker, spec_priority, "tech_blood")
-    yield from process_GramStain(env, spec_id, spec_type, resources, tracker, spec_priority, "tech_blood")
+    isolates = get_isolates(env, spec_id, spec_type,
+                            lambda r: _sample_num_colonies(spec_cfg, PyRng(r), is_blood_culture))
+    for iso in isolates.pending("gram"):                 # exactly one Gram stain per isolate
+        isolates.mark(iso, "gram")
+        yield from process_GramStain(env, spec_id, spec_type, resources, tracker, spec_priority, "tech_blood")
 
     with resources["incubator"].request() as inc_req:
         yield inc_req
@@ -291,7 +297,7 @@ def _handle_direct_plating_path(env, spec_id, spec_type, spec_cfg, rng, resource
     if not success:
         return False
 
-    if is_stool_culture:
+    if is_stool_culture and spec_cfg.get("gn_broth_enrichment", True):
         tracker.log_event(spec_id, spec_type, EV.GN_BROTH_INCUBATION_START, env.now)
         yield env.timeout(6.0 * 60.0)
         tracker.log_event(spec_id, spec_type, EV.GN_BROTH_INCUBATION_DONE, env.now)
@@ -309,10 +315,9 @@ def _handle_direct_plating_path(env, spec_id, spec_type, spec_cfg, rng, resource
                 yield env.timeout(rng.py.uniform(2.0, 4.0))
                 tracker.log_event(spec_id, spec_type, EV.GN_BROTH_SUBCULTURE_DONE, env.now)
 
-    with resources["incubator"].request() as inc_req:
-        yield inc_req
-        tracker.log_event(spec_id, spec_type, EV.PRIMARY_INCUBATION, env.now)
-        yield env.timeout(_sample_incubation_minutes(env, spec_cfg, rng, "primary"))
+    # per-type override (TCBS 18 h, CVA 72 h, Yersinia 48 h at room temperature) or the default scheduled-read model
+    yield from hold_primary_incubation(env, spec_id, spec_type, spec_cfg, resources, tracker,
+                                       lambda: _sample_incubation_minutes(env, spec_cfg, rng, "primary"))
     return True
 
 
@@ -426,7 +431,9 @@ def _specimen_workflow(env, spec_id, spec_type, resources, inventory, tracker,
         yield from _finish(env, spec_id, spec_type, spec_cfg, rng, resources, tracker, spec_priority)   # negatives count toward TAT
         return
 
-    num_colonies = _sample_num_colonies(spec_cfg, rng, is_blood_culture)
+    isolates = get_isolates(env, spec_id, spec_type,
+                            lambda r: _sample_num_colonies(spec_cfg, PyRng(r), is_blood_culture))
+    num_colonies = isolates.n
     if num_colonies >= 4:
         tracker.log_event(spec_id, spec_type, EV.MIXED_FLORA, env.now)
 
@@ -446,6 +453,12 @@ def _specimen_workflow(env, spec_id, spec_type, resources, inventory, tracker,
         if batch_size > 1:
             tracker.log_event(spec_id, spec_type, EV.multi_organism_parallel(batch_size), env.now)
 
+    # ---- 6a-2. presumptive bench tests (oxidase / TSI / indole / catalase ...), before MALDI -------
+    if not (yield from process_biochem_phase(env, spec_id, spec_type, spec_cfg, resources, tracker, spec_priority,
+                                             "presumptive", isolates)):
+        yield from _finish(env, spec_id, spec_type, spec_cfg, rng, resources, tracker, spec_priority, positive=False)   # closed: no MALDI/AST
+        return
+
     # ---- 6b/6c. identification and AST, driven by the isolates actually present -----
     # Old logic: two independent per-specimen coin flips (MALDI 70%, Phoenix 40%) regardless of
     # how many organisms grew, and AST could happen with no ID. Now:
@@ -453,9 +466,12 @@ def _specimen_workflow(env, spec_id, spec_type, resources, inventory, tracker,
     #   isolates sent to AST ~ Binomial(isolates identified, Phoenix_test_percent)
     # `maldi_testing_percent` is therefore P(isolate is identified by MALDI | positive specimen) and
     # `Phoenix_test_percent` is P(AST | identified isolate). Re-estimate both from the LIS on that basis.
-    n_candidates = min(num_colonies, p.max_isolates_identified)
-    maldi_rate = _rate(spec_cfg, "maldi_testing_percent")
-    n_identified = sum(rng.py.random() < maldi_rate for _ in range(n_candidates))
+    # TSI (and any other parallel bench test) starts now and runs alongside MALDI/AST; joined before the final read
+    parallel_bench = start_parallel_biochem(env, spec_id, spec_type, spec_cfg, resources, tracker, spec_priority,
+                                            "presumptive", isolates)
+    maldi_rate = rate_for(isolates, spec_cfg, _rate(spec_cfg, "maldi_testing_percent"), "multi_isolate_maldi_rate")
+    maldi_set = isolates.select("maldi", maldi_rate, limit=p.max_isolates_identified)   # each isolate: at most ONE MALDI
+    n_identified = len(maldi_set)
     if n_identified > 0:
         # NOTE: process_maldi_testing has no isolate-count argument, so it runs once per specimen.
         # Add an n_isolates parameter there if prep/run time should scale with n_identified.
@@ -467,10 +483,16 @@ def _specimen_workflow(env, spec_id, spec_type, resources, inventory, tracker,
         )
 
 
-    phoenix_rate = _rate(spec_cfg, "Phoenix_test_percent")
-    n_ast = sum(rng.py.random() < phoenix_rate for _ in range(n_identified))
+    if n_identified > 0:      # post-ID bench tests (PBP2a lateral flow, E. coli latex) before AST
+        yield from process_biochem_phase(env, spec_id, spec_type, spec_cfg, resources, tracker, spec_priority,
+                                         "post_id", isolates)
+
+    phoenix_rate = rate_for(isolates, spec_cfg, _rate(spec_cfg, "Phoenix_test_percent"), "multi_isolate_ast_rate")
+    n_ast = len(isolates.select("ast", phoenix_rate, among=maldi_set))                # only identified isolates, at most ONE AST each
     if n_ast > 0:
         yield from process_phoenix_testing(env, spec_id, spec_type, resources, tracker, spec_priority, n_ast)
+
+    yield from join_parallel(env, parallel_bench)        # TSI etc. must be read before the final report
 
     # ---- 10. complete ---------------------------------------------------------------
     yield from _finish(env, spec_id, spec_type, spec_cfg, rng, resources, tracker, spec_priority, positive=True, n_ast=n_ast)

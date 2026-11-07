@@ -124,6 +124,18 @@ GRAM_STAIN_DONE = "Optional 1b: Gram Stain Completed"
 BIOFIRE_START = "Optional 2a: BioFire Setup"
 BIOFIRE_DONE = "Optional 2b: BioFire Completed"
 
+# Bench tests (modules/biochem_tests.py).  setup = tech starts, wait = tube/strip incubating, done = result read
+BENCH_TEST_EVENTS = {
+    "oxidase":       {"setup": "6e. Oxidase Test Started",             "done": "6e. Oxidase Test Completed"},
+    "tsi":           {"setup": "6f. TSI Inoculation Started",          "wait": "6f. TSI Incubation Started",      "done": "6f. TSI Read Completed"},
+    "indole":        {"setup": "6g. Indole Spot Test Started",         "done": "6g. Indole Spot Test Completed"},
+    "catalase":      {"setup": "6h. Catalase Test Started",            "done": "6h. Catalase Test Completed"},
+    "pbp":           {"setup": "6i. PBP2a Lateral Flow Setup Started", "wait": "6i. PBP2a Lateral Flow Developing", "done": "6i. PBP2a Lateral Flow Read Completed"},
+    "latex":         {"setup": "6j. E. coli Latex Agglutination Started", "done": "6j. E. coli Latex Agglutination Completed"},
+    "biochem_panel": {"setup": "6k. Biochemical Panel Started",        "done": "6k. Biochemical Panel Completed"},
+}
+BIOCHEM_DISCARD = "6z. Presumptive Test Negative - Culture Closed"      # counted as culture-negative (see NEGATIVE_MARKERS)
+
 # ----------------------------------------------------------------------------------------------
 # 7. Terminal states
 # ----------------------------------------------------------------------------------------------
@@ -136,7 +148,7 @@ COMPLETED = "10. Completed"
 PLATING_STARTS = (ROUTINE_PLATING_STARTED, PRIORITY_PLATING_STARTED,
                   AUTOMATED_PLATING_STARTED, MANUAL_PLATING_STARTED)
 INCUBATION_STARTS = (PRIMARY_INCUBATION, BLOOD_PLATE_INCUBATION, SEEDED_INCUBATION_START)
-NEGATIVE_MARKERS = (BACTEC_NEGATIVE, NO_SIGNIFICANT_GROWTH)      # culture-negative -> TAT split by outcome
+NEGATIVE_MARKERS = (BACTEC_NEGATIVE, NO_SIGNIFICANT_GROWTH, BIOCHEM_DISCARD)      # culture-negative -> TAT split by outcome
 # Specimens dropped by the model. MEDIA_ALLOCATION_FAILED is logged by the inventory helper, and most call sites
 # did NOT also log ABORTED, so count either one as an abort (run_metrics does).
 ABORT_MARKERS = (ABORTED, MEDIA_ALLOCATION_FAILED)

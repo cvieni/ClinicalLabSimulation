@@ -59,8 +59,8 @@ configs_to_load = {
 # Set LABSIM_ALLOW_DEFAULT_TTP=1 to run on the UNCALIBRATED defaults above on purpose
 # (e.g. a laptop without the ARUP_data folder). Otherwise a missing file is an error,
 # because a run that silently uses defaults looks calibrated but is not.
-ALLOW_DEFAULT_TTP = os.environ.get("LABSIM_ALLOW_DEFAULT_TTP", "0") == "0"
-# ALLOW_DEFAULT_TTP = os.environ.get("LABSIM_ALLOW_DEFAULT_TTP", "0") == "1"
+# ALLOW_DEFAULT_TTP = os.environ.get("LABSIM_ALLOW_DEFAULT_TTP", "0") == "0"
+ALLOW_DEFAULT_TTP = os.environ.get("LABSIM_ALLOW_DEFAULT_TTP", "0") == "1"
 
 
 # Where each TTP config came from; stamp this into run outputs.
@@ -668,3 +668,35 @@ report_48h_final_report_distrib = {
 
 
 # Did I do  Approximate Bayesian Calibration (ABC) for parameter optimization against my 2025 data?
+
+# --- bench tests (modules/biochem_tests.py; which tests run, and how often, is in params_config/biochem_config.py) ---
+biochem_tests_enabled = True
+# tech hands-on minutes (min, max)
+min_oxidase_time, max_oxidase_time = 1.0, 2.0
+min_indole_time, max_indole_time = 1.0, 2.0
+min_catalase_time, max_catalase_time = 1.0, 2.0
+min_latex_time, max_latex_time = 2.0, 5.0
+min_tsi_setup_time, max_tsi_setup_time = 2.0, 4.0
+min_tsi_read_time, max_tsi_read_time = 1.0, 2.0
+min_tsi_incubation_hours, max_tsi_incubation_hours = 18.0, 24.0          # tube sits in an incubator slot
+min_pbp_setup_time, max_pbp_setup_time = 2.0, 3.0
+min_pbp_wait_minutes, max_pbp_wait_minutes = 10.0, 15.0                  # lateral-flow development; tech is free
+min_pbp_read_time, max_pbp_read_time = 0.5, 1.0
+# P(result positive). Only matters where the plan says on_negative="stop" or requires_prev (Vibrio oxidase/TSI).
+# 1.0 = every culture proceeds, which is what the draft StoolCulture_biochemicals.py did. SET FROM YOUR LIS.
+oxidase_positive_rate = 1.0
+tsi_positive_rate = 1.0              # for Vibrio: share of TSI reading K/A
+indole_positive_rate = 1.0
+catalase_positive_rate = 1.0
+pbp_positive_rate = 1.0
+latex_positive_rate = 1.0
+biochem_panel_positive_rate = 1.0
+
+# --- per-isolate tracking (modules/isolates.py) ---
+isolate_strict = True            # True: a second Gram/MALDI/AST/bench test on the same isolate (or AST without MALDI) raises an error
+multi_isolate_maldi_rate = None  # P(isolate is spotted | specimen has >= 2 isolates); None = same as maldi_testing_percent
+multi_isolate_ast_rate = None    # P(identified isolate gets AST | specimen has >= 2 isolates); None = same as Phoenix_test_percent
+export_isolate_ledger = False    # True: write results_experiments/isolate_ledger_proc_<pid>_seed<seed>.csv for every run
+
+# --- literature task times (modules/literature_times.py) ---
+use_literature_task_times = False   # True: one Gram stain of one isolate = prepare smear + stain + dry + read/report (Table 1, about 15 min median)

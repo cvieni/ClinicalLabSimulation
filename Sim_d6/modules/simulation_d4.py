@@ -326,12 +326,20 @@ def _run_simulation_impl(sim_days, seed, instrument_resources, shift_staffing_pr
 
     total_specimens = df_raw["Specimen_ID"].nunique() if not df_raw.empty and "Specimen_ID" in df_raw.columns else 0
     stochastic_stats = extract_run_stochastic_metrics(df_raw, total_specimens)
+    from modules.isolates import audit_ledger, export_ledger          # per-isolate audit: duplicate tests must be 0
+    if isinstance(stochastic_stats, dict):
+        stochastic_stats.update(audit_ledger(env))
+    if getattr(p, 'export_isolate_ledger', False):
+        export_ledger(env, Path('results_experiments') / f'isolate_ledger_proc_{os.getpid()}_seed{seed}.csv')
 
     if df_raw.empty:
         return pd.DataFrame(), df_state, media_usage, pd.DataFrame(), stochastic_stats
 
     # TAT = arrival -> "10. Completed", by exact stage name, restricted to the measurement window.
     df_pivot, window_diag = build_results_frame(df_raw, sim_minutes, initial_conditions_loaded)
+    if {'Specimen_ID', 'Type'} <= set(df_pivot.columns):        # isolates per specimen (0 = culture-negative / never worked up)
+        _n_iso = {k: s.n for k, s in getattr(env, 'isolate_sets', {}).items()}
+        df_pivot['N_Isolates'] = [_n_iso.get((t, i), 0) for t, i in zip(df_pivot['Type'], df_pivot['Specimen_ID'])]
     if isinstance(stochastic_stats, dict):
         stochastic_stats.update(window_diag)
         stochastic_stats["ttp_source"] = dict(p.TTP_SOURCE)

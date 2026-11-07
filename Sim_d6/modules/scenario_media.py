@@ -4,6 +4,7 @@ param scenario_media_json:
   {"global": 1.5,                         # multiply every media's fields below
    "per_media": {"Blood_Agar": 2.0},      # extra multiplier for named media (on top of global)
    "fields": ["reorder_point", "order_qty", "initial"],   # default; shelf_life and cost are never scaled
+   "field_scale": {"reorder_point": 1.2, "order_qty": 0.8},  # optional extra per-field multipliers
    "lead_time_days": 3}                   # optional supplier lead time (your baseline is 3)
 """
 import copy
@@ -29,11 +30,13 @@ def apply_media_scenario(media_cfg, media_json):
     if unknown:
         raise ValueError(f"scenario media {unknown} not in MEDIA_CONFIG {list(out)}")
     g = float(c.get("global", 1.0))
+    fs = c.get("field_scale", {})
+    fields = list(dict.fromkeys(list(c.get("fields", DEFAULT_FIELDS)) + list(fs)))
     for media, cfg in out.items():
         f = g * float(per.get(media, 1.0))
-        for fld in c.get("fields", DEFAULT_FIELDS):
+        for fld in fields:
             if fld in cfg:
-                cfg[fld] = int(math.ceil(cfg[fld] * f))
+                cfg[fld] = int(math.ceil(cfg[fld] * f * float(fs.get(fld, 1.0)) - 1e-9))
     return out
 
 

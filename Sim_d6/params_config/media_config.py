@@ -45,20 +45,20 @@ real_world_media_orders = {
 
 base_media_config = {
     "Blood_Agar":      {"cost": 1.0, "shelf_life": 90, "reorder_point": 9600, "order_qty": 13500, "initial": 16400},
+    "Chocolate_Agar":  {"cost": 1.0, "shelf_life": 60, "reorder_point": 5400, "order_qty": 7500,  "initial": 9200},
     "MacConkey":       {"cost": 1.0, "shelf_life": 60, "reorder_point": 5400, "order_qty": 7500,  "initial": 9200},
     "CNA_Agar":        {"cost": 1.0, "shelf_life": 60, "reorder_point": 4000, "order_qty": 5600,  "initial": 6800},
-    "Chocolate_Agar":  {"cost": 1.0, "shelf_life": 60, "reorder_point": 5400, "order_qty": 7500,  "initial": 9200},
-    "ThayerMartin":    {"cost": 1.0, "shelf_life": 60, "reorder_point": 120,   "order_qty": 100,    "initial": 200},
     "ChromeAgar":      {"cost": 2.0, "shelf_life": 60, "reorder_point": 3220, "order_qty": 56,  "initial": 5470},
     "GN_Broth":        {"cost": 1.0, "shelf_life": 150, "reorder_point": 1500,  "order_qty": 1000,   "initial": 2500}, # fastidious organism broth
+    "ThayerMartin":    {"cost": 1.0, "shelf_life": 60, "reorder_point": 120,   "order_qty": 100,    "initial": 200},
     "CT-SMAC":         {"cost": 1.0, "shelf_life": 30, "reorder_point": 1000, "order_qty": 1000,  "initial": 1200},
     # "FastidiousBroth": {"cost": 1.0, "shelf_life": 150, "reorder_point": 420,  "order_qty": 195,  "initial": 710},
-    "TCBS":            {"cost": 1.0, "shelf_life": 90, "reorder_point": 500, "order_qty": 500,  "initial": 1000},
 
-    "HE_Agar":         {"cost": 1.0, "shelf_life": 30, "reorder_point": 2000, "order_qty": 1100,  "initial": 4000},
-    "Campy_CVA":       {"cost": 1.0, "shelf_life": 30, "reorder_point": 1000, "order_qty": 1100,  "initial": 4000},
-    "BCSA_Agar":       {"cost": 1.0, "shelf_life": 30, "reorder_point": 800, "order_qty": 500,  "initial": 800},
-    "MTM":             {"cost": 1.0, "shelf_life": 30, "reorder_point": 250,  "order_qty": 250,   "initial": 500},
+    "HE_Agar":         {"cost": 1.0, "shelf_life": 30, "reorder_point": 9000, "order_qty": 1100,  "initial": 1500},
+    "Campy_CVA":       {"cost": 1.0, "shelf_life": 30, "reorder_point": 900, "order_qty": 1100,  "initial": 1500},
+    "BCSA_Agar":       {"cost": 1.0, "shelf_life": 30, "reorder_point": 100, "order_qty": 100,  "initial": 200},
+    "TCBS":            {"cost": 1.0, "shelf_life": 90, "reorder_point": 50, "order_qty": 50,  "initial": 100},
+    "MTM":             {"cost": 1.0, "shelf_life": 30, "reorder_point": 50,  "order_qty": 50,   "initial": 100},
     # "IMA":             {"cost": 1.0, "shelf_life": 20, "reorder_point": 10,   "order_qty": 10,    "initial": 15},
 }
 

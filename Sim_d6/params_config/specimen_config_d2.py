@@ -46,12 +46,17 @@ configs_to_load = {
     "Urine_NonInv": f"NonInv_Urine_{json_year}_calibrated_params.json",
     "Resp_NonCF": f"Respiratory_NonCF_{json_year}_calibrated_params.json",
     "Resp_CF": f"Respiratory_CF_{json_year}_calibrated_params.json",
-    "Stool": f"Stool_{json_year}_calibrated_params.json",
+    # "Stool": f"Stool_{json_year}_calibrated_params.json",
     "Tissue_genital": f"Tiss_genital_{json_year}_calibrated_params.json",
     "Tissue_FNA": f"Tiss_FNA_{json_year}_calibrated_params.json",
     "Tissue_other": f"TissueCleaned_{json_year}_calibrated_params.json",
     "Wound_genital": f"Wound_genital_{json_year}_calibrated_params.json",
     "Wound_other": f"Wound_Cleaned_{json_year}_calibrated_params.json",
+
+    "Stool_Ecoli": f"Stool_Ecoli_{json_year}_calibrated_params.json",
+    "Stool_Campy": f"Stool_Campy_{json_year}_calibrated_params.json",
+    "Stool_Vibrio": f"Stool_Vibrio_{json_year}_calibrated_params.json",
+    "Stool_Yersinia": f"Stool_Yersinia_{json_year}_calibrated_params.json",
 }
 
 loaded_data = {}
@@ -401,6 +406,24 @@ SPECIMEN_TYPES = {
     # Stool Culture, Vibrio, Test Directory: Test 0060136
     # Stool Culture, Yersinia, Test Directory: Test 0060137
 
+    # Update the STOOL config -----
+    # Path 1: Stool
+    # Path 2: Stool + Campy -> requires 72 hours before reading the campy plate
+    # --	Stools (0060134; 0060135; 0060136; 0060137) -------------
+    # 0060137 = Stool Culture Yersinia
+    # 0060134 = E. coli shiga toxin
+    # 0060135 = Campylobacter
+    # 0060136 = Vibrio
+
+    # For E. coli -> after MALDI -> perform E. coli latex agglutination biochemical
+    # Plate from GN Broth gets at least 2 days even if no growth
+    # All plates discarded at 2 days if no growth except for CVA
+
+    # Vibrio culture requires TCBS agar - incubate 18 hours at 35C - swwep oxidase -> -> if positive TSI, if negative discard -> after TSI if K/A then phoenix and or Maldi
+    # Yersinia culture -> incubate at room temperature (no incubator slot) -> examine MAC plate at 48 hours -> no biochemicals until after 48 hours -> if colonies present innoculate TSI and incubate at 37 + innoculate two MIO tubes
+    # -> if rule out Y. pestis then do Oxidase, catalse, indole, and urease -> then perform Phoenix ID / AST -> confirm with MALDI or 16S sequencing
+
+
     # "Stool": {
     #     "media_req": {"Blood_Agar": 1, "MacConkey": 1, "HE_Agar": 1, "Campy_CVA": 1, "CT-SMAC": 1, "GN_Broth": 1},      
     #     "cancel_rate_percent":0.02,     
@@ -417,8 +440,7 @@ SPECIMEN_TYPES = {
     #         "weekend": get_param("Stool", "hourly_weights_weekend"),          
     #     },
 
-
-    "Stool_EcoliRoutine": {
+    "Stool_Ecoli": {
         "media_req": {"Blood_Agar": 1, "MacConkey": 1, "HE_Agar": 1, "Campy_CVA": 1, "CT-SMAC": 1, "GN_Broth": 1},      
         "cancel_rate_percent":0.02,     
         "plating_time_range": (0.1, typical_max_plating_time),   
@@ -477,7 +499,7 @@ SPECIMEN_TYPES = {
         "tech_review_range": (0.5, 4.0), 
         "initial_vol": 100,
         "daily_volume_mean": get_param("Stool_Yersinia", "daily_volume_mean"),
-        "accession_time_config": get_accession_config("Stool"),
+        "accession_time_config": get_accession_config("Stool_Yersinia"),
         "accession_touch_time_min": 0.5,
         "accession_touch_time_max": 3.0,
         "cancel_rate_percent": loaded_data["Stool_Yersinia"]["cancellation_metrics"]["lab_cancel_rate_pct"],
@@ -486,26 +508,6 @@ SPECIMEN_TYPES = {
             "weekend": get_param("Stool_Yersinia", "hourly_weights_weekend"),          
         },
     },
-
-
-# Update the STOOL config -----
-# Path 1: Stool
-# Path 2: Stool + Campy -> requires 72 hours before reading the campy plate
-# --	Stools (0060134; 0060135; 0060136; 0060137) -------------
-# 0060137 = Stool Culture Yersinia
-# 0060134 = E. coli shiga toxin
-# 0060135 = Campylobacter
-# 0060136 = Vibrio
-
-# For E. coli -> after MALDI -> perform E. coli latex agglutination biochemical
-# Plate from GN Broth gets at least 2 days even if no growth
-# All plates discarded at 2 days if no growth except for CVA
-
-# Vibrio culture requires TCBS agar - incubate 18 hours at 35C - swwep oxidase -> -> if positive TSI, if negative discard -> after TSI if K/A then phoenix and or Maldi
-# Yersinia culture -> incubate at room temperature (no incubator slot) -> examine MAC plate at 48 hours -> no biochemicals until after 48 hours -> if colonies present innoculate TSI and incubate at 37 + innoculate two MIO tubes
-# -> if rule out Y. pestis then do Oxidase, catalse, indole, and urease -> then perform Phoenix ID / AST -> confirm with MALDI or 16S sequencing
-
-    }
 }
 
 # Attach the explicit tuning matrix to all specimen configs so the override layer is
@@ -570,7 +572,11 @@ PRIORITY_CATEGORY_BY_TYPE = {
     "Resp_CystFibrosis": {"tracheal_gastric_aspirates": 0.4, "invasive_respiratory": 0.4,  "stain_cultures": 0.2}, 
     "Wound":             {"stain_cultures": 1.0},                    
     "Wound_Genital":     {"tissues_nonsurgical": 0.6, "genital_ureaplasma_mycoplasma": 0.4},
-    "Stool":             {"stool_in_transport": 0.8, "short_stability_unpreserved": 0.2},
+    # "Stool":             {"stool_in_transport": 0.8, "short_stability_unpreserved": 0.2},
+    "Stool_Ecoli":       {"stool_in_transport": 0.8, "short_stability_unpreserved": 0.2},
+    "Stool_Campy":       {"stool_in_transport": 0.4, "short_stability_unpreserved": 0.6},
+    "Stool_Vibrio":      {"stool_in_transport": 0.5, "short_stability_unpreserved": 0.5},
+    "Stool_Yersinia":    {"stool_in_transport": 0.7, "short_stability_unpreserved": 0.3},
     "Urine_Invasive":    {"urine": 1.0},
     "Urine_NonInvasive": {"urine": 1.0},
 }
@@ -612,15 +618,49 @@ FINAL_READ_BY_TYPE = {
     "Wound_Genital":     {"hold_hours": (63, 119), "extended_fraction": 0.022, "extended_hours": (260, 356), "positive_delay_hours": (6, 8)},
     "Respiratory":       {"hold_hours": (42, 56),   "extended_fraction": 0.0,  "extended_hours": (0, 0)},
     "Resp_CystFibrosis": {"hold_hours": (42, 56),   "extended_fraction": 0.0,  "extended_hours": (0, 0)},
-    "Stool":             {"hold_hours": (72, 91), "extended_fraction": 0.0, "extended_hours": (0, 0), "positive_delay_hours": (5, 10)},
+    # "Stool":             {"hold_hours": (72, 91), "extended_fraction": 0.0, "extended_hours": (0, 0), "positive_delay_hours": (5, 10)},
+    "Stool_Ecoli":       {"hold_hours": (72, 91), "extended_fraction": 0.0, "extended_hours": (0, 0), "positive_delay_hours": (5, 10)},
+    "Stool_Vibrio":      {"hold_hours": (72, 91), "extended_fraction": 0.0, "extended_hours": (0, 0), "positive_delay_hours": (5, 10)},
+    "Stool_Campy":       {"hold_hours": (72, 75), "extended_fraction": 0.0, "extended_hours": (0, 0), "positive_delay_hours": (5, 10)},
+    "Stool_Yersinia":    {"hold_hours": (72, 91), "extended_fraction": 0.0, "extended_hours": (0, 0), "positive_delay_hours": (5, 10)},
     "Urine_Invasive":    {"hold_hours": (22, 68), "extended_fraction": 0.0, "extended_hours": (0, 0)},
     "Urine_NonInvasive": {"hold_hours": (22, 68),   "extended_fraction": 0.0,  "extended_hours": (0, 0)},
 }
 
-               
+     
 for _t, _fr in FINAL_READ_BY_TYPE.items():
     if _t in SPECIMEN_TYPES:
         SPECIMEN_TYPES[_t]["final_read"] = _fr
     else:
         print(f"WARNING FINAL_READ_BY_TYPE: '{_t}' is not in SPECIMEN_TYPES (typo?)")
 
+
+# ===== stool pathways (modules/biochem_tests.py) ==============================================================
+# primary_incubation overrides the default incubation model: TCBS 18 h (Vibrio), CVA 72 h (Campylobacter),
+# Yersinia 48 h at room temperature (no incubator slot).  Per-type test times/percentages can be overridden here too.
+_STOOL_PATHWAY_CFG = {
+    "Stool_Vibrio":   {"gn_broth_enrichment": False, "primary_incubation": {"hours": 18.0, "incubator": True}},
+    "Stool_Campy":    {"gn_broth_enrichment": False, "primary_incubation": {"hours": 72.0, "incubator": True}},
+    "Stool_Yersinia": {"gn_broth_enrichment": False, "primary_incubation": {"hours": 48.0, "incubator": False},
+                       "min_tsi_setup_time": 3.0, "max_tsi_setup_time": 7.0},       # TSI + two MIO tubes
+}
+for _t, _c in _STOOL_PATHWAY_CFG.items():
+    if _t in SPECIMEN_TYPES:
+        SPECIMEN_TYPES[_t].update(_c)
+# the four stool configs replace the single "Stool" type: give each the old Stool final-read as a STARTING POINT
+# (re-run calibrate_final_read.py per stool test; Campy/Vibrio/Yersinia differ)
+for _t in ("Stool_EcoliRoutine", "Stool_Campy", "Stool_Vibrio", "Stool_Yersinia"):
+    if _t in SPECIMEN_TYPES and "final_read" not in SPECIMEN_TYPES[_t] and "Stool" in FINAL_READ_BY_TYPE:
+        SPECIMEN_TYPES[_t]["final_read"] = dict(FINAL_READ_BY_TYPE["Stool"])
+
+# P(culture positive) per stool config (positive_specimen_rate is read by the day-2 outcome draw)
+_STOOL_POSITIVITY = {"Stool_Campy": 0.10, "Stool_Vibrio": 0.025, "Stool_Yersinia": 0.05}
+for _t, _v in _STOOL_POSITIVITY.items():
+    if _t in SPECIMEN_TYPES:
+        SPECIMEN_TYPES[_t]["positive_specimen_rate"] = _v
+
+# ----- every stool config (whatever it is called) starts from the old "Stool" final-read model; recalibrate each one -----
+for _t in [k for k in SPECIMEN_TYPES if k.upper().startswith("STOOL")]:
+    if "final_read" not in SPECIMEN_TYPES[_t] and "Stool" in FINAL_READ_BY_TYPE:
+        SPECIMEN_TYPES[_t]["final_read"] = dict(FINAL_READ_BY_TYPE["Stool"])
+_STOOL_FINALREAD_ALL = True
