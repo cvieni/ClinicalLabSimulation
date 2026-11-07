@@ -6,6 +6,13 @@ Each step:  {"test": name, "p": P(test is performed | the step is reached), ...o
                   "isolate"  = every isolate gets its own draw with probability p (n isolates -> up to n tests)
   parallel      : True = the test is started in the background and runs alongside MALDI/AST; the specimen waits for it only
                   before the final read (TSI on routine stool).  Parallel steps cannot gate MALDI (no on_negative/requires_prev).
+  bench         : who runs the test.  Default = the tech who read the plate (presumptive) / the type's own bench (post_id: bottles ->
+                  tech_blood, urine -> tech_urine, stool -> tech_stool, everything else -> routine side).
+                  Override per step: "processor" | "type" | "routine" | a resource key such as "tech_urine".
+  at_read       : True = run the test at the plate read even if the plate has been incubated twice or more (default False: see the rule below)
+  RULE (presumptive phase): the tech who READ the plate runs the test right away only if the isolate is on its first plate and that plate has
+                  not been incubated twice (a re-incubated plate, or a configured hold of 48 h or more, counts as 2+).  Otherwise the test is deferred
+                  to the isolate's next plate (a subculture, set up if none was planned) and run by whoever reads that plate after one incubation.
   on_negative   : "stop" -> a negative result closes the culture (logged as a discard, counted as culture-negative); default "continue"
 
 Phases (see specimen_process_d5.py):

@@ -9,6 +9,7 @@ Isolates (modules/isolates.py): every test is claimed on an isolate of the speci
 scope "specimen" tests one isolate (your "x % of cultures"); scope "isolate" gives every isolate its own draw.
 Randomness: one stream per (specimen, phase, step), so adding or editing a test never shifts other draws.
 """
+import math
 import random
 
 import params_config.params_d3 as p
@@ -37,13 +38,35 @@ def _val(spec_cfg, key):
     return spec_cfg[key] if key in spec_cfg else getattr(p, key)
 
 
-def _tech(spec_type, resources, phase):
-    if phase == "presumptive":
-        return get_tech_bench(spec_type, resources)             # the bench that read the plate
+def note_processor(env, spec_id, spec_type, req, fallback):
+    """Remember which bench actually read this specimen's plate (the member that served a pooled request, else the resource asked)."""
+    served = getattr(req, "granted", None)
+    env.__dict__.setdefault("processors", {})[(spec_type, spec_id)] = served[0] if served else fallback
+
+
+def _type_bench(env, spec_type, resources):
+    """The specimen type's own bench: bottles -> tech_blood, urine -> tech_urine, stool -> p.stool_review_bench, rest -> routine side."""
     up = spec_type.upper()
-    if up.startswith("BCX") or up.startswith("BODYFLUID"):
-        return resources["tech_blood"]
+    if up.startswith(("BCX", "BODYFLUID", "URINE", "STOOL")):
+        return get_tech_bench(spec_type, resources)
     return get_least_busy_tech(resources, "tech_routine", "tech_new")
+
+
+def _tech(env, spec_id, spec_type, resources, phase, step):
+    """Who runs a bench test.  step["bench"] (optional) overrides:  "processor" | "type" | "routine" | any resource key (e.g. "tech_urine").
+    Default: presumptive tests (read with the plate) -> the tech who read this plate (falls back to the type's bench if that bench has
+    no staff now); post-ID tests -> the type's own bench (bottles/urine/stool) or the routine side (everything else, as MALDI/AST prep)."""
+    mode = step.get("bench") or ("processor" if phase == "presumptive" else "type")
+    if mode == "processor":
+        r = getattr(env, "processors", {}).get((spec_type, spec_id))
+        if r is not None and r.capacity > 0:
+            return r
+        return _type_bench(env, spec_type, resources)
+    if mode == "type":
+        return _type_bench(env, spec_type, resources)
+    if mode == "routine":
+        return get_least_busy_tech(resources, "tech_routine", "tech_new")
+    return resources[mode] if resources[mode].capacity > 0 else _type_bench(env, spec_type, resources)
 
 
 def _run_test(env, test, spec_id, spec_type, spec_cfg, resources, tracker, prio, tech, r):
@@ -96,49 +119,93 @@ def _positive(r, spec_cfg, test):
     return r.random() < float(_val(spec_cfg, f"{test}_positive_rate"))
 
 
-def process_biochem_phase(env, spec_id, spec_type, spec_cfg, resources, tracker, spec_priority, phase, isolates):
-    """Sequential steps of this phase (parallel steps are started by start_parallel_biochem). Returns False if a step with
-    on_negative='stop' read negative on every isolate tested (the caller closes the culture)."""
-    plan = BIOCHEM_PLAN.get(spec_type, {}).get(phase, [])
-    if not plan or not p.biochem_tests_enabled:
-        return True
-    tech = _tech(spec_type, resources, phase)
-    prev_positive = True
-    for k, s in enumerate(plan):
-        if s.get("parallel"):
+class Job:
+    """One planned bench test: which step, the isolates it was claimed on, and the random stream it keeps drawing results from."""
+    __slots__ = ("k", "step", "isolates", "r")
+
+    def __init__(self, k, step, isolates, r):
+        self.k, self.step, self.isolates, self.r = k, step, isolates, r
+
+
+def plate_incubations(spec_cfg, reincubated):
+    """Incubations the plate has had when it is read: the type's configured hold (48 h -> 2, 72 h -> 3; default 1) + 1 if re-incubated."""
+    ov = spec_cfg.get("primary_incubation")
+    base = max(1, math.ceil(float(ov["hours"]) / 24.0 - 0.01)) if ov else 1
+    return base + (1 if reincubated else 0)
+
+
+def plan_biochem(env, spec_id, spec_type, spec_cfg, phase, isolates):
+    """Decide (once, deterministically) which tests this specimen gets and on which isolates; they are claimed now so nothing can repeat."""
+    if not p.biochem_tests_enabled:
+        return []
+    return [Job(k, s, _claim(s, isolates, phase, _step_rng(env, spec_type, spec_id, phase, k)), _step_rng(env, spec_type, spec_id, phase, k))
+            for k, s in enumerate(BIOCHEM_PLAN.get(spec_type, {}).get(phase, []))]
+
+
+def split_jobs(jobs, isolates):
+    """(run now at the plate read, defer to the next plate).  Rule: the tech who read the plate runs the test only if it is the isolate's
+    first plate and it has not been incubated twice; step option at_read=True forces 'now'.  Otherwise the test waits for the next plate that
+    has been incubated once, i.e. the subculture, and is run by whoever reads it."""
+    if isolates.eligible_at_read():
+        return list(jobs), []
+    return [j for j in jobs if j.step.get("at_read")], [j for j in jobs if not j.step.get("at_read")]
+
+
+def run_biochem_jobs(env, spec_id, spec_type, spec_cfg, resources, tracker, spec_priority, phase, isolates, jobs, bench_key=None):
+    """Run planned tests in order.  Returns (continue?, [background processes]); continue is False when a step with on_negative='stop'
+    read negative on every isolate tested (the caller closes the culture).  bench_key forces the bench (the tech who read the subculture plate)
+    unless the step names its own."""
+    procs = []
+    prev = isolates.bio_prev
+    for j in jobs:
+        s = j.step
+        if s.get("requires_prev") and not prev:
+            prev = False
             continue
-        r = _step_rng(env, spec_type, spec_id, phase, k)
-        if s.get("requires_prev") and not prev_positive:
-            prev_positive = False
+        tech = (resources[bench_key] if bench_key and not s.get("bench") and resources[bench_key].capacity > 0
+                else _tech(env, spec_id, spec_type, resources, phase, s))
+        if s.get("parallel"):
+            if j.isolates:
+                procs.append(env.process(_parallel_runner(env, s["test"], len(j.isolates), spec_id, spec_type, spec_cfg, resources,
+                                                          tracker, spec_priority, tech, j.r)))
+            prev = bool(j.isolates)
             continue
         results = []
-        for iso in _claim(s, isolates, phase, r):
-            yield from _run_test(env, s["test"], spec_id, spec_type, spec_cfg, resources, tracker, spec_priority, tech, r)
-            results.append(_positive(r, spec_cfg, s["test"]))
-        prev_positive = any(results)
-        if results and not prev_positive and s.get("on_negative") == "stop":
+        for _ in j.isolates:
+            yield from _run_test(env, s["test"], spec_id, spec_type, spec_cfg, resources, tracker, spec_priority, tech, j.r)
+            results.append(_positive(j.r, spec_cfg, s["test"]))
+        prev = any(results)
+        isolates.bio_prev = prev
+        if results and not prev and s.get("on_negative") == "stop":
             tracker.log_event(spec_id, spec_type, EV.BIOCHEM_DISCARD, env.now)
-            return False
-    return True
+            return False, procs
+    isolates.bio_prev = prev
+    return True, procs
+
+
+def process_biochem_phase(env, spec_id, spec_type, spec_cfg, resources, tracker, spec_priority, phase, isolates):
+    """Plan + run a whole phase now (used for post_id tests).  Background tests are joined before returning."""
+    jobs = plan_biochem(env, spec_id, spec_type, spec_cfg, phase, isolates)
+    ok, procs = yield from run_biochem_jobs(env, spec_id, spec_type, spec_cfg, resources, tracker, spec_priority, phase, isolates, jobs)
+    yield from join_parallel(env, procs)
+    return ok
 
 
 def start_parallel_biochem(env, spec_id, spec_type, spec_cfg, resources, tracker, spec_priority, phase, isolates):
-    """Start this phase's parallel steps (e.g. TSI) in the background NOW and return their processes; call join_parallel()
-    before the final read.  Isolates are claimed immediately, so nothing can run the same test on them twice."""
-    plan = BIOCHEM_PLAN.get(spec_type, {}).get(phase, [])
-    if not plan or not p.biochem_tests_enabled:
-        return []
-    tech = _tech(spec_type, resources, phase)
-    procs = []
-    for k, s in enumerate(plan):
-        if not s.get("parallel"):
-            continue
-        r = _step_rng(env, spec_type, spec_id, phase, k)
-        chosen = _claim(s, isolates, phase, r)
-        if chosen:
-            procs.append(env.process(_parallel_runner(env, s["test"], len(chosen), spec_id, spec_type, spec_cfg, resources,
-                                                      tracker, spec_priority, tech, r)))
+    """Compatibility (v3-v5 call site): plan + start only the parallel steps of a phase.  The v6 call site uses plan/split/run instead."""
+    jobs = [j for j in plan_biochem(env, spec_id, spec_type, spec_cfg, phase, isolates) if j.step.get("parallel")]
+    _, procs = yield_free_run(env, spec_id, spec_type, spec_cfg, resources, tracker, spec_priority, phase, isolates, jobs)
     return procs
+
+
+def yield_free_run(env, spec_id, spec_type, spec_cfg, resources, tracker, spec_priority, phase, isolates, jobs):
+    procs = []
+    for j in jobs:
+        tech = _tech(env, spec_id, spec_type, resources, phase, j.step)
+        if j.isolates:
+            procs.append(env.process(_parallel_runner(env, j.step["test"], len(j.isolates), spec_id, spec_type, spec_cfg, resources,
+                                                      tracker, spec_priority, tech, j.r)))
+    return True, procs
 
 
 def _parallel_runner(env, test, n, spec_id, spec_type, spec_cfg, resources, tracker, prio, tech, r):

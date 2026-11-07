@@ -550,6 +550,18 @@ def main():
         key = summary[summary["metric"].str.match(r"^tat_(overall_p50|overall_p95|p50_[^_]+$|p95_[^_]+$)")]
         for _, r in key.iterrows():
             print(f"  {r['metric']:<28} {r['mean']:7.2f}  [{r['pi_lo']:.2f}, {r['pi_hi']:.2f}]   n={int(r['n'])}")
+        print("\nStool KPIs (hours): all stool, then by LIS test code")
+        _codes = [("StoolAll", "all stool configs"), ("Stool_Ecoli", "60134 E. coli"), ("Stool_Campy", "60135 Campylobacter"),
+                  ("Stool_Vibrio", "60136 Vibrio"), ("Stool_Yersinia", "60137 Yersinia")]
+        _m = summary.set_index("metric")
+        for _k, _lab in _codes:
+            _n = None
+            for _st in ("p50", "p95"):
+                _r = _m.loc[f"tat_{_st}_{_k}"] if f"tat_{_st}_{_k}" in _m.index else None
+                if _r is not None:
+                    print(f"  {_st} {_lab:<22} {_r['mean']:7.2f}  [{_r['pi_lo']:.2f}, {_r['pi_hi']:.2f}]")
+                else:
+                    print(f"  {_st} {_lab:<22}    n/a (fewer than 10 completed per replication, or not in this run)")
     else:
         print("  WARNING: No completed specimens recorded across replications; TAT metrics unavailable.")
 

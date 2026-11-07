@@ -164,6 +164,13 @@ def compute_tat_metrics(df_pivot: pd.DataFrame):
         if len(s) >= MIN_N_FOR_PERCENTILE:
             summary[f"tat_p50_{k}"], summary[f"tat_p95_{k}"] = _pct(s, 50), _pct(s, 95)
 
+    stool = df[df["Type"].astype(str).str.upper().str.startswith("STOOL")]      # every stool config pooled (StoolAll)
+    if len(stool):
+        s = stool["Total_TAT_Hours"]
+        summary["tat_StoolAll"], summary["n_tat_StoolAll"] = round(float(s.mean()), 2), int(len(s))
+        if len(s) >= MIN_N_FOR_PERCENTILE:
+            summary["tat_p50_StoolAll"], summary["tat_p95_StoolAll"] = _pct(s, 50), _pct(s, 95)
+
     if "Arrival_Shift" in df.columns:
         for sh, g in df.groupby("Arrival_Shift"):
             s = g["Total_TAT_Hours"]

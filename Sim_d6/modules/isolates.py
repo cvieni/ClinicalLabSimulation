@@ -48,6 +48,16 @@ class IsolateSet:
         self.rng = random.Random(f"{env.run_seed}:{spec_type}:{spec_id}:isolates:pick")
         self.isolates = [Isolate(i + 1) for i in range(max(1, int(n)))]
         self.violations = 0
+        self.sub_no = 1          # 1 = the isolate is on the first plate it was seen on (primary plate / first subculture from a bottle)
+        self.plate_inc = 1       # how many incubations that plate has had when it is read
+        self.bio_prev = True     # result of the previous bench test (for requires_prev steps that straddle "now" and "deferred")
+
+    def start_plate(self, incubations):
+        self.sub_no, self.plate_inc = 1, int(incubations)
+
+    def eligible_at_read(self):
+        """The tech reading the plate may run the bench test himself only on a first-time plate that has not been incubated twice."""
+        return self.sub_no == 1 and self.plate_inc < 2
 
     @property
     def n(self):

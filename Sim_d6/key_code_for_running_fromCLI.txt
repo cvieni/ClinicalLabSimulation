@@ -27,3 +27,25 @@ python make_manuscript_figures_micro.py --mc-dir results_experiments/scn_baselin
 python accession_diagnostics.py review
 # Check the predicted media usage per specimen type
 python accession_diagnostics.py media
+
+
+# Quick smoke test (confirm nothing crashes)
+python run_scenarios.py --only baseline --iterations 2 --sim-days 30 --results-dir results_smoke
+
+# Full run (about 10 minutes for 30 replications), same settings as your last baseline so the comparison is fair:
+python run_scenarios.py --only baseline --force --iterations 30 --sim-days 60 --results-dir results_experiments
+
+# 3. No-biochem control, to isolate what the bench tests cost:
+python run_scenarios.py --quick "no_biochem=param:biochem_tests_enabled:0" --only no_biochem --force --iterations 30 --sim-days 60 --results-dir results_experiments
+
+# Generate figures
+python make_manuscript_figures_micro.py --mc-dir results_experiments\scn_baseline --obs-2025 <LIS 2025 files> --scenario baseline=results_experiments\scn_baseline --scenario no_biochem=results_experiments\scn_no_biochem
+python make_manuscript_figures_micro.py --mc-dir results_experiments\scn_baseline --obs-2025 data/observed_2025_lis_clean.csv --scenario baseline=results_experiments\scn_baseline --scenario no_biochem=results_experiments\scn_no_biochem
+
+# make observed data into compiled
+python make_observed_csv_d1.py --year 2025 --output-dir data
+
+# run the full sceario
+python run_scenarios.py --only baseline,no_biochem --force --iterations 30 --sim-days 60 --results-dir results_experiments
+
+python make_manuscript_figures_micro.py --mc-dir results_experiments\scn_no_biochem --obs-2025 data\observed_2025_lis_clean.csv --out manuscript_png_nobio --tables manuscript_tables_nobio

@@ -110,3 +110,5 @@ SCENARIOS = {
     # **sweep_volume_add("BCx", [500, 1000, 2000]),
     # **sweep_volume("BCx", [1.25, 1.5, 2.0]),
 }
+SCENARIOS["no_biochem"] = param(biochem_tests_enabled=0)            # all bench tests off (oxidase/TSI/indole/catalase/PBP2a/latex)
+SCENARIOS["lit_gram"] = param(use_literature_task_times=1)          # Gram-stain time from the literature (Gerada 2024) instead of the old range

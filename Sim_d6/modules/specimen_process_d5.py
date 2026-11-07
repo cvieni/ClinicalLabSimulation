@@ -10,7 +10,7 @@ from modules.subpathways import process_automated_bactec, process_automated_wasp
 from modules.MALDI_biochemicals import process_maldi_testing, process_BioFire, process_GramStain
 from modules.AST_phoenix import process_phoenix_testing
 from modules.final_read import process_final_read
-from modules.biochem_tests import process_biochem_phase, hold_primary_incubation, start_parallel_biochem, join_parallel
+from modules.biochem_tests import process_biochem_phase, hold_primary_incubation, join_parallel, note_processor, plan_biochem, split_jobs, run_biochem_jobs, plate_incubations
 from modules.isolates import get_isolates, PyRng, rate_for
 from modules.accession_d2 import process_accessioning
 from params_config import event_name as EV
@@ -202,7 +202,7 @@ def _perform_repeat_workup_batch(env, spec_id, spec_type, spec_cfg, rng, resourc
 
 
 def _run_workup_rounds(env, spec_id, spec_type, spec_cfg, rng, resources, inventory, tracker, spec_priority,
-                       tech_key, batch_size, max_rounds, with_biochem):
+                       tech_key, batch_size, max_rounds, with_biochem, after_first=None):
     """Round 0 was already decided by the profile; later rounds use third/additional_workup_percent."""
     for rnd in range(max_rounds):
         if rnd > 0:
@@ -222,6 +222,8 @@ def _run_workup_rounds(env, spec_id, spec_type, spec_cfg, rng, resources, invent
             spec_priority, tech_key, batch_size)
         if not ok:
             return False
+        if rnd == 0 and after_first is not None:
+            yield from after_first()
     return True
 
 
@@ -399,6 +401,7 @@ def _specimen_workflow(env, spec_id, spec_type, resources, inventory, tracker,
     tech_resource = get_tech_bench(spec_type, resources)
     with req_resource(tech_resource, spec_priority) as req:
         yield req
+        note_processor(env, spec_id, spec_type, req, tech_resource)      # remember who read this plate: the same tech runs its bench tests
         tracker.log_event(spec_id, spec_type, EV.TECH_REVIEW, env.now)
         override_range = resolve_time_range_override(
             spec_cfg, "tech_review_range", sim_minutes=env.now,
@@ -407,7 +410,8 @@ def _specimen_workflow(env, spec_id, spec_type, resources, inventory, tracker,
         yield env.timeout(rng.py.uniform(min_time, max_time))
 
     # 4B. stochastic re-incubation
-    if rng.py.random() < p.reincubation_percent:
+    was_reincubated = rng.py.random() < p.reincubation_percent
+    if was_reincubated:
         with resources["incubator"].request() as reinc_req:
             yield reinc_req
             tracker.log_event(spec_id, spec_type, EV.EXTENDED_REINCUBATION, env.now)
@@ -434,11 +438,37 @@ def _specimen_workflow(env, spec_id, spec_type, resources, inventory, tracker,
     isolates = get_isolates(env, spec_id, spec_type,
                             lambda r: _sample_num_colonies(spec_cfg, PyRng(r), is_blood_culture))
     num_colonies = isolates.n
+    isolates.start_plate(plate_incubations(spec_cfg, was_reincubated))     # v6: incubations this plate has had at the read
+    parallel_bench = []
+    bench_now, bench_later = split_jobs(plan_biochem(env, spec_id, spec_type, spec_cfg, 'presumptive', isolates), isolates)
+    # first plate, not incubated twice -> the tech who read it runs the tests now, before any subculture
+    _ok, _procs = yield from run_biochem_jobs(env, spec_id, spec_type, spec_cfg, resources, tracker, spec_priority,
+                                              'presumptive', isolates, bench_now)
+    parallel_bench += _procs
+    if not _ok:
+        yield from _finish(env, spec_id, spec_type, spec_cfg, rng, resources, tracker, spec_priority, positive=False)
+        return
     if num_colonies >= 4:
         tracker.log_event(spec_id, spec_type, EV.MIXED_FLORA, env.now)
 
     needs_workup, batch_size = _sample_repeat_workup_profile(spec_cfg, rng, num_colonies)
-    if not needs_workup:
+    _tkey = 'tech_blood' if is_blood_culture else 'tech_routine'
+    _deferred_state = {'closed': False}
+
+    def _after_first_subculture():
+        # the isolate's next plate has now had one incubation and was read by _tkey: that tech runs the deferred tests
+        isolates.start_plate(1); isolates.sub_no = 2
+        ok2, pr = yield from run_biochem_jobs(env, spec_id, spec_type, spec_cfg, resources, tracker, spec_priority,
+                                              'presumptive', isolates, bench_later, bench_key=_tkey)
+        parallel_bench.extend(pr)
+        _deferred_state['closed'] = not ok2
+    if not needs_workup and bench_later:      # a deferred test needs a subculture: set one up for the isolates it covers
+        ok = yield from _perform_repeat_workup_batch(env, spec_id, spec_type, spec_cfg, rng, resources, inventory, tracker,
+                                                    spec_priority, _tkey, max(1, min(num_colonies, len(isolates.isolates))))
+        if not ok:
+            tracker.log_event(spec_id, spec_type, EV.ABORTED, env.now); return
+        yield from _after_first_subculture()
+    elif not needs_workup:
         tracker.log_event(spec_id, spec_type, EV.POSITIVE_NO_WORKUP, env.now)
     else:
         ok = yield from _run_workup_rounds(
@@ -446,16 +476,16 @@ def _specimen_workflow(env, spec_id, spec_type, resources, inventory, tracker,
             tech_key="tech_blood" if is_blood_culture else "tech_routine",
             batch_size=batch_size,
             max_rounds=p.max_subculture_limit_blood if is_blood_culture else p.max_subculture_limit_other,
-            with_biochem=not is_blood_culture)
+            with_biochem=not is_blood_culture,
+            after_first=_after_first_subculture if bench_later else None)
         if not ok:
             tracker.log_event(spec_id, spec_type, EV.ABORTED, env.now)
             return
         if batch_size > 1:
             tracker.log_event(spec_id, spec_type, EV.multi_organism_parallel(batch_size), env.now)
 
-    # ---- 6a-2. presumptive bench tests (oxidase / TSI / indole / catalase ...), before MALDI -------
-    if not (yield from process_biochem_phase(env, spec_id, spec_type, spec_cfg, resources, tracker, spec_priority,
-                                             "presumptive", isolates)):
+    # ---- 6a-2. (v6) presumptive bench tests already ran: at the read (first plate) or after the first subculture ----
+    if _deferred_state['closed']:
         yield from _finish(env, spec_id, spec_type, spec_cfg, rng, resources, tracker, spec_priority, positive=False)   # closed: no MALDI/AST
         return
 
@@ -467,8 +497,6 @@ def _specimen_workflow(env, spec_id, spec_type, resources, inventory, tracker,
     # `maldi_testing_percent` is therefore P(isolate is identified by MALDI | positive specimen) and
     # `Phoenix_test_percent` is P(AST | identified isolate). Re-estimate both from the LIS on that basis.
     # TSI (and any other parallel bench test) starts now and runs alongside MALDI/AST; joined before the final read
-    parallel_bench = start_parallel_biochem(env, spec_id, spec_type, spec_cfg, resources, tracker, spec_priority,
-                                            "presumptive", isolates)
     maldi_rate = rate_for(isolates, spec_cfg, _rate(spec_cfg, "maldi_testing_percent"), "multi_isolate_maldi_rate")
     maldi_set = isolates.select("maldi", maldi_rate, limit=p.max_isolates_identified)   # each isolate: at most ONE MALDI
     n_identified = len(maldi_set)

@@ -48,6 +48,8 @@ GROUPS = {
     "Tissue (FNA)": ["Tissue_FNA"], "Tissue (genital)": ["Tissue_genital"], "Wound": ["Wound"],
     "Wound (genital)": ["Wound_Genital"],
     "Stool": ["Stool", "Stool_Ecoli", "Stool_EcoliRoutine", "Stool_Campy", "Stool_Vibrio", "Stool_Yersinia"],   # LIS has one stool label: the 4 sim configs are pooled for validation
+    # the full stool group above pools everything; these four are the same specimens split by LIS test code (order_num) / sim stool type
+    "Stool 60134 (E. coli)": [], "Stool 60135 (Campylobacter)": [], "Stool 60136 (Vibrio)": [], "Stool 60137 (Yersinia)": [],
     "Respiratory (non-CF)": ["Respiratory", "Resp_NonCF"], "Respiratory (CF)": ["Resp_CystFibrosis", "Resp_CF"],
     "Urine": ["Urine_Invasive", "Urine_NonInvasive"],
 }
@@ -57,7 +59,10 @@ OBS_TO_GROUP = {"bloodculture": "Blood culture", "bodyfluid": "Body fluid", "bon
                 "fnatissue": "Tissue (FNA)", "genitaltissue": "Tissue (genital)", "wound": "Wound",
                 "genitalwound": "Wound (genital)", "woundgenital": "Wound (genital)", "stool": "Stool",
                 "respiratory": "Respiratory (non-CF)", "respiratorynoncf": "Respiratory (non-CF)", "respnoncf": "Respiratory (non-CF)", "noncf": "Respiratory (non-CF)",
-                "respiratorycf": "Respiratory (CF)", "respcf": "Respiratory (CF)", "cf": "Respiratory (CF)", "cysticfibrosis": "Respiratory (CF)", "invasiveurine": "Urine", "urine": "Urine"}
+                "respiratorycf": "Respiratory (CF)", "respcf": "Respiratory (CF)", "cf": "Respiratory (CF)", "cysticfibrosis": "Respiratory (CF)", "invasiveurine": "Urine", "noninvasiveurine": "Urine", "urine": "Urine"}
+STOOL_SPLIT = {"60134": "Stool 60134 (E. coli)", "60135": "Stool 60135 (Campylobacter)",
+               "60136": "Stool 60136 (Vibrio)", "60137": "Stool 60137 (Yersinia)"}
+SIM_STOOL_CODE = {"Stool_Ecoli": "60134", "Stool_EcoliRoutine": "60134", "Stool_Campy": "60135", "Stool_Vibrio": "60136", "Stool_Yersinia": "60137"}
 SHIFTS = ["Day", "Evening", "Night"]
 SHIFT_HOURS = {"Day": (7, 15), "Evening": (15, 23)}          # everything else = Night
 BENCH_LABELS = {  # state-file resource -> manuscript label (rows of the utilisation heat-map, in this order)
@@ -203,6 +208,33 @@ def _file_group(path):
     return None
 
 
+def _code(x):
+    """LIS order number -> '60134' (drops .0, leading zeros, spaces)"""
+    t = re.sub(r"\.0+$", "", str(x).strip()).lstrip("0")
+    return t
+
+
+def with_stool_split(df, kind):
+    """Add the per-test-code stool rows next to the pooled 'Stool' rows (the pooled group is kept).  kind: 'sim' (by Type) | 'obs' (by order_num)."""
+    if df is None:
+        return None
+    if kind == "sim":
+        code = df["Type"].map(SIM_STOOL_CODE)
+    else:
+        ocol = _find_col(df, ["order_num", "order_number", "ordernum", "test_code", "order_code"])
+        if ocol is None:
+            print("  NOTE: no order_num column in the LIS file: stool test codes cannot be split")
+            return df
+        code = df[ocol].map(_code).where(df["group"] == "Stool")
+    sub = df[code.isin(STOOL_SPLIT)].copy()
+    if sub.empty:
+        return df
+    sub["group"] = code[sub.index].map(STOOL_SPLIT)
+    if kind == "obs":
+        print("  LIS stool rows by order_num:", {STOOL_SPLIT[k]: int((sub["group"] == STOOL_SPLIT[k]).sum()) for k in STOOL_SPLIT})
+    return pd.concat([df, sub], ignore_index=True)
+
+
 def _find_col(d, wanted):
     low = {c.lower(): c for c in d.columns}
     for w in wanted:
@@ -211,7 +243,7 @@ def _find_col(d, wanted):
     return None
 
 
-def load_obs(paths):
+def load_obs(paths, exclude=None):
     """One or more LIS csv files. A file named like Respiratory_NonCF_2025.csv / Respiratory_CF_2025.csv is assigned to
     'Respiratory (non-CF)' / 'Respiratory (CF)' regardless of its specimen_type values. Prints what it loaded per file."""
     frames = []
@@ -239,6 +271,12 @@ def load_obs(paths):
             d = d.rename(columns={acol: "arrival_datetime"})
         frames.append(d)
     d = pd.concat(frames, ignore_index=True)
+    if exclude and "source_file" in d.columns:          # e.g. --obs-exclude UofU: leave out raw files whose name contains the text
+        keep = ~d["source_file"].astype(str).str.contains(exclude, case=False, regex=False)
+        print(f"  --obs-exclude {exclude!r}: dropped {int((~keep).sum()):,} LIS rows")
+        d = d[keep]
+    elif exclude:
+        print("  NOTE: --obs-exclude needs the source_file column: re-run make_observed_csv_d1.py")
     d["tat_h"] = pd.to_numeric(d["TAT_Hours"], errors="coerce")
     d = d.dropna(subset=["tat_h"])
     if "arrival_datetime" in d.columns:
@@ -881,6 +919,7 @@ def main():
     ap.add_argument("--mc-dir", required=True)
     ap.add_argument("--obs-2025", nargs="+", help="one or more LIS 2025 csv files (include Respiratory_NonCF_2025.csv and Respiratory_CF_2025.csv)")
     ap.add_argument("--obs-2024", nargs="+")
+    ap.add_argument("--obs-exclude", default=None, help="drop LIS rows whose source file name contains this text (e.g. UofU)")
     ap.add_argument("--obs-month-2024")
     ap.add_argument("--obs-month-2025")
     ap.add_argument("--scenario", action="append", default=[], help="NAME=<mc folder> (repeat); 'baseline' is the reference")
@@ -897,8 +936,8 @@ def main():
 
     sim, rt, n_days = load_sim(a.mc_dir)
     st = load_state(a.mc_dir, rt)
-    obs25 = load_obs(a.obs_2025) if a.obs_2025 else None
-    obs24 = load_obs(a.obs_2024) if a.obs_2024 else None
+    obs25 = load_obs(a.obs_2025, a.obs_exclude) if a.obs_2025 else None
+    obs24 = load_obs(a.obs_2024, a.obs_exclude) if a.obs_2024 else None
     print(f"sim: {len(sim):,} in-window specimens, {sim.rep.nunique()} replications, {n_days:.0f} measured days")
 
     if obs25 is not None:
@@ -906,7 +945,8 @@ def main():
         if miss:
             print(f"  NOTE: no LIS 2025 rows for: {miss}  (pass their files to --obs-2025)")
     print("Tables")
-    tab = validation_table(sim, obs25, obs24, n_days)
+    simv, obs25v, obs24v = with_stool_split(sim, "sim"), with_stool_split(obs25, "obs"), with_stool_split(obs24, "obs")   # + stool by test code
+    tab = validation_table(simv, obs25v, obs24v, n_days)
     utilization_table(st)
 
     print("Figures")
@@ -914,10 +954,10 @@ def main():
         run("validation dumbbell", fig_validation_dumbbell, tab)
         run("agreement", fig_agreement, tab)
         run("arrival profile", fig_arrival_profile, sim, obs25, n_days)
-    run("ecdf grid", fig_ecdf_grid, sim, obs25, obs24)
+    run("ecdf grid", fig_ecdf_grid, simv, obs25v, obs24v)
     run("utilisation heat-map", fig_utilization_heatmap, st)
     run("queues", fig_queues, st)
-    run("p95 by shift", fig_shift_p95, sim, obs25)
+    run("p95 by shift", fig_shift_p95, simv, obs25v)
     run("specimen counts", lambda: fig_specimen_counts(load_counts(a.mc_dir), n_days))
     run("bcx vs literature", fig_literature_bcx, sim)
     if a.obs_month_2024 and a.obs_month_2025:

@@ -616,15 +616,21 @@ FINAL_READ_BY_TYPE = {
     "Tissue_genital":    {"hold_hours": (68, 142), "extended_fraction": 0.123, "extended_hours": (330, 412)},
     "Wound":             {"hold_hours": (62, 125), "extended_fraction": 0.08, "extended_hours": (327, 351), "positive_delay_hours": (8, 12)},
     "Wound_Genital":     {"hold_hours": (63, 119), "extended_fraction": 0.022, "extended_hours": (260, 356), "positive_delay_hours": (6, 8)},
-    "Respiratory":       {"hold_hours": (42, 56),   "extended_fraction": 0.0,  "extended_hours": (0, 0)},
-    "Resp_CystFibrosis": {"hold_hours": (42, 56),   "extended_fraction": 0.0,  "extended_hours": (0, 0)},
+    
+    "Respiratory":       {"hold_hours": (29, 50),   "extended_fraction": 0.16,  "extended_hours": (101, 179)},
+    "Resp_CystFibrosis": {"hold_hours": (55, 65),   "extended_fraction": 0.289,  "extended_hours": (118, 226)},
+
+    "Respiratory":       {"hold_hours": (40, 68), "extended_fraction": 0.15, "extended_hours": (80, 160)},
+    "Resp_CystFibrosis": {"hold_hours": (58, 106), "extended_fraction": 0.25, "extended_hours": (130, 210)},
+    
     # "Stool":             {"hold_hours": (72, 91), "extended_fraction": 0.0, "extended_hours": (0, 0), "positive_delay_hours": (5, 10)},
-    "Stool_Ecoli":       {"hold_hours": (72, 91), "extended_fraction": 0.0, "extended_hours": (0, 0), "positive_delay_hours": (5, 10)},
-    "Stool_Vibrio":      {"hold_hours": (72, 91), "extended_fraction": 0.0, "extended_hours": (0, 0), "positive_delay_hours": (5, 10)},
-    "Stool_Campy":       {"hold_hours": (72, 75), "extended_fraction": 0.0, "extended_hours": (0, 0), "positive_delay_hours": (5, 10)},
-    "Stool_Yersinia":    {"hold_hours": (72, 91), "extended_fraction": 0.0, "extended_hours": (0, 0), "positive_delay_hours": (5, 10)},
-    "Urine_Invasive":    {"hold_hours": (22, 68), "extended_fraction": 0.0, "extended_hours": (0, 0)},
-    "Urine_NonInvasive": {"hold_hours": (22, 68),   "extended_fraction": 0.0,  "extended_hours": (0, 0)},
+    "Stool_Ecoli":       {"hold_hours": (60, 98), "extended_fraction": 0.0, "extended_hours": (0, 0), "positive_delay_hours": (5, 10)},
+    "Stool_Vibrio":      {"hold_hours": (24, 84), "extended_fraction": 0.0, "extended_hours": (0, 0), "positive_delay_hours": (5, 10)},
+    "Stool_Campy":       {"hold_hours": (72, 80), "extended_fraction": 0.0, "extended_hours": (0, 0), "positive_delay_hours": (5, 10)},
+    "Stool_Yersinia":    {"hold_hours": (60, 84), "extended_fraction": 0.0, "extended_hours": (0, 0), "positive_delay_hours": (5, 10)},
+    
+    "Urine_Invasive":    {"hold_hours": (32, 80), "extended_fraction": 0.25, "extended_hours": (80, 160)},
+    "Urine_NonInvasive": {"hold_hours": (19, 55), "extended_fraction": 0.12, "extended_hours": (62, 128)},
 }
 
      
@@ -664,3 +670,13 @@ for _t in [k for k in SPECIMEN_TYPES if k.upper().startswith("STOOL")]:
     if "final_read" not in SPECIMEN_TYPES[_t] and "Stool" in FINAL_READ_BY_TYPE:
         SPECIMEN_TYPES[_t]["final_read"] = dict(FINAL_READ_BY_TYPE["Stool"])
 _STOOL_FINALREAD_ALL = True
+
+# ===== UofU urine: processed by this lab, but not in the calibrated InvUrine / NonInv_Urine JSON files ============
+# Daily volume = usable LIS rows of the 2 UofU files in 2025 / 365 (4,536 invasive, 37,191 non-invasive).
+# Arrival pattern, cancel rate and accession time stay those of the in-house urine files (assumption: recalibrate from the combined files when you can).
+_UOFU_URINE_ROWS_2025 = {"Urine_Invasive": 4536, "Urine_NonInvasive": 37191}
+if not globals().get("_UOFU_ADDED", False):
+    for _t, _n in _UOFU_URINE_ROWS_2025.items():
+        if _t in SPECIMEN_TYPES:
+            SPECIMEN_TYPES[_t]["daily_volume_mean"] = float(SPECIMEN_TYPES[_t]["daily_volume_mean"]) + _n / 365.0
+    _UOFU_ADDED = True
