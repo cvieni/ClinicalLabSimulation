@@ -14,6 +14,8 @@ Sim_d3/
 Sim_d4/
 Sim_d5b/
 Sim_d5/
+Sim_d6/
+Sim_d7/
 
 # Ignore output & data directories inside Sim_d5 (or anywhere in project)
 **/__pycache__/

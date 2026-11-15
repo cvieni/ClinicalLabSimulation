@@ -5,6 +5,15 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+
+def _state_days(df):
+    """time axis in days from whichever time column the state frame carries (Day, Minute or Hour)"""
+    for col, div in (("Day", 1.0), ("Minute", 1440.0), ("minute", 1440.0), ("Hour", 24.0)):
+        if col in df.columns:
+            return pd.to_numeric(df[col], errors="coerce") / div
+    return pd.Series(df.index / 24.0, index=df.index)
+
+
 # =====================================================================
 # ======== Figure 1  - Workload Queue  ========
 # ====================================================================
@@ -14,9 +23,7 @@ def Graphing_WorkloadQueues(df_state):
         return {}
 
     df = df_state.copy()
-    df["Day"] = df["Minute"] / (24.0 * 60.0) if "Minute" in df.columns else (
-        df["minute"] / (24.0 * 60.0) if "minute" in df.columns else df.index / 48.0
-    )
+    df["Day"] = _state_days(df)
     max_days = df["Day"].max()
 
     # marker_col = "Plating_Queue_Length" if "Plating_Queue_Length" in df.columns else (
@@ -164,9 +171,7 @@ def Graphing_TechUtilization(df_state):
         return {}
 
     df = df_state.copy()
-    df["Day"] = df["Minute"] / (24.0 * 60.0) if "Minute" in df.columns else (
-        df["minute"] / (24.0 * 60.0) if "minute" in df.columns else df.index / 48.0
-    )
+    df["Day"] = _state_days(df)
     max_days = df["Day"].max()
 
     tech_cols = [c for c in ["Busy_Techs", "Active_Techs", "busy_techs", "active_techs"] if c in df.columns]
@@ -374,17 +379,14 @@ def Graphing_active_vs_backlog_plot(df_state):
     Queue over time.
     """
     # 1. Calculate time in hours
-    time_hours = (
-        df_state["Minute"] / 60.0
-        if "Minute" in df_state.columns
-        else df_state.index
-    )
+    time_hours = _state_days(df_state) * 24.0
 
     # 2. Identify and sum queue columns for total backlog calculation
     queue_cols = [
         c
         for c in df_state.columns
-        if "queue" in c.lower() or "waiting" in c.lower()
+        if ("queue" in c.lower() or "waiting" in c.lower())
+        and not c.startswith(("Total_", "Tech_Actual", "Res_")) and c != "Plating_Queue_Length"   # totals / duplicates would double-count
     ]
     if queue_cols:
         df_state["total_backlog"] = df_state[queue_cols].sum(axis=1)
@@ -404,11 +406,12 @@ def Graphing_active_vs_backlog_plot(df_state):
     )
 
     # Top Plot: Active Specimens
-    if "active_specimens" in df_state.columns:
+    active_col = next((c for c in ("Active_Specimens_In_Lab", "active_specimens") if c in df_state.columns), None)
+    if active_col:
         fig.add_trace(
             go.Scatter(
                 x=time_hours,
-                y=df_state["active_specimens"],
+                y=df_state[active_col],
                 mode="lines",
                 name="Active Specimens",
                 line=dict(color="#2b5c8f", width=2),

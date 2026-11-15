@@ -21,6 +21,8 @@ Inputs
   --scenario      NAME=<mc folder>; the scenario called "baseline" is the reference. Same seeds across scenarios ->
                   differences are paired by replication (common random numbers).
 Anything missing is skipped with a message.
+Extra figures: 14_util_delta_<scenario> (bench utilisation, scenario minus baseline), 15_validation_combined (p50 + p95 + agreement in one panel),
+08a-c now also show the simulated baseline month (mean line, 95% band across replications).
 """
 import argparse
 import calendar
@@ -561,16 +563,36 @@ def fig_shift_p95(sim, obs25):
     save_both(fig, "07_p95_by_arrival_shift")
 
 
-def fig_bcx_monthly(m24, m25):
+SIM_BAND_C = "#1baf7a"   # simulation colour in fig 08 only (blue is 2025 there)
+
+
+def _sim_bcx_month(sim, n_days):
+    """Per replication (one simulated window ~ one month): p50, p95, specimens scaled to 30.4 days -> mean and 95% band across reps."""
+    d = sim[sim["group"] == "Blood culture"]
+    if d.empty:
+        return None
+    g = d.groupby("rep")["tat_h"]
+    per = pd.DataFrame({"obs_p50": g.quantile(0.5), "obs_p95": g.quantile(0.95), "n_samples": g.size() * 30.4 / max(n_days, 1)})
+    return {c: (per[c].mean(), np.percentile(per[c], 2.5), np.percentile(per[c], 97.5)) for c in per.columns}
+
+
+def fig_bcx_monthly(m24, m25, sim=None, n_days=38):
     a, b = pd.read_csv(m24), pd.read_csv(m25)
+    simb = _sim_bcx_month(sim, n_days) if sim is not None else None
+    rows = []
     mon = {calendar.month_abbr[i]: i for i in range(1, 13)}
     for name, col, ylab in (("08a_bcx_monthly_p50", "obs_p50", "Median TAT (h)"), ("08b_bcx_monthly_p95", "obs_p95", "95th percentile TAT (h)"),
                             ("08c_bcx_monthly_volume", "n_samples", "Blood cultures per month")):
-        fig, ax = plt.subplots(figsize=(3.5, 2.7))
-        fig.subplots_adjust(left=0.16, right=0.98, bottom=0.17, top=0.88)
+        fig, ax = plt.subplots(figsize=(3.5, 2.9))
+        fig.subplots_adjust(left=0.16, right=0.98, bottom=0.17, top=0.80)
         x0 = SHORTAGE_START.month - 0.5 + (SHORTAGE_START.day - 1) / 30
         x1 = SHORTAGE_END.month - 0.5 + (SHORTAGE_END.day - 1) / 31
         ax.axvspan(x0, x1, color=YEAR_COLORS[2024], alpha=0.12, lw=0, zorder=0)
+        if simb is not None:
+            mu, lo_, hi_ = simb[col]
+            ax.axhspan(lo_, hi_, color=SIM_BAND_C, alpha=0.18, lw=0, zorder=1)
+            ax.axhline(mu, color=SIM_BAND_C, linewidth=1.8, linestyle="--", zorder=2)
+            rows.append(dict(metric=col, sim_mean=mu, sim_lo95=lo_, sim_hi95=hi_))
         for y, d in ((2024, a), (2025, b)):
             d = d[d["specimen_type"].map(norm) == "bloodculture"].copy()
             d["m"] = d["month"].map(lambda v: mon.get(str(v)[:3], v)).astype(int)
@@ -586,8 +608,12 @@ def fig_bcx_monthly(m24, m25):
         ax.set_ylabel(ylab)
         h = [Line2D([0], [0], color=YEAR_COLORS[y], marker="o", markersize=4, label=str(y)) for y in (2024, 2025)]
         h.append(plt.Rectangle((0, 0), 1, 1, facecolor=YEAR_COLORS[2024], alpha=0.25, label="Bottle shortage"))
-        top_legend(ax, h, ncol=3)
+        if simb is not None:
+            h.append(Line2D([0], [0], color=SIM_BAND_C, linestyle="--", linewidth=1.8, label="Simulated (mean, 95% band)"))
+        top_legend(ax, h, ncol=2)
         save_both(fig, name)
+    if rows:
+        pd.DataFrame(rows).to_csv(TAB / "table8_bcx_monthly_sim.csv", index=False, float_format="%.2f")
 
 
 def scenario_frames(specs):
@@ -913,6 +939,127 @@ def fig_literature_bcx(sim, n_draw=20000):
     save_both(fig, "13_bcx_vs_literature")
 
 
+# ----------------------------------------------------------------------------
+# extra figures: utilisation delta (scenario - baseline) and the combined validation panel
+# ----------------------------------------------------------------------------
+DIV = LinearSegmentedColormap.from_list("div", ["#1f5fb4", "#8ec1ee", "#f5f1e8", "#f2a38b", "#c62828"])   # blue = less busy, red = busier
+
+
+def _util_by_hour(st, b):
+    d = st[st[f"Res_{b}_capacity"] > 0]
+    return (100 * d[f"Res_{b}_in_use"] / d[f"Res_{b}_capacity"]).groupby([d["rep"], d["hod"]]).mean().unstack("hod")   # rep x hour
+
+
+def fig_utilization_delta(st0, st1, name):
+    """Hour-by-bench utilisation change (percentage points), scenario minus baseline; replications are paired (same seeds)."""
+    benches = [b for b in BENCH_LABELS if all(f"Res_{b}_{k}" in x for x in (st0, st1) for k in ("in_use", "capacity"))]
+    M, mean_d, ci_d = np.full((len(benches), 24), np.nan), [], []
+    for i, b in enumerate(benches):
+        u0, u1 = _util_by_hour(st0, b), _util_by_hour(st1, b)
+        reps = u0.index.intersection(u1.index)
+        dd = (u1.loc[reps] - u0.loc[reps])
+        M[i, dd.columns.values] = dd.mean().values
+        per_rep = dd.mean(axis=1).values                       # each replication's mean change over the hours with capacity
+        m, c = tci(per_rep)
+        mean_d.append(m)
+        ci_d.append(c)
+    pd.DataFrame({"bench": [BENCH_LABELS[b] for b in benches], "mean_delta_pp": mean_d, "ci95_pp": ci_d}).to_csv(
+        TAB / f"table9_util_delta_{name}.csv", index=False, float_format="%.2f")
+    lim = max(2.0, float(np.nanmax(np.abs(M))))
+    cmap = DIV.copy()
+    cmap.set_bad("#f0efec")
+    fig = plt.figure(figsize=(6.4, 0.3 * len(benches) + 1.1))
+    ax = fig.add_axes([0.22, 0.21, 0.42, 0.68])
+    cax = fig.add_axes([0.66, 0.21, 0.015, 0.68])
+    bx = fig.add_axes([0.80, 0.21, 0.17, 0.68])
+    im = ax.imshow(np.ma.masked_invalid(M), cmap=cmap, vmin=-lim, vmax=lim, aspect="auto")
+    ax.grid(False)
+    ax.set_xticks(range(0, 24, 3))
+    ax.set_yticks(range(len(benches)))
+    ax.set_yticklabels([BENCH_LABELS[b] for b in benches])
+    for sp in ax.spines.values():
+        sp.set_visible(False)
+    ax.tick_params(length=0)
+    cb = fig.colorbar(im, cax=cax)
+    cb.outline.set_visible(False)
+    cb.ax.tick_params(length=2, labelsize=7)
+    cb.set_label("\u0394 utilisation (pp)")
+    cb.ax.grid(False)
+    ax.set_xlabel("Hour of day")
+    ax.set_ylabel("Bench")
+    ax.set_title(name.replace("_", " ") + " minus baseline", fontsize=7.5, fontweight="bold", loc="left")
+    y = np.arange(len(benches))
+    bx.barh(y, mean_d, xerr=[0 if not np.isfinite(c) else c for c in ci_d], color=[SIM_C if v <= 0 else "#c62828" for v in mean_d],
+            error_kw=dict(lw=0.7, ecolor=INK2, capsize=1.5), height=0.6)
+    bx.axvline(0, color=INK, linewidth=0.8)
+    bx.set_ylim(len(benches) - 0.5, -0.5)
+    bx.set_yticks([])
+    bx.grid(axis="y", visible=False)
+    bx.set_xlabel("Mean \u0394 (pp, 95% CI)")
+    save_both(fig, f"14_util_delta_{re.sub(r'[^A-Za-z0-9]+', '_', name)}")
+
+
+def fig_validation_combined(tab):
+    """A: median, B: 95th percentile (sim vs LIS 2025, LIS 2024 open diamonds), C: agreement scatter. One figure."""
+    order = list(tab.sort_values("obs2025_p50" if "obs2025_p50" in tab else "sim_p50")["group"])
+    fig = plt.figure(figsize=(7.2, 0.27 * len(order) + 1.7))
+    gs = fig.add_gridspec(1, 2, left=0.20, right=0.66, bottom=0.14, top=0.84, wspace=0.08)
+    gsC = fig.add_gridspec(1, 1, left=0.745, right=0.985, bottom=0.14, top=0.84)
+    axs = [fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[0, 1])]
+    for j, (ax, stat, ttl) in enumerate(zip(axs, ("p50", "p95"), ("Median TAT (h)", "95th percentile TAT (h)"))):
+        for k, g in enumerate(order):
+            r = tab[tab.group == g].iloc[0]
+            if pd.notna(r.get(f"obs2025_{stat}")):
+                ax.plot([r[f"sim_{stat}"], r[f"obs2025_{stat}"]], [k, k], color=GRID, linewidth=2.2, zorder=1)
+                ax.scatter(r[f"obs2025_{stat}"], k, marker="D", s=22, color=OBS_C, zorder=4)
+            if pd.notna(r.get(f"obs2024_{stat}")):
+                ax.scatter(r[f"obs2024_{stat}"], k, marker="D", s=22, facecolor="white", edgecolor=OBS24_C, linewidth=1.0, zorder=3)
+            ax.errorbar(r[f"sim_{stat}"], k, xerr=r[f"sim_{stat}_ci"] if pd.notna(r[f"sim_{stat}_ci"]) else 0, fmt="o", markersize=4.2,
+                        color=SIM_C, ecolor=SIM_C, elinewidth=1, markeredgecolor="white", markeredgewidth=0.6, zorder=5)
+        ax.set_yticks(range(len(order)))
+        ax.set_yticklabels(order if j == 0 else [])
+        ax.set_ylim(len(order) - 0.4, -0.6)
+        ax.set_xlim(left=0)
+        ax.grid(axis="y", visible=False)
+        ax.set_xlabel(ttl)
+        ax.set_title("AB"[j], fontsize=9, fontweight="bold", loc="left")
+    axs[0].set_ylabel("Specimen type")
+    ax = fig.add_subplot(gsC[0, 0])
+    lo, hi = 20, 500
+    xs = np.array([lo, hi])
+    ax.plot(xs, xs, color=INK, linewidth=0.8)
+    ax.fill_between(xs, xs * 0.8, xs * 1.2, color=GRID, alpha=0.6, lw=0, zorder=0)
+    txt = []
+    for stat, filled, mk in (("p50", True, "o"), ("p95", False, "s")):
+        c = f"obs2025_{stat}"
+        d = tab.dropna(subset=[c])
+        ax.scatter(d[c], d[f"sim_{stat}"], s=20, marker=mk, color=SIM_C if filled else "white", edgecolor=SIM_C, linewidth=1.0, zorder=3)
+        txt.append(f"{stat.upper()}: MAPE {(100 * (d[f'sim_{stat}'] - d[c]).abs() / d[c]).mean():.0f}%, "
+                   f"R\u00b2 {np.corrcoef(np.log(d[c]), np.log(d[f'sim_{stat}']))[0, 1] ** 2:.2f}")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlim(lo, hi)
+    ax.set_ylim(lo, hi)
+    ax.set_aspect("equal", adjustable="box")
+    from matplotlib.ticker import FixedLocator, FixedFormatter, NullLocator
+    for axis in (ax.xaxis, ax.yaxis):
+        axis.set_major_locator(FixedLocator([20, 50, 100, 200, 500]))
+        axis.set_major_formatter(FixedFormatter(["20", "50", "100", "200", "500"]))
+        axis.set_minor_locator(NullLocator())
+    ax.text(0.04, 0.96, "\n".join(txt), transform=ax.transAxes, va="top", fontsize=6.5, color=INK2)
+    ax.set_xlabel("Observed TAT, LIS 2025 (h)")
+    ax.set_ylabel("Simulated TAT (h)")
+    ax.set_title("C", fontsize=9, fontweight="bold", loc="left")
+    h = [Line2D([0], [0], marker="o", color="w", markerfacecolor=SIM_C, markersize=5, label="Simulated (mean, 95% CI)"),
+         Line2D([0], [0], marker="D", color="w", markerfacecolor=OBS_C, markersize=5, label="LIS 2025")]
+    if "obs2024_p50" in tab:
+        h.append(Line2D([0], [0], marker="D", color="w", markerfacecolor="white", markeredgecolor=OBS24_C, markersize=5, label="LIS 2024"))
+    h += [Line2D([0], [0], marker="s", color="w", markerfacecolor="white", markeredgecolor=SIM_C, markersize=5, label="Panel C: 95th pct"),
+          Line2D([0], [0], color=GRID, linewidth=6, label="Panel C: \u00b120%")]
+    fig.legend(handles=h, loc="upper center", ncol=5, frameon=False, bbox_to_anchor=(0.55, 1.0), fontsize=6.5)
+    save_both(fig, "15_validation_combined")
+
+
 def main():
     global OUT, TAB, BARE
     ap = argparse.ArgumentParser()
@@ -953,6 +1100,7 @@ def main():
     if obs25 is not None:
         run("validation dumbbell", fig_validation_dumbbell, tab)
         run("agreement", fig_agreement, tab)
+        run("combined validation panel", fig_validation_combined, tab)
         run("arrival profile", fig_arrival_profile, sim, obs25, n_days)
     run("ecdf grid", fig_ecdf_grid, simv, obs25v, obs24v)
     run("utilisation heat-map", fig_utilization_heatmap, st)
@@ -961,10 +1109,17 @@ def main():
     run("specimen counts", lambda: fig_specimen_counts(load_counts(a.mc_dir), n_days))
     run("bcx vs literature", fig_literature_bcx, sim)
     if a.obs_month_2024 and a.obs_month_2025:
-        run("bcx monthly", fig_bcx_monthly, a.obs_month_2024, a.obs_month_2025)
+        run("bcx monthly", fig_bcx_monthly, a.obs_month_2024, a.obs_month_2025, sim, n_days)
     if a.scenario:
         specs = [tuple(s.split("=", 1)) for s in a.scenario]
         run("scenarios", lambda: fig_scenarios(scenario_frames(specs)))
+        base_dir = dict(specs).get(BASELINE_SCENARIO)
+        if base_dir:
+            st_base = load_state(base_dir, pd.read_csv(Path(base_dir) / "run_table.csv"))
+            for nm, folder in specs:
+                if nm != BASELINE_SCENARIO:
+                    run(f"utilisation delta {nm}", lambda nm=nm, folder=folder: fig_utilization_delta(
+                        st_base, load_state(folder, pd.read_csv(Path(folder) / "run_table.csv")), nm))
     if a.breaking_point and a.scenario:
         run("breaking point", fig_breaking_point, [tuple(x.split("=", 1)) for x in a.scenario], a.bp_tol, a.bp_unfinished)
     print(f"\nDone. PNGs in {OUT}/  tables in {TAB}/")

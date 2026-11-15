@@ -49,3 +49,15 @@ python make_observed_csv_d1.py --year 2025 --output-dir data
 python run_scenarios.py --only baseline,no_biochem --force --iterations 30 --sim-days 60 --results-dir results_experiments
 
 python make_manuscript_figures_micro.py --mc-dir results_experiments\scn_no_biochem --obs-2025 data\observed_2025_lis_clean.csv --out manuscript_png_nobio --tables manuscript_tables_nobio
+
+
+
+For running the Machine learning pipeline:
+ML shortage pipeline (v8)
+
+2) python run_ml_pipeline.py gen --n 200 --reps 2 --out-dir ml_out
+3) python run_ml_pipeline.py train --out-dir ml_out
+4) python run_ml_pipeline.py validate --n 20 --out-dir ml_out
+5) python run_ml_pipeline.py forecast  --out-dir ml_out --media Blood_Agar --duration 10 --severity 0.8
+6) python run_ml_pipeline.py recommend --out-dir ml_out --media Blood_Agar --duration 10 --severity 0.8 --tol-pct 10 --abort-cap 5 --verify 4 --verify-reps 5
+Add --mock to any command to test the plumbing without the real sim. Edit the assumptions block at top of modules/ml_pipeline.py.

@@ -1,0 +1,190 @@
+"""Media (plates/broths) sanity checks, config only, no simulation needed.
+
+Two problems found in the 10-day funnel (5,624 stockout delays, 3,243 specimens dropped for media):
+
+1. UNKNOWN MEDIA NAMES. `media_req` in specimen_config_d2 names media that do not exist in MEDIA_CONFIG
+   ('Chocolate', 'GramStain', 'BCSA_Agar', 'HE_Agar', 'Campy_CVA', 'CT-SMAC', 'GN_Broth').
+   MediaInventory.lots is a defaultdict, so an unknown name silently has 0 stock forever. consume_media_inventory
+   then polls 5 times (p.inventory_stockout_recheck, 480 min) and aborts the specimen: those specimen types can
+   NEVER be plated. validate_media_requirements() fails fast at start-up instead.
+
+2. REPLENISHMENT CAN NOT KEEP UP. inventory_manager_process orders `order_qty` when (on_hand + on_order) <= reorder_point,
+   and a delivery takes 3 days. If reorder_point < demand x lead time, stock hits zero while the order is in transit, and
+   because consumption stops at zero, the position stays above the reorder point until delivery. The cycle is then
+   lead + order_qty/demand days, so the supply rate is order_qty / (lead + order_qty/demand), far below demand.
+   media_supply_report() computes that per medium and prints a demand-based suggestion.
+"""
+from __future__ import annotations
+
+import math
+import os
+
+import pandas as pd
+
+
+def media_demand_per_day(spec_types: dict, media_cfg: dict | None = None, rejection_frac: float = 0.0,
+                         workup_factor: float = 1.0) -> dict:
+    """Plates/day per medium = sum over types of daily_volume_mean x qty x (1-rejection) x workup_factor x (1+waste).
+    workup_factor > 1 approximates the extra plates used by repeat workups (not modelled here)."""
+    dem: dict = {}
+    for t, cfg in spec_types.items():
+        vol = float(cfg.get("daily_volume_mean") or 0.0)
+        for m, q in (cfg.get("media_req") or {}).items():
+            waste = float((media_cfg or {}).get(m, {}).get("batch_waste_factor", 0.0))
+            dem[m] = dem.get(m, 0.0) + vol * float(q) * (1.0 - rejection_frac) * workup_factor * (1.0 + waste)
+    return dem
+
+
+def find_unknown_media(spec_types: dict, media_cfg: dict) -> dict:
+    """{media_name: [(spec_type, daily_volume), ...]} for every media_req key missing from media_cfg."""
+    out: dict = {}
+    for t, cfg in spec_types.items():
+        for m in (cfg.get("media_req") or {}):
+            if m not in media_cfg:
+                out.setdefault(m, []).append((t, float(cfg.get("daily_volume_mean") or 0.0)))
+    return out
+
+
+def validate_media_requirements(spec_types: dict, media_cfg: dict, strict: bool = True) -> dict:
+    """Raise (or warn when LABSIM_ALLOW_UNKNOWN_MEDIA=1 / strict=False) if any media_req name is not in media_cfg."""
+    unknown = find_unknown_media(spec_types, media_cfg)
+    if not unknown:
+        return unknown
+    lost = {}
+    for m, lst in unknown.items():
+        for t, v in lst:
+            lost[t] = v
+    lines = [f"  {m!r:20} used by " + ", ".join(f"{t} ({v:.0f}/day)" for t, v in lst) for m, lst in unknown.items()]
+    msg = ("media_req names that are not in MEDIA_CONFIG (those specimens can never get media and will be aborted "
+           f"after p.inventory_stockout_recheck x 5 minutes; {sum(lost.values()):.0f} specimens/day affected):\n"
+           + "\n".join(lines) + "\nFix the spelling in specimen_config_d2.py or add the medium to media_config.py "
+           "(set LABSIM_ALLOW_UNKNOWN_MEDIA=1 to run anyway).")
+    if strict and os.environ.get("LABSIM_ALLOW_UNKNOWN_MEDIA") != "1":
+        raise ValueError(msg)
+    import warnings
+    warnings.warn(msg)
+    return unknown
+
+
+def media_supply_report(spec_types: dict, media_cfg: dict, lead_time_days: float = 3.0, review_days: float = 1.0,
+                        recheck_minutes: float = 480.0, max_attempts: int = 5, rejection_frac: float = 0.0,
+                        workup_factor: float = 1.15, safety: float = 1.25, order_days: float = 7.0) -> pd.DataFrame:
+    """Per-medium demand vs the (initial, reorder_point, order_qty, lead time) policy."""
+    dem = media_demand_per_day(spec_types, media_cfg, rejection_frac, workup_factor)
+    rows = []
+    for m, d in sorted(dem.items(), key=lambda kv: -kv[1]):
+        c = media_cfg.get(m)
+        if c is None:
+            rows.append(dict(medium=m, demand_per_day=round(d), status="NOT IN MEDIA_CONFIG"))
+            continue
+        u = float(c.get("plates_per_unit", 1))
+        rop = float(c.get("reorder_point") or 0) * u
+        q, init = float(c["order_qty"]) * u, float(c["initial"]) * u
+        lead = float(c.get("lead_time_days") or lead_time_days)
+        s_days = c.get("standing_order_interval_days") or c.get("order_frequency")
+        s_qty = c.get("standing_order_qty") or (c["order_qty"] if c.get("order_frequency") else 0)
+        stand = float(s_qty) * u / float(s_days) if s_days and s_qty else 0.0                  # plates/day
+        need_rop = d * (lead + review_days)
+        # Shortage orders are reviewed once per review interval, so they can add at most order_qty / review_days per day,
+        # however low the reorder point is (a 56-plate order per day can never feed 560 plates/day).
+        max_rate = q / review_days
+        if c.get("reorder_point") is None:
+            sup_pct = min(100.0, 100.0 * stand / d)                                  # standing orders only
+        elif rop >= need_rop:
+            sup_pct = min(100.0, 100.0 * (max_rate + stand) / d)                     # trigger is early enough; size limits it
+        else:
+            cycle = lead + review_days / 2.0 + q / d                                 # trigger too late: stock-out each cycle
+            sup_pct = min(100.0, 100.0 * (min(q / cycle, max_rate) + stand) / d)
+        shelf = float(c.get("shelf_life", float("inf")))
+        peak_days = max(init, rop + q, float(s_qty or 0) * u) / d
+        if sup_pct >= 99 and peak_days > shelf:
+            status_override = f"EXPIRES (holds {peak_days:.0f} d > shelf life {shelf:g} d)"
+        else:
+            status_override = None
+        rows.append(dict(medium=m, demand_per_day=round(d), initial_days_cover=round(init / d, 2),
+                         reorder_point=rop, rop_needed=math.ceil(need_rop), order_qty_days=round(q / d, 1),
+                         standing_per_day=round(stand),
+                         supply_pct_of_demand=round(sup_pct), status=status_override or ("OK" if sup_pct >= 99 else "STARVED")))
+    df = pd.DataFrame(rows)
+    print(f"\n=== Media: demand vs replenishment policy (lead {lead_time_days:g} d, review every {review_days:g} d) ===")
+    print(df.to_string(index=False))
+    print(f"\nA specimen waits at most {max_attempts} x {recheck_minutes:g} min = {max_attempts * recheck_minutes / 60:g} h for "
+          f"media, then is aborted. A lead time of {lead_time_days * 24:g} h is longer than that.")
+    unk = find_unknown_media(spec_types, media_cfg)
+    if unk:
+        print("\nUNKNOWN MEDIA (never obtainable):")
+        for m, lst in unk.items():
+            print(f"  {m!r}: " + ", ".join(f"{t} ({v:.0f}/day)" for t, v in lst))
+    print(f"\nSuggested starting point (demand x {safety:g} safety, {order_days:g}-day orders; REPLACE with your real par levels):")
+    for m, d in sorted(dem.items(), key=lambda kv: -kv[1]):
+        rop = math.ceil(d * (lead_time_days + review_days) * safety / 10) * 10
+        q = math.ceil(d * order_days / 10) * 10
+        print(f'    "{m}": reorder_point={rop}, order_qty={q}, initial={rop + q // 2}')
+    return df
+
+
+def suggest_media_config(spec_types: dict, media_cfg: dict, lead_time_days: float = 3.0, review_days: float = 1.0,
+                         rejection_frac: float = 0.0, workup_factor: float = 1.15, safety: float = 1.25,
+                         order_days: float = 7.0) -> str:
+    """Python source for a demand-based MEDIA_CONFIG. Keeps your cost / shelf_life where the medium exists; media
+    you have not defined get PLACEHOLDER cost/shelf_life that you must replace. Reorder point covers demand over
+    (lead time + review interval) x safety, orders cover `order_days` of demand, initial = reorder point + half an order.
+    Shelf life is checked against the maximum stock held (reorder point + order, in days of demand)."""
+    dem = media_demand_per_day(spec_types, media_cfg, rejection_frac, workup_factor)
+    for m, c in media_cfg.items():                     # keep defined-but-unused media so nothing disappears
+        dem.setdefault(m, 0.0)
+    lines = ["MEDIA_CONFIG = {"]
+    for m, d in sorted(dem.items(), key=lambda kv: -kv[1]):
+        old = media_cfg.get(m, {})
+        rop = max(10, math.ceil(d * (lead_time_days + review_days) * safety / 10) * 10)
+        q = max(10, math.ceil(d * order_days / 10) * 10)
+        init = rop + q // 2
+        shelf = old.get("shelf_life", 30)
+        flags = []
+        if m not in media_cfg:
+            flags.append("NEW: placeholder cost/shelf_life")
+        if d > 0 and (rop + q) / d > shelf:
+            flags.append(f"max stock = {(rop + q) / d:.0f} d > shelf life {shelf} d: lower order_days or order more often")
+        note = ("  # " + "; ".join(flags)) if flags else ""
+        lines.append(f'    "{m}": {{"cost": {old.get("cost", 1.0)}, "shelf_life": {shelf}, "reorder_point": {rop}, '
+                     f'"order_qty": {q}, "initial": {init}}},{note}')
+    lines.append("}")
+    return "\n".join(lines)
+
+
+def simulate_stockouts(media_cfg: dict, demand_per_day: dict, lead_time_days: float = 3.0, days: int = 60,
+                       seed: int = 1) -> pd.DataFrame:
+    """Run YOUR MediaInventory + inventory_manager_process against Poisson demand and report the share of requests
+    that find no stock (instant check, no waiting). Needs modules.inventory on the path."""
+    import random
+
+    import simpy
+    from modules.inventory import MediaInventory, inventory_manager_process
+
+    random.seed(seed)
+    env = simpy.Environment()
+    inv = MediaInventory(env, media_cfg, order_lead_time_days=lead_time_days)
+    env.process(inventory_manager_process(env, inv, media_cfg))
+    stats = {m: dict(req=0, short=0, min_stock=float("inf")) for m in demand_per_day}
+
+    def consumer(m, d):
+        rate = d / 1440.0
+        while d > 0:
+            yield env.timeout(random.expovariate(rate))
+            st = stats[m]
+            st["req"] += 1
+            have = inv.total_inventory(m)
+            st["min_stock"] = min(st["min_stock"], have)
+            if have < 1:
+                st["short"] += 1
+            else:
+                inv.try_consume_media(m, 1)
+
+    for m, d in demand_per_day.items():
+        if m in media_cfg and d > 0:
+            env.process(consumer(m, d))
+    env.run(until=days * 1440)
+    rows = [dict(medium=m, requests=v["req"], pct_no_stock=round(100.0 * v["short"] / max(1, v["req"]), 1),
+                 min_on_hand=int(v["min_stock"]) if v["req"] else None)
+            for m, v in stats.items() if m in media_cfg and v["req"]]
+    return pd.DataFrame(rows).sort_values("pct_no_stock", ascending=False)

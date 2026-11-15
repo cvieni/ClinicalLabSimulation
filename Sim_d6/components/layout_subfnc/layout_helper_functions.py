@@ -34,47 +34,26 @@ def get_default_tech(day_type, shift_key, tech_key, default=1):
         return default
 
 
+# (field, label) in display order, 4 per row. Keys match SHIFT_STAFFING_PROFILE / the simulator.
+STAFF_FIELDS = [
+    ("tech_accession", "Accession"), ("tech_float_accession", "Float (acc/plating)"), ("tech_plating", "Plating"), ("tech_blood", "Blood"),
+    ("tech_urine", "Urine"), ("tech_stool", "Stool"), ("tech_new", "New-plate"), ("tech_routine", "Routine"),
+    ("tech_float_newroutine", "Float (new/routine)"), ("tech_supervisor", "Supervisor"),
+]
+
+
 def create_shift_inputs(day_type, shift_key, shift_label):
-    """Helper to build consistent shift input cards pre-populated with config defaults using Pattern-Matching IDs."""
-    val_a = get_default_tech(day_type, shift_key, "tech_accession", default=1)
-    val_plt = get_default_tech(day_type, shift_key, "tech_plating", default=1)
-    val_b = get_default_tech(day_type, shift_key, "tech_blood", default=1)
-    val_r = get_default_tech(day_type, shift_key, "tech_routine", default=1)
-    val_s = get_default_tech(day_type, shift_key, "tech_stool", default=1)
-    val_u = get_default_tech(day_type, shift_key, "tech_urine", default=1)
-    val_n = get_default_tech(day_type, shift_key, "tech_new", default=1)
-    val_f = get_default_tech(day_type, shift_key, "tech_float", default=1)
-    val_p = get_default_tech(day_type, shift_key, "plating_capacity", default=2)
-
+    """Shift card with one input per bench, pre-populated from SHIFT_STAFFING_PROFILE (pattern-matching ids)."""
     def make_id(field_name):
-        return {
-            "type": "staff-input",
-            "day_type": day_type,   # e.g. 'wd' or 'we'
-            "shift": shift_key,     # e.g. 'shift1', 'shift2', 'shift3'
-            "field": field_name,    # e.g. 'tech_accession'
-        }
+        return {"type": "staff-input", "day_type": day_type, "shift": shift_key, "field": field_name}
 
-    return dbc.Card(
-        dbc.CardBody([
-            html.H6(shift_label, className="card-subtitle mb-2 text-primary"),
-            dbc.Row([
-                dbc.Col([html.Label("Accessioning Techs", style={"fontSize": "11px"}), dbc.Input(id=make_id("tech_accession"), type="number", value=val_a, min=0, size="sm", debounce=True)], width=3),
-                dbc.Col([html.Label("Plating Techs", style={"fontSize": "11px"}), dbc.Input(id=make_id("tech_plating"), type="number", value=val_plt, min=0, size="sm", debounce=True)], width=3),
-                dbc.Col([html.Label("Blood Techs", style={"fontSize": "11px"}), dbc.Input(id=make_id("tech_blood"), type="number", value=val_b, min=0, size="sm", debounce=True)], width=3),
-                dbc.Col([html.Label("Routine Techs", style={"fontSize": "11px"}), dbc.Input(id=make_id("tech_routine"), type="number", value=val_r, min=0, size="sm", debounce=True)], width=3),
-            ], className="mb-2"),
-            dbc.Row([
-                dbc.Col([html.Label("Stool Techs", style={"fontSize": "11px"}), dbc.Input(id=make_id("tech_stool"), type="number", value=val_s, min=0, size="sm", debounce=True)], width=3),
-                dbc.Col([html.Label("Urine Techs", style={"fontSize": "11px"}), dbc.Input(id=make_id("tech_urine"), type="number", value=val_u, min=0, size="sm", debounce=True)], width=3),
-                dbc.Col([html.Label("News Bench", style={"fontSize": "11px"}), dbc.Input(id=make_id("tech_new"), type="number", value=val_n, min=0, size="sm", debounce=True)], width=3),
-                dbc.Col([html.Label("Float Tech", style={"fontSize": "11px"}), dbc.Input(id=make_id("tech_float"), type="number", value=val_f, min=0, size="sm", debounce=True)], width=3),
-            ], className="mb-2"),
-            dbc.Row([
-                dbc.Col([html.Label("Plating Capacity", style={"fontSize": "11px"}), dbc.Input(id=make_id("plating_capacity"), type="number", value=val_p, min=1, size="sm", debounce=True)], width=6),
-            ])
-        ]),
-        className="mb-2 shadow-sm"
-    )
+    def col(field, label):
+        return dbc.Col([html.Label(label, style={"fontSize": "11px"}),
+                        dbc.Input(id=make_id(field), type="number", value=get_default_tech(day_type, shift_key, field, default=0),
+                                  min=0, size="sm", debounce=True)], width=3)
+
+    rows = [dbc.Row([col(f, l) for f, l in STAFF_FIELDS[k:k + 4]], className="mb-2") for k in range(0, len(STAFF_FIELDS), 4)]
+    return dbc.Card(dbc.CardBody([html.H6(shift_label, className="card-subtitle mb-2 text-primary"), *rows]), className="mb-2 shadow-sm")
 
 
 def create_progress_bar(prefix="sim"):

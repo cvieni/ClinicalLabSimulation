@@ -6,6 +6,7 @@ from params_config.config_d2 import Instrument_resources
 
 # from components.layout_subfnc.layout_helper_functions import create_progress_bar, create_shift_inputs
 from .layout_helper_functions import create_progress_bar, create_shift_inputs
+from .scenario_controls import create_scenario_controls
 
 SIM_MAX_TIME = p.sim_max_time
 
@@ -21,12 +22,10 @@ def create_sidebar_controls():
         dbc.Accordion([
             dbc.AccordionItem([
                 html.Label("Simulation Duration (Days)"),
-                dcc.Slider(id="slider_sim_days", min=1, max=SIM_MAX_TIME, step=1, value=7, marks={1: "1d", 7: "7d", 14: "14d", 21: "21d", 31: "31d"}),
+                dcc.Slider(id="slider_sim_days", min=1, max=SIM_MAX_TIME, step=1, value=7, marks={1: "1d", 7: "7d", 14: "14d", 30: "30d", 60: "60d"}),
                 html.Hr(),
-                html.Label("Avg Plating Time (Minutes)"),
-                dcc.Slider(id="input_plating_time", min=0.1, max=10, step=0.2, value=1, marks={0.5: "30 sec", 1: "1m", 3: "3m", 5: "5m", 10: "10m"}),
-                html.Label("Incubation Duration (Hours)", className="mt-2"),
-                dcc.Slider(id="input_incubation_hours", min=6, max=24, step=1, value=12, marks={6: "6h", 12: "12h", 18: "18h", 24: "24h"}),
+                html.Label("Random seed"),
+                dbc.Input(id="input_seed", type="number", value=p.seed_input, size="sm", className="mb-2"),
                 html.Hr(),
                 html.Label("Blood Culture Capacity"),
                 dbc.Input(id="input_bc_capacity", type="number", value=bc_default, size="sm", className="mb-2"),
@@ -49,6 +48,8 @@ def create_sidebar_controls():
                 create_shift_inputs("we", "shift2", "Shift 2: Evening (15:00 - 23:00)"),
                 create_shift_inputs("we", "shift3", "Shift 3: Night (23:00 - 07:00)"),
             ], title="🏖️ Weekend Tech Staffing"),
+
+            dbc.AccordionItem(create_scenario_controls(), title="🧪 Scenario Tweaks (what-if)"),
         ], start_collapsed=True, always_open=False),
 
         dbc.Button("🚀 Run Simulation", id="btn_run_sim", color="primary", className="w-100 mt-3"),
@@ -60,10 +61,12 @@ def create_kpi_cards():
     """Builds top-level KPI summary cards for Tab 1."""
     return dbc.Row([
         dbc.Col(dbc.Card([dbc.CardBody([html.H6("Total Specimens"), html.H3(id="kpi_total", children="-")])], color="light")),
-        dbc.Col(dbc.Card([dbc.CardBody([html.H6("Avg TAT"), html.H3(id="kpi_tat", children="-")])], color="light")),
+        dbc.Col(dbc.Card([dbc.CardBody([html.H6("TAT p50 / p95"), html.H3(id="kpi_tat", children="-", style={"fontSize": "1.3rem"})])], color="light")),
         dbc.Col(dbc.Card([dbc.CardBody([html.H6("Avg Wait Mins"), html.H3(id="kpi_wait", children="-")])], color="light")),
         dbc.Col(dbc.Card([dbc.CardBody([html.H6("Completion Rate"), html.H3(id="kpi_completion", children="-")])], color="light")),
-    ], className="mb-4")
+        dbc.Col(dbc.Card([dbc.CardBody([html.H6("Stockout-delayed"), html.H3(id="kpi_stockouts", children="-")])], color="light")),
+        dbc.Col(dbc.Card([dbc.CardBody([html.H6("Aborted (media)"), html.H3(id="kpi_aborted", children="-")])], color="light")),
+    ], className="mb-2")
 
 
 def create_operational_tab():
@@ -73,6 +76,7 @@ def create_operational_tab():
         dbc.Col([
             create_progress_bar("sim"),
             create_kpi_cards(),
+            html.Div(id="shortage_stats_box", className="small text-muted mb-3"),
             dcc.Tabs([
                 dcc.Tab(label="📈 Workload & Queues", children=[dcc.Graph(id="chart_scatter_timeline")]),
                 dcc.Tab(label="📈 Sample Volume Trends", children=[dcc.Graph(id="chart_sample_volumes_line")]),

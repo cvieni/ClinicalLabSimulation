@@ -1,0 +1,74 @@
+python inspect_initial_conditions.py --raw .\data\observed_2025_lis_clean.csv
+params_config/initial_conditions.json: top-level keys ['seed_plating_queue', 'seed_incubating_specimens']
+
+python make_observed_csv.py --by-month .\data\observed_2025_lis_by_specimen_month.csv --out observed_lis_month.csv
+$d = Get-ChildItem .\results_experiments\mc_* -Directory | Sort-Object LastWriteTime | Select-Object -Last 1
+python run_montecarlo_and_plot.py --plots-only --out $d.FullName --observed .\observed_lis_month.csv
+
+python make_observed_csv.py --by-month .\data\observed_2025_lis_by_specimen_month.csv --out observed_lis_month.csv
+python run_montecarlo_and_plot.py --iterations 10 --sim-days 60 --seed 1 --workers 4 --observed .\observed_lis_month.csv
+python mc_window_check.py
+
+Then run various scenarios -> 
+1. drop the float tech
+2. add an evening routine tech
+3. double the amount of time required for stool biochemicals (i.e. add an extra biochemical)
+
+python run_scenarios.py --iterations 30 --sim-days 60 --seed 42
+
+python make_manuscript_figures_micro.py --mc-dir results_experiments/scn_baseline `
+  --obs-2025 data/observed_2025_lis_clean.csv data/Respiratory_NonCF_2025.csv data/Respiratory_CF_2025.csv `
+  --scenario baseline=results_experiments/scn_baseline --scenario no_float=results_experiments/scn_no_float `
+  --scenario evening_routine_plus1=results_experiments/scn_evening_routine_plus1 `
+  --scenario stool_biochem_x2=results_experiments/scn_stool_biochem_x2
+
+
+# Check the predicted tech review time per specimen
+python accession_diagnostics.py review
+# Check the predicted media usage per specimen type
+python accession_diagnostics.py media
+
+
+# Quick smoke test (confirm nothing crashes)
+python run_scenarios.py --only baseline --iterations 2 --sim-days 30 --results-dir results_smoke
+
+# Full run (about 10 minutes for 30 replications), same settings as your last baseline so the comparison is fair:
+python run_scenarios.py --only baseline --force --iterations 30 --sim-days 60 --results-dir results_experiments
+
+# 3. No-biochem control, to isolate what the bench tests cost:
+python run_scenarios.py --quick "no_biochem=param:biochem_tests_enabled:0" --only no_biochem --force --iterations 30 --sim-days 60 --results-dir results_experiments
+
+# Generate figures
+python make_manuscript_figures_micro.py --mc-dir results_experiments\scn_baseline --obs-2025 <LIS 2025 files> --scenario baseline=results_experiments\scn_baseline --scenario no_biochem=results_experiments\scn_no_biochem
+python make_manuscript_figures_micro.py --mc-dir results_experiments\scn_baseline --obs-2025 data/observed_2025_lis_clean.csv --scenario baseline=results_experiments\scn_baseline --scenario no_biochem=results_experiments\scn_no_biochem
+
+# make observed data into compiled
+python make_observed_csv_d1.py --year 2025 --output-dir data
+
+# run the full sceario
+python run_scenarios.py --only baseline,no_biochem --force --iterations 30 --sim-days 60 --results-dir results_experiments
+
+python make_manuscript_figures_micro.py --mc-dir results_experiments\scn_no_biochem --obs-2025 data\observed_2025_lis_clean.csv --out manuscript_png_nobio --tables manuscript_tables_nobio
+
+
+
+For running the Machine learning pipeline:
+ML shortage pipeline (v8)
+
+2) python run_ml_pipeline.py gen --n 200 --reps 2 --out-dir ml_out
+3) python run_ml_pipeline.py train --out-dir ml_out
+4) python run_ml_pipeline.py validate --n 20 --out-dir ml_out
+5) python run_ml_pipeline.py forecast  --out-dir ml_out --media Blood_Agar --duration 10 --severity 0.8
+6) python run_ml_pipeline.py recommend --out-dir ml_out --media Blood_Agar --duration 10 --severity 0.8 --tol-pct 10 --abort-cap 5 --verify 4 --verify-reps 5
+Add --mock to any command to test the plumbing without the real sim. Edit the assumptions block at top of modules/ml_pipeline.py.
+
+
+
+# 1. new baseline with Gerada Gram stain + bottle load (same seed and days as the previous run)
+python run_montecarlo_and_plot.py --out results_experiments\mc_gerada_gram --iterations 10 --seed 42 --workers 8
+
+# 2. observed LIS (2025 = tuned) table, if you haven't rebuilt it since the last re-clean
+python make_observed_from_lis.py --obs data\observed_2025_lis_clean.csv --out observed_lis_month.csv
+
+# 3. manuscript tables and figures on the new run
+python make_manuscript_figures_micro.py

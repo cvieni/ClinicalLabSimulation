@@ -620,9 +620,11 @@ FINAL_READ_BY_TYPE = {
     "Respiratory":       {"hold_hours": (29, 50),   "extended_fraction": 0.16,  "extended_hours": (101, 179)},
     "Resp_CystFibrosis": {"hold_hours": (55, 65),   "extended_fraction": 0.289,  "extended_hours": (118, 226)},
 
-    "Respiratory":       {"hold_hours": (40, 68), "extended_fraction": 0.15, "extended_hours": (80, 160)},
-    "Resp_CystFibrosis": {"hold_hours": (58, 106), "extended_fraction": 0.25, "extended_hours": (130, 210)},
-    
+    # "Respiratory":       {"hold_hours": (40, 68), "extended_fraction": 0.15, "extended_hours": (80, 160)},
+    # "Resp_CystFibrosis": {"hold_hours": (58, 106), "extended_fraction": 0.25, "extended_hours": (130, 210)},
+    "Respiratory":       {"hold_hours": (27, 84),  "extended_fraction": 0.105, "extended_hours": (102, 165)},
+    "Resp_CystFibrosis": {"hold_hours": (50, 125), "extended_fraction": 0.133, "extended_hours": (118, 252)},
+
     # "Stool":             {"hold_hours": (72, 91), "extended_fraction": 0.0, "extended_hours": (0, 0), "positive_delay_hours": (5, 10)},
     "Stool_Ecoli":       {"hold_hours": (60, 98), "extended_fraction": 0.0, "extended_hours": (0, 0), "positive_delay_hours": (5, 10)},
     "Stool_Vibrio":      {"hold_hours": (24, 84), "extended_fraction": 0.0, "extended_hours": (0, 0), "positive_delay_hours": (5, 10)},
@@ -631,6 +633,7 @@ FINAL_READ_BY_TYPE = {
     
     "Urine_Invasive":    {"hold_hours": (32, 80), "extended_fraction": 0.25, "extended_hours": (80, 160)},
     "Urine_NonInvasive": {"hold_hours": (19, 55), "extended_fraction": 0.12, "extended_hours": (62, 128)},
+    
 }
 
      
