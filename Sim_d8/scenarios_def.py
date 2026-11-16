@@ -98,17 +98,53 @@ def sweep_volume_all(factors, media=True):
     return {f"all_x{f:g}": combine(volume_all(f), media_x(f) if media else _blank()) for f in factors}
 
 
+
+
+
+# SCENARIOS = {
+#     "baseline": _blank(),
+#     "no_float": combine(staff_set("tech_float_accession", 0), staff_set("tech_float_newroutine", 0)),
+#     "evening_routine_plus1": staff_add("tech_routine", 1, shift="Evening"),
+#     "stool_biochem_x2": param(stool_biochem_time_multiplier=2.0),
+#     # ---- examples (uncomment / edit) ----
+#     # "new_client_bcx_plus2000": combine(volume_add("BCx", 2000), instrument("bc_instrument", 864)),
+#     # "volume_x1.5_all": combine(volume_all(1.5), media_x(1.5)),
+#     # **sweep_volume_all([1.25, 1.5, 2.0, 2.5]),        # -> all_x1.25 ... used by the breaking-point figure
+#     # **sweep_volume_add("BCx", [500, 1000, 2000]),
+#     # **sweep_volume("BCx", [1.25, 1.5, 2.0]),
+# }
+# SCENARIOS["no_biochem"] = param(biochem_tests_enabled=0)            # all bench tests off (oxidase/TSI/indole/catalase/PBP2a/latex)
+# SCENARIOS["lit_gram"] = param(use_literature_task_times=1)          # Gram-stain time from the literature (Gerada 2024) instead of the old range
+
+
+
 SCENARIOS = {
     "baseline": _blank(),
+
+    # --- Sensitivity / Ablation scenarios ---
     "no_float": combine(staff_set("tech_float_accession", 0), staff_set("tech_float_newroutine", 0)),
-    "evening_routine_plus1": staff_add("tech_routine", 1, shift="Evening"),
+    "evening_routine_plus1": staff_add("tech_routine", 1, shift="Day"),
     "stool_biochem_x2": param(stool_biochem_time_multiplier=2.0),
-    # ---- examples (uncomment / edit) ----
-    # "new_client_bcx_plus2000": combine(volume_add("BCx", 2000), instrument("bc_instrument", 864)),
-    # "volume_x1.5_all": combine(volume_all(1.5), media_x(1.5)),
-    # **sweep_volume_all([1.25, 1.5, 2.0, 2.5]),        # -> all_x1.25 ... used by the breaking-point figure
-    # **sweep_volume_add("BCx", [500, 1000, 2000]),
-    # **sweep_volume("BCx", [1.25, 1.5, 2.0]),
+    "no_biochem": param(biochem_tests_enabled=0),
+    "lit_gram": param(use_literature_task_times=1),
+
+    # --- Stress Tests (matching Fig3_StressTests.py) ---
+    "Volume_all_1pt5x": combine(volume_all(1.5), media_x(1.5)),
+    "Volume_all_2pt0x": combine(volume_all(2.0), media_x(2.0)),
+    "BCx_Vol_double": volume_x("BCx", 2.0),
+    "Urine_Vol_1pt5x": combine(volume_x("Urine_NonInvasive", 1.5), volume_x("Urine_Invasive", 1.5)),
+    "Stool_Vol_1pt5x": combine(
+        volume_x("Stool_Ecoli", 1.5),
+        volume_x("Stool_Campy", 1.5),
+        volume_x("Stool_Vibrio", 1.5),
+        volume_x("Stool_Yersinia", 1.5),
+    ),
+    "BCx_Bottle_Shortage": media_x(0.5, media="Blood_Agar", lead_time_days=5.0),  # adjust media name if BCx bottles are tracked separately
+    "BloodAgar__Shortage": media_x(0.5, media="Blood_Agar", lead_time_days=5.0),
+    "Accessioning_tech_day_0pt5": staff_set("tech_accession", 6, shift="Day"),     # baseline Day is 12
+    "Routine_day_0pt5": staff_set("tech_routine", 2, shift="Day"),                 # baseline Day is 5
+
+    # --- Sweeps (for breaking-point / headroom analysis) ---
+    **sweep_volume_all([1.25, 1.5, 2.0, 2.5]),
+    **sweep_volume("BCx", [1.25, 1.5, 2.0]),
 }
-SCENARIOS["no_biochem"] = param(biochem_tests_enabled=0)            # all bench tests off (oxidase/TSI/indole/catalase/PBP2a/latex)
-SCENARIOS["lit_gram"] = param(use_literature_task_times=1)          # Gram-stain time from the literature (Gerada 2024) instead of the old range

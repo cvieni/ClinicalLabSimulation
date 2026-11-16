@@ -70,7 +70,19 @@ PNG_HEIGHT = None
 DPI = 300
 BARE = False
 
-MC_DIR = "results_experiments/mc_gerada_gram"
+# Research/ClinicalLabSimulation
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+# Research/ClinicalLabSimulation/Sim_d8
+SIM_DIR = Path(__file__).resolve().parent.parent
+# Research/ClinicalLabSimulation/Sim_d8/manuscript_png
+OUTPUT_DIR = Path(SIM_DIR, "manuscript_png")         
+MC_DIR = Path(SIM_DIR, "results_experiments/scn_baseline")
+
+OBS_2025 = [Path(SIM_DIR, "data/observed_2025_lis_clean.csv")]
+OBS_2024 = [Path(SIM_DIR, "data/observed_2024_lis_clean.csv")]
+                 
+OBS_EXCLUDE = None                                             
+
 
 # Prefer specimen_config if it exists in the simulation output.
 # Otherwise, use Type.

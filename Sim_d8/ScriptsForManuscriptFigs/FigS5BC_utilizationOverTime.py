@@ -1,277 +1,134 @@
+#!/usr/bin/env python3
+"""Figure S5B/C: Bench utilization over simulation days (overall and by shift) from state_*.csv.gz.
+Run: python FigS5BC_utilizationOverTime.py"""
+import glob
+import re
+from pathlib import Path
 
-# =============================================================================
-# FIGURE: MEDIA CONSUMPTION OVER THE COURSE OF THE SIMULATION
-# =============================================================================
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 
-def fig_media_consumption(
-    inv,
-    days=None,
-    filename="Fig_media_consumption",
-):
-    """
-    Plot daily media consumption over the simulation.
+import fig_common as fc
 
-    Panel A: Plates consumed per day, by media type.
-    Panel B: Cumulative plates consumed, by media type.
-    Panel C: Plates expired per day, by media type.
+# =========================================================== SETTINGS ===========================================================
 
-    Vertical dashed lines indicate media order events.
+# Research/ClinicalLabSimulation
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+# Research/ClinicalLabSimulation/Sim_d8
+SIM_DIR = Path(__file__).resolve().parent.parent
+# Research/ClinicalLabSimulation/Sim_d8/manuscript_png
+OUTPUT_DIR = Path(SIM_DIR, "manuscript_png/FigS5_UtilizationTime")         
+MC_DIR = Path(SIM_DIR, "results_experiments/scn_baseline")
 
-    Parameters
-    ----------
-    inv:
-        Inventory object containing:
-            inv.daily_used
-            inv.daily_expired
-            inv.order_events
+OBS_2025 = Path(SIM_DIR, "data/observed_2025_lis_clean.csv")
+OBS_2024 = Path(SIM_DIR, "data/observed_2024_lis_clean.csv") 
 
-    days:
-        Number of simulation days to display.
-        If None, inferred from the inventory records.
-    """
 
-    # -------------------------------------------------------------------------
-    # Identify media types and simulation duration
-    # -------------------------------------------------------------------------
+PNG_WIDTH = 5.5
+PNG_HEIGHT = 4.6
+DPI = 300
+BARE = False
+LEGEND_COLUMNS = 3
 
-    media_types = list(MEDIA_TYPES)
+BENCH_LABELS = {
+    "tech_accession": "Accessioning",
+    "tech_float_accession": "Float (accession/plating)",
+    "tech_plating": "Plating",
+    "tech_blood": "Blood culture bench",
+    "tech_urine": "Urine bench",
+    "tech_stool": "Stool bench",
+    "tech_new": "New-plate bench",
+    "tech_float_newroutine": "Float (new/routine)",
+    "tech_routine": "Routine bench",
+    "tech_supervisor": "Supervisor",
+}
+# ================================================================================================================================
 
-    if not media_types:
-        raise ValueError("MEDIA_TYPES is empty.")
 
-    if days is None:
-        days = min(
-            len(inv.daily_used),
-            len(inv.daily_expired),
-        )
+def load_state_daily(mc_dir):
+    path = Path(mc_dir)
+    rt_path = path / "run_table.csv"
+    w0, w1 = 0.0, np.inf
+    if rt_path.exists():
+        rt = pd.read_csv(rt_path)
+        w0 = float(rt["window_start_min"].iloc[0]) / 1440 if "window_start_min" in rt else 0.0
+        w1 = float(rt["window_end_min"].iloc[0]) / 1440 if "window_end_min" in rt else np.inf
 
-    if days <= 0:
-        raise ValueError("No daily inventory records were found.")
+    files = sorted(glob.glob(str(path / "replications" / "state_*.csv.gz")))
+    if not files:
+        raise SystemExit(f"No state_*.csv.gz files found in {path / 'replications'}")
 
-    day = np.arange(days)
+    frames = []
+    for f in files:
+        d = pd.read_csv(f, low_memory=False)
+        d["rep"] = int(re.findall(r"(\d+)", Path(f).name)[0])
+        if "Day" not in d.columns and "Minute" in d.columns:
+            d["Day"] = (d["Minute"] // 1440).astype(int)
+        d = d[(d["Day"] >= w0) & (d["Day"] < w1)].copy()
+        d["day_rel"] = (d["Day"] - int(w0)).astype(int)
 
-    # -------------------------------------------------------------------------
-    # Extract daily usage and expiration
-    # -------------------------------------------------------------------------
+        if "Hour" in d.columns:
+            hod = (d["Hour"] % 24).astype(int)
+        elif "Minute" in d.columns:
+            hod = ((d["Minute"] % 1440) // 60).astype(int)
+        else:
+            raise KeyError("State file must contain 'Hour' or 'Minute'.")
+        d["shift"] = fc.shift_of_hour(hod)
+        frames.append(d)
 
-    used = pd.DataFrame({
-        media: [
-            inv.daily_used[d].get(media, 0)
-            for d in day
-        ]
-        for media in media_types
-    })
+    return pd.concat(frames, ignore_index=True)
 
-    expired = pd.DataFrame({
-        media: [
-            inv.daily_expired[d].get(media, 0)
-            for d in day
-        ]
-        for media in media_types
-    })
 
-    used = used.fillna(0)
-    expired = expired.fillna(0)
+def main():
+    fc.apply_style()
+    st = load_state_daily(MC_DIR)
 
-    cumulative = used.cumsum()
+    benches = [b for b in BENCH_LABELS if f"Res_{b}_in_use" in st and f"Res_{b}_capacity" in st]
+    if not benches:
+        raise SystemExit("No Res_<bench>_in_use / Res_<bench>_capacity columns found in state logs.")
 
-    used.insert(0, "Day", day)
-    expired.insert(0, "Day", day)
-    cumulative.insert(0, "Day", day)
+    daily_records = []
+    for b in benches:
+        active = st[st[f"Res_{b}_capacity"] > 0].copy()
+        active["util_pct"] = 100.0 * active[f"Res_{b}_in_use"] / active[f"Res_{b}_capacity"]
+        g = active.groupby(["day_rel", "shift"])["util_pct"].mean().reset_index()
+        g["bench"] = BENCH_LABELS[b]
+        daily_records.append(g)
 
-    # -------------------------------------------------------------------------
-    # Save underlying data
-    # -------------------------------------------------------------------------
-
+    df_util = pd.concat(daily_records, ignore_index=True)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    df_util.to_csv(OUTPUT_DIR / "table_s5bc_utilization_over_time.csv", index=False, float_format="%.2f")
 
-    used.to_csv(
-        OUTPUT_DIR / "table_media_used_daily.csv",
-        index=False,
-    )
+    fig, axes = plt.subplots(2, 1, figsize=(PNG_WIDTH, PNG_HEIGHT), sharex=True)
+    fig.subplots_adjust(left=0.12, right=0.97, bottom=0.11, top=0.80, hspace=0.35)
 
-    expired.to_csv(
-        OUTPUT_DIR / "table_media_expired_daily.csv",
-        index=False,
-    )
-
-    cumulative.to_csv(
-        OUTPUT_DIR / "table_media_used_cumulative.csv",
-        index=False,
-    )
-
-    # -------------------------------------------------------------------------
-    # Order events
-    # -------------------------------------------------------------------------
-
-    order_days = sorted({
-        int(event[0])
-        for event in getattr(inv, "order_events", [])
-        if 0 <= int(event[0]) < days
-    })
-
-    # -------------------------------------------------------------------------
-    # Figure
-    # -------------------------------------------------------------------------
-
-    n_panels = 3
-
-    height = (
-        PNG_HEIGHT
-        if PNG_HEIGHT is not None
-        else 5.8
-    )
-
-    fig, axes = plt.subplots(
-        n_panels,
-        1,
-        figsize=(PNG_WIDTH + 1.0, height),
-        sharex=True,
-    )
-
-    fig.subplots_adjust(
-        left=0.17,
-        right=0.97,
-        bottom=0.12,
-        top=0.88,
-        hspace=0.38,
-    )
-
-    colors = {
-        media: fc.FALLBACK_PALETTE[i % len(fc.FALLBACK_PALETTE)]
-        for i, media in enumerate(media_types)
-    }
-
-    # -------------------------------------------------------------------------
-    # Panel A: Daily consumption
-    # -------------------------------------------------------------------------
-
+    # Panel B: Daily mean utilization by bench (averaged across shifts)
     ax = axes[0]
+    by_bench = df_util.groupby(["day_rel", "bench"])["util_pct"].mean().unstack("bench")
+    for i, label in enumerate([BENCH_LABELS[b] for b in benches if BENCH_LABELS[b] in by_bench.columns]):
+        color = fc.FALLBACK_PALETTE[i % len(fc.FALLBACK_PALETTE)]
+        ax.plot(by_bench.index, by_bench[label], label=label, color=color, linewidth=1.2)
+    ax.set_ylabel("Mean utilisation (%)")
+    ax.set_title("B. Daily bench utilisation across simulation window", loc="left", fontsize=8, fontweight="bold")
+    ax.set_ylim(0, 105)
 
-    for media in media_types:
-        ax.plot(
-            day,
-            used[media],
-            color=colors[media],
-            linewidth=1.2,
-            label=media,
-        )
-
-    for order_day in order_days:
-        ax.axvline(
-            order_day,
-            color=fc.OBS24_C,
-            linestyle="--",
-            alpha=0.25,
-            linewidth=0.8,
-        )
-
-    ax.set_ylabel("Plates used / day")
-    ax.set_title("A. Daily media consumption", loc="left", fontsize=8)
-    ax.grid(axis="y", linestyle=":", alpha=0.6)
-
-    # -------------------------------------------------------------------------
-    # Panel B: Cumulative consumption
-    # -------------------------------------------------------------------------
-
+    # Panel C: Mean utilization across all benches by shift
     ax = axes[1]
+    shift_colors = {"Day": fc.SIM_C, "Evening": fc.OBS24_C, "Night": fc.INK2}
+    by_shift = df_util.groupby(["day_rel", "shift"])["util_pct"].mean().unstack("shift")
+    for sh in ("Day", "Evening", "Night"):
+        if sh in by_shift.columns:
+            ax.plot(by_shift.index, by_shift[sh], label=f"{sh} shift", color=shift_colors[sh], linewidth=1.4)
+    ax.set_ylabel("Mean utilisation (%)")
+    ax.set_xlabel("Measured simulation day")
+    ax.set_title("C. Mean bench utilisation by shift", loc="left", fontsize=8, fontweight="bold")
+    ax.set_ylim(0, 105)
+    ax.legend(loc="upper right", frameon=False, ncol=3)
 
-    for media in media_types:
-        ax.plot(
-            day,
-            cumulative[media],
-            color=colors[media],
-            linewidth=1.4,
-            label=media,
-        )
+    fc.top_legend(axes[0], ncol=LEGEND_COLUMNS)
+    fc.save_both(fig, "FigS5BC_utilization_over_time", OUTPUT_DIR, dpi=DPI, bare=BARE)
 
-    for order_day in order_days:
-        ax.axvline(
-            order_day,
-            color=fc.OBS24_C,
-            linestyle="--",
-            alpha=0.25,
-            linewidth=0.8,
-        )
 
-    ax.set_ylabel("Cumulative plates used")
-    ax.set_title("B. Cumulative media consumption", loc="left", fontsize=8)
-    ax.grid(axis="y", linestyle=":", alpha=0.6)
-
-    # -------------------------------------------------------------------------
-    # Panel C: Daily expiration
-    # -------------------------------------------------------------------------
-
-    ax = axes[2]
-
-    for media in media_types:
-        ax.plot(
-            day,
-            expired[media],
-            color=colors[media],
-            linewidth=1.2,
-            linestyle="--",
-            label=media,
-        )
-
-    for order_day in order_days:
-        ax.axvline(
-            order_day,
-            color=fc.OBS24_C,
-            linestyle="--",
-            alpha=0.25,
-            linewidth=0.8,
-        )
-
-    ax.set_ylabel("Plates expired / day")
-    ax.set_xlabel("Simulation day")
-    ax.set_title("C. Daily media expiration", loc="left", fontsize=8)
-    ax.grid(axis="y", linestyle=":", alpha=0.6)
-
-    # -------------------------------------------------------------------------
-    # Shared legend
-    # -------------------------------------------------------------------------
-
-    handles = [
-        Line2D(
-            [0], [0],
-            color=colors[media],
-            linewidth=1.5,
-            label=media,
-        )
-        for media in media_types
-    ]
-
-    handles.append(
-        Line2D(
-            [0], [0],
-            color=fc.OBS24_C,
-            linestyle="--",
-            linewidth=1,
-            label="Media order placed",
-        )
-    )
-
-    fig.legend(
-        handles=handles,
-        loc="upper center",
-        bbox_to_anchor=(0.55, 0.99),
-        ncol=LEGEND_COLUMNS,
-        frameon=False,
-    )
-
-    # -------------------------------------------------------------------------
-    # Save figure
-    # -------------------------------------------------------------------------
-
-    fc.save_both(
-        fig,
-        filename,
-        OUTPUT_DIR,
-        dpi=DPI,
-        bare=BARE,
-    )
-
-    print(
-        f"Media consumption figure saved to {OUTPUT_DIR}"
-    )
+if __name__ == "__main__":
+    main()

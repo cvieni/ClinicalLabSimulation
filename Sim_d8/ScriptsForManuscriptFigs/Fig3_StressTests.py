@@ -52,22 +52,19 @@ BASELINE = "baseline"
 INCLUDE_MEDIA_SHORTAGE = True
 
 SCENARIOS = {
-    "baseline": Path(SCENARIO_DIR, "mc_A"),
-
+    "baseline": SCENARIO_DIR / "scn_baseline",
     # Volume stress tests
-    "Volume_all_1pt5x": Path(SCENARIO_DIR, "mc_B"),
-    "Volume_all_2pt0x": Path(SCENARIO_DIR, "mc_C"),
-    "BCx_Vol_double": Path(SCENARIO_DIR, "mc_D"),
-    "Urine_Vol_1pt5x": Path(SCENARIO_DIR, "mc_E"),
-    "Stool_Vol_1pt5x": Path(SCENARIO_DIR, "mc_F"),
-
-    # Media shortages (optional)
-    "BCx_Bottle_Shortage": Path(SCENARIO_DIR, "mc_G"),
-    "BloodAgar__Shortage": Path(SCENARIO_DIR, "mc_H"),
-
+    "Volume_all_1pt5x": SCENARIO_DIR / "scn_Volume_all_1pt5x",
+    "Volume_all_2pt0x": SCENARIO_DIR / "scn_Volume_all_2pt0x",
+    "BCx_Vol_double": SCENARIO_DIR / "scn_BCx_Vol_double",
+    "Urine_Vol_1pt5x": SCENARIO_DIR / "scn_Urine_Vol_1pt5x",
+    "Stool_Vol_1pt5x": SCENARIO_DIR / "scn_Stool_Vol_1pt5x",
+    # Media shortages
+    "BCx_Bottle_Shortage": SCENARIO_DIR / "scn_BCx_Bottle_Shortage",
+    "BloodAgar__Shortage": SCENARIO_DIR / "scn_BloodAgar__Shortage",
     # Staffing stress tests
-    "Accessioning_tech_day_0pt5": Path(SCENARIO_DIR, "mc_I"),
-    "Routine_day_0pt5": Path(SCENARIO_DIR, "mc_J"),
+    "Accessioning_tech_day_0pt5": SCENARIO_DIR / "scn_Accessioning_tech_day_0pt5",
+    "Routine_day_0pt5": SCENARIO_DIR / "scn_Routine_day_0pt5",
 }
 
 # Plot order: top to bottom

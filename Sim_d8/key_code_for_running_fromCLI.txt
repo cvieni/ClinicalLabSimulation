@@ -1,3 +1,23 @@
+
+
+
+# RUN BASELINE FIRST
+python run_scenarios.py --only baseline --iterations 30 --sim-days 60 --seed 42
+# or with python run_montecarlo_and_plot.py --iterations 30 --sim-days 60 --seed 42 --out results_experiments/mc_gerada_gram
+
+# STRESS TEST RUNS
+python run_scenarios.py --only baseline,Volume_all_1pt5x,Volume_all_2pt0x,BCx_Vol_double,Urine_Vol_1pt5x,Stool_Vol_1pt5x,BCx_Bottle_Shortage,BloodAgar__Shortage,Accessioning_tech_day_0pt5,Routine_day_0pt5 --iterations 30 --sim-days 60 --seed 42
+python run_scenarios.py --iterations 30 --sim-days 60 --seed 42
+
+# SWEEPS/SENSITIVITY ANALSYS
+python run_scenarios.py --only baseline,BCx_x1.25,BCx_x1.5,BCx_x2.0,all_x1.25,all_x1.5,all_x2.0 --iterations 30 --sim-days 60 --seed 42
+
+
+
+
+
+
+
 python inspect_initial_conditions.py --raw .\data\observed_2025_lis_clean.csv
 params_config/initial_conditions.json: top-level keys ['seed_plating_queue', 'seed_incubating_specimens']
 

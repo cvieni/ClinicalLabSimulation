@@ -28,10 +28,18 @@ PNG_HEIGHT = None                            # inches; None = automatic from the
 DPI = 300
 BARE = False                                 # True: the unlabelled version also loses the legend and in-plot text
 
-MC_DIR = "results_experiments/mc_gerada_gram"                       # Monte Carlo folder (has replications/ and run_table.csv)
-OBS_2025 = ["data/observed_2025_lis_clean.csv"]                     # list of RAW LIS files (tuned / calibration year)
-OBS_2024 = ["data/observed_2024_lis_clean.csv"]                                                       # list of RAW LIS files (held-out validation year); [] = none
-OBS_EXCLUDE = None                                                  # drop LIS rows whose source file name contains this text
+# Research/ClinicalLabSimulation
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+# Research/ClinicalLabSimulation/Sim_d8
+SIM_DIR = Path(__file__).resolve().parent.parent
+# Research/ClinicalLabSimulation/Sim_d8/manuscript_png
+OUTPUT_DIR = Path(SIM_DIR, "manuscript_png")         
+MC_DIR = Path(SIM_DIR, "results_experiments/scn_baseline")
+
+OBS_2025 = Path(SIM_DIR, "data/observed_2025_lis_clean.csv")
+OBS_2024 = Path(SIM_DIR, "data/observed_2024_lis_clean.csv")                                                    
+OBS_EXCLUDE = None                                                 
+
 
 # ==============================================================================================================================================
 
