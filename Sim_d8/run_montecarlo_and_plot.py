@@ -50,6 +50,7 @@ from modules.simulation_d4 import run_simulation
 from modules.run_metrics import compute_tat_metrics
 from modules.param_overrides import validate_overrides
 from modules.MonteCarlo.monte_carlo_d3 import summarize_run_table
+import modules.inventory as inv_mod
 
 # --------------------------------------------------------------------------------------------------
 # --------------------------------------------------------------------------------------------------
@@ -94,6 +95,12 @@ def _run_one(task):
     row = {"rep": i, "seed": seed}
     if df_pivot.empty:
         return row
+
+    # Inside your per-replication loop, right after run_simulation(...):
+    if inv_mod.LAST_DAILY is not None and not inv_mod.LAST_DAILY.empty:
+        df_media = inv_mod.LAST_DAILY.copy()
+        df_media.insert(0, "rep", i)
+        df_media.to_csv(rep_dir / f"media_{i:03d}.csv.gz", index=False, compression="gzip")
 
     spec = df_pivot[[c for c in SPEC_COLS if c in df_pivot.columns]].copy()
     spec["rep"] = i

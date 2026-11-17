@@ -1,11 +1,27 @@
-# Sim_d8/ScriptsForManuscriptFigs/FigS6_SpecimenCounts.py
+#!/usr/bin/env python3
+"""Figure S7A: Normalized specimen and positive isolate counts across specimen configurations
+(both individual configurations and grouped categories, on linear and log10 scales).
+Run: python FigS7A_SpecimenCounts_2.py"""
+import glob
+import re
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import numpy as np
+import pandas as pd
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from matplotlib.ticker import FixedFormatter, FixedLocator, NullLocator
+from scipy import stats
+
+import fig_common as fc
 
 # =============================================================================
 # EDIT THESE FIRST
 # =============================================================================
-
-output_direct = "manuscript_pngs/FigS6_SpecCounts"
-
 specimen_order_list = [
     "Urine_NonInvasive",
     "Urine_Invasive",
@@ -29,47 +45,43 @@ specimen_order_list = [
     "Wound_Genital",
 ]
 
-from pathlib import Path
-import glob
-import re
+# Mapping for the combined/grouped figure
+COMBINED_GROUPS = {
+    "Urine (Non-Invasive)": ["Urine_NonInvasive"],
+    "Urine (Invasive)": ["Urine_Invasive"],
+    "Blood Culture (BCx)": ["BCx"],
+    "Respiratory (Non-CF)": ["Respiratory", "Resp_NonCF"],
+    "Respiratory (CF)": ["Resp_CystFibrosis", "Resp_CF"],
+    "Stool": [
+        "Stool", "Stool_Ecoli", "Stool_EcoliRoutine",
+        "Stool_Campy", "Stool_Vibrio", "Stool_Yersinia",
+    ],
+    "Body Fluid": ["BodyFluid"],
+    "Tissue / Bone / Wound": [
+        "Bone_Cx", "Tissue", "Tissue_FNA", "Tissue_genital",
+        "Wound", "Wound_Genital",
+    ],
+}
 
-import numpy as np
-import pandas as pd
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
-
-import fig_common as fc
+COMBINED_ORDER = list(COMBINED_GROUPS.keys())
 
 # =============================================================================
 # SETTINGS
 # =============================================================================
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+SIM_DIR = Path(__file__).resolve().parent.parent
+OUTPUT_DIR = SIM_DIR / "manuscript_png/FigS7_SpecCounts"
+MC_DIR = SIM_DIR / "results_experiments/scn_baseline"
 
-OUTPUT_DIR = Path(output_direct)
-
-PNG_WIDTH = 4.6
+PNG_WIDTH = 4.8
 LEFT_MARGIN_IN = 1.75
 RIGHT_MARGIN_IN = 0.25
 BOTTOM_MARGIN_IN = 0.65
-TOP_MARGIN_IN = 0.65
+TOP_MARGIN_IN = 0.72
 
 PNG_HEIGHT = None
 DPI = 300
-BARE = False
-
-figure_margin_size = 0.0
-set_background_transparent = True
-
-# Research/ClinicalLabSimulation
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-SIM_DIR = Path(__file__).resolve().parent.parent
-OUTPUT_DIR = Path(SIM_DIR, "manuscript_png")         
-MC_DIR = Path(SIM_DIR, "results_experiments/scn_baseline")
-
-OBS_2025 = [Path(SIM_DIR, "data/observed_2025_lis_clean.csv")]
-OBS_2024 = [Path(SIM_DIR, "data/observed_2024_lis_clean.csv")]
-OBS_EXCLUDE = None                                             
+LEGEND_COLUMNS = 1
 
 SPECIMEN_COLUMN_CANDIDATES = [
     "specimen_config",
@@ -79,20 +91,32 @@ SPECIMEN_COLUMN_CANDIDATES = [
 REFERENCE_SPECIMEN = None
 
 
-def save_both(fig, stem, out_dir: Path, dpi: int = 300, bare: bool = False):
-    """Save <stem>_labelled.png and <stem>_unlabelled.png with transparent background and zero margin."""
+def save_both(fig, stem, out_dir: Path, dpi: int = 300):
+    """Save <stem>_labelled.png (white bg, visible axes) and <stem>_unlabelled.png (transparent bg, tick marks only) on an identical canvas."""
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1. Labelled version: solid white background, visible axes, tick labels, text annotations, and legend
+    fig.patch.set_facecolor("white")
+    fig.patch.set_alpha(1.0)
+    for ax in fig.axes:
+        ax.set_facecolor("white")
+        ax.patch.set_alpha(1.0)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["bottom"].set_visible(True)
+        ax.spines["left"].set_visible(True)
+        ax.tick_params(which="both", bottom=True, left=True)
+
     fig.savefig(
         out_dir / f"{stem}_labelled.png",
         dpi=dpi,
-        transparent=set_background_transparent,
-        facecolor="none" if set_background_transparent else "white",
-        edgecolor="none",
-        bbox_inches="tight" if figure_margin_size == 0.0 else None,
-        pad_inches=0.0,
+        transparent=False,
+        facecolor="white",
     )
 
+    # 2. Strip all titles, axis labels, tick values, legends, and bar value text (keep tick marks & axis lines)
     for ax in fig.axes:
+        ax.set_title("")
         ax.set_xlabel("")
         ax.set_ylabel("")
         ax.tick_params(
@@ -100,27 +124,28 @@ def save_both(fig, stem, out_dir: Path, dpi: int = 300, bare: bool = False):
             bottom=True, left=True,
             labelbottom=False, labelleft=False, labelright=False, labeltop=False,
         )
-        if bare:
-            ax.set_title("")
-            if ax.get_legend():
-                ax.get_legend().remove()
-            for t in ax.texts:
-                t.set_visible(False)
+        ax.xaxis.set_minor_formatter(plt.NullFormatter())
+        ax.yaxis.set_minor_formatter(plt.NullFormatter())
+        if ax.get_legend():
+            ax.get_legend().remove()
+        for t in ax.texts:
+            t.set_visible(False)
 
-    if bare:
-        for lg in list(fig.legends):
-            lg.remove()
-        if fig._suptitle is not None:
-            fig._suptitle.set_visible(False)
+    for lg in list(fig.legends):
+        lg.remove()
+    if fig._suptitle is not None:
+        fig._suptitle.set_visible(False)
+
+    # 3. Unlabelled version: transparent background, visible axes & tick marks, identical canvas alignment
+    fig.patch.set_alpha(0.0)
+    for ax in fig.axes:
+        ax.patch.set_alpha(0.0)
 
     fig.savefig(
         out_dir / f"{stem}_unlabelled.png",
         dpi=dpi,
-        transparent=set_background_transparent,
-        facecolor="none" if set_background_transparent else "white",
-        edgecolor="none",
-        bbox_inches="tight" if figure_margin_size == 0.0 else None,
-        pad_inches=0.0,
+        transparent=True,
+        facecolor="none",
     )
     plt.close(fig)
     print(f"  wrote {stem}_labelled.png & {stem}_unlabelled.png")
@@ -167,8 +192,15 @@ def load_counts(mc_dir):
     return cnt
 
 
+def apply_combined_groups(cnt: pd.DataFrame) -> pd.DataFrame:
+    """Map individual specimen configurations into COMBINED_GROUPS."""
+    raw_to_group = {raw: grp for grp, members in COMBINED_GROUPS.items() for raw in members}
+    out = cnt.copy()
+    out["specimen"] = out["specimen"].map(lambda x: raw_to_group.get(str(x), str(x)))
+    return out
+
+
 def mean_ci(values):
-    from scipy import stats
     x = np.asarray(values, dtype=float)
     x = x[np.isfinite(x)]
     if len(x) == 0:
@@ -226,13 +258,13 @@ def normalize_counts(tb):
     tb["isolates_pct"] = np.where(tb["samples"] > 0, 100 * tb["isolates"] / tb["samples"], np.nan)
     tb["isolates_pct_reference"] = 100 * tb["isolates_normalized"]
 
-    print(f"\nReference specimen count: {reference_count:,.0f}")
+    print(f"Reference specimen count: {reference_count:,.0f}")
     return tb
 
 
-def order_specimens(tb):
+def order_specimens(tb, order_list):
     available = tb["specimen"].astype(str).tolist()
-    requested = [str(x) for x in specimen_order_list if str(x) in available]
+    requested = [str(x) for x in order_list if str(x) in available]
     requested = list(dict.fromkeys(requested))
     remaining = [x for x in available if x not in requested]
     remaining = tb[tb["specimen"].isin(remaining)].sort_values("samples", ascending=False)["specimen"].astype(str).tolist()
@@ -241,18 +273,11 @@ def order_specimens(tb):
     return tb.sort_values("specimen").reset_index(drop=True)
 
 
-def fig_specimen_counts(cnt):
-    tb = counts_table(cnt)
-    tb = normalize_counts(tb)
-    tb = order_specimens(tb)
-
+def _render_bars(tb: pd.DataFrame, log_scale: bool, stem: str, y_label: str = "Specimen configuration"):
     has_iso = tb["isolates"].fillna(0).sum() > 0
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    tb.to_csv(OUTPUT_DIR / "table_specimen_counts_normalized.csv", index=False)
-
     y = np.arange(len(tb))
     h = 0.34 if has_iso else 0.60
-    height = PNG_HEIGHT if PNG_HEIGHT is not None else 0.30 * len(tb) + 1.4
+    height = PNG_HEIGHT if PNG_HEIGHT is not None else max(3.4, 0.34 * len(tb) + 1.4)
 
     fig, ax = fc.new_fig(
         width_in=PNG_WIDTH,
@@ -263,12 +288,13 @@ def fig_specimen_counts(cnt):
         top_in=TOP_MARGIN_IN,
     )
 
+    sample_vals = tb["samples_normalized"].replace(0, np.nan) if log_scale else tb["samples_normalized"]
     sample_y = y + h / 2 if has_iso else y
     ax.barh(
         sample_y,
-        tb["samples_normalized"],
+        sample_vals,
         height=h,
-        xerr=tb["samples_ci95_normalized"].fillna(0),
+        xerr=tb["samples_ci95_normalized"].fillna(0) if not log_scale else None,
         color=fc.SIM_C,
         label="Total specimens / maximum specimen count",
         error_kw=dict(lw=0.7, ecolor=fc.INK2, capsize=1.5),
@@ -280,39 +306,101 @@ def fig_specimen_counts(cnt):
             isolate_y,
             tb["isolates_normalized"].replace(0, np.nan),
             height=h,
-            xerr=tb["isolates_ci95_normalized"].fillna(0),
+            xerr=tb["isolates_ci95_normalized"].fillna(0) if not log_scale else None,
             color=fc.OBS24_C,
             label="Positive isolates / maximum specimen count",
             error_kw=dict(lw=0.7, ecolor=fc.INK2, capsize=1.5),
         )
 
-    for yi, value, pct in zip(sample_y, tb["samples_normalized"], tb["samples"]):
-        ax.text(value + 0.015, yi, f"{value:.2f}", va="center", ha="left", fontsize=6, color=fc.INK2)
+    if log_scale:
+        pos_vals = pd.concat([tb["samples_normalized"], tb["isolates_normalized"]]).dropna()
+        pos_vals = pos_vals[pos_vals > 0]
+        min_pos = float(pos_vals.min()) if not pos_vals.empty else 1e-4
+        lo = 10.0 ** np.floor(np.log10(min_pos))
+        hi = 1.5
 
-    if has_iso:
-        for yi, value, pct in zip(isolate_y, tb["isolates_normalized"], tb["isolates_pct"]):
+        ax.set_xscale("log")
+        ax.set_xlim(left=lo, right=hi)
+
+        ticks = [10.0 ** e for e in range(int(np.floor(np.log10(lo))), int(np.ceil(np.log10(hi))) + 1)]
+        ticks = [t for t in ticks if lo <= t <= hi]
+        ax.xaxis.set_major_locator(FixedLocator(ticks))
+        ax.xaxis.set_major_formatter(FixedFormatter([f"{t:g}" for t in ticks]))
+        ax.xaxis.set_minor_locator(NullLocator())
+
+        for yi, value in zip(sample_y, tb["samples_normalized"]):
             if pd.notna(value) and value > 0:
-                pct_label = f"{pct:.1f}%" if pd.notna(pct) else "NA"
-                ax.text(value + 0.015, yi, f"{value:.2f} ({pct_label} of specimens)", va="center", ha="left", fontsize=6, color=fc.INK2)
+                lbl = f"{value:.3f}" if value < 0.01 else f"{value:.2f}"
+                ax.text(value * 1.15, yi, lbl, va="center", ha="left", fontsize=5.8, color=fc.INK2)
+
+        if has_iso:
+            for yi, value, pct in zip(isolate_y, tb["isolates_normalized"], tb["isolates_pct"]):
+                if pd.notna(value) and value > 0:
+                    lbl = f"{value:.3f}" if value < 0.01 else f"{value:.2f}"
+                    pct_label = f"{pct:.1f}%" if pd.notna(pct) else "NA"
+                    ax.text(value * 1.15, yi, f"{lbl} ({pct_label})", va="center", ha="left", fontsize=5.8, color=fc.INK2)
+
+        ax.set_xlabel("Relative count, log scale (largest category = 1.0)")
+    else:
+        for yi, value in zip(sample_y, tb["samples_normalized"]):
+            ax.text(value + 0.015, yi, f"{value:.2f}", va="center", ha="left", fontsize=6, color=fc.INK2)
+
+        if has_iso:
+            for yi, value, pct in zip(isolate_y, tb["isolates_normalized"], tb["isolates_pct"]):
+                if pd.notna(value) and value > 0:
+                    pct_label = f"{pct:.1f}%" if pd.notna(pct) else "NA"
+                    ax.text(value + 0.015, yi, f"{value:.2f} ({pct_label} of specimens)", va="center", ha="left", fontsize=6, color=fc.INK2)
+
+        ax.set_xlim(left=0, right=max(1.15, float(tb["samples_normalized"].max()) * 1.42))
+        ax.set_xlabel("Relative count (largest specimen category = 1.0)")
 
     ax.set_yticks(y)
     ax.set_yticklabels(tb["specimen"].astype(str))
     ax.invert_yaxis()
-    ax.set_xlim(left=0, right=max(1.15, float(tb["samples_normalized"].max()) * 1.35))
-    ax.set_xlabel("Relative count (largest specimen category = 1.0)")
-    ax.set_ylabel("Specimen configuration")
+    ax.set_ylabel(y_label)
     ax.grid(axis="y", visible=False)
     ax.grid(axis="x", visible=True)
 
-    fc.top_legend(ax, ncol=LEGEND_COLUMNS)
-    save_both(fig, "FigS6_specimen_counts", OUTPUT_DIR, dpi=DPI, bare=BARE)
+    handles, labels = ax.get_legend_handles_labels()
+    if handles:
+        ax.legend(
+            handles,
+            labels,
+            loc="lower left",
+            bbox_to_anchor=(0.0, 1.01),
+            ncol=LEGEND_COLUMNS,
+            frameon=False,
+            fontsize=7.0,
+        )
+
+    save_both(fig, stem, OUTPUT_DIR, dpi=DPI)
+
+
+def fig_specimen_counts(cnt):
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    # 1. Individual specimen configurations
+    tb = counts_table(cnt)
+    tb = normalize_counts(tb)
+    tb = order_specimens(tb, specimen_order_list)
+    tb.to_csv(OUTPUT_DIR / "table_specimen_counts_normalized.csv", index=False)
+
+    _render_bars(tb, log_scale=False, stem="FigS7A_specimen_counts", y_label="Specimen configuration")
+    _render_bars(tb, log_scale=True, stem="FigS7A_specimen_counts_log", y_label="Specimen configuration")
+
+    # 2. Combined specimen categories (all Stool combined; Tissue + Bone + Wound combined)
+    cnt_grouped = apply_combined_groups(cnt)
+    tb_grp = counts_table(cnt_grouped)
+    tb_grp = normalize_counts(tb_grp)
+    tb_grp = order_specimens(tb_grp, COMBINED_ORDER)
+    tb_grp.to_csv(OUTPUT_DIR / "table_specimen_counts_grouped_normalized.csv", index=False)
+
+    _render_bars(tb_grp, log_scale=False, stem="FigS7A_specimen_counts_grouped", y_label="Specimen group")
+    _render_bars(tb_grp, log_scale=True, stem="FigS7A_specimen_counts_grouped_log", y_label="Specimen group")
 
 
 def main():
     fc.apply_style()
-    if set_background_transparent:
-        plt.rcParams.update({"figure.facecolor": "none", "axes.facecolor": "none"})
-
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     cnt = load_counts(MC_DIR)
     fig_specimen_counts(cnt)

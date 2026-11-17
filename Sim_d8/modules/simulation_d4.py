@@ -306,6 +306,9 @@ def _run_simulation_impl(sim_days, seed, instrument_resources, shift_staffing_pr
 
     print(f"Simulation run complete. Debug log saved to: {os.path.abspath(log_filename)}")
 
+    inventory.finalize(sim_minutes)
+
+
     # =========================================================
     # EXPORT DIAGNOSTIC TIME-SERIES CSV (unique file per process AND seed)
     # =========================================================

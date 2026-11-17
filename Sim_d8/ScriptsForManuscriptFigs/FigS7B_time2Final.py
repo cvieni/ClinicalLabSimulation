@@ -1,4 +1,11 @@
+#!/usr/bin/env python3
+"""Figure S7B: Time-to-finalization ECDF by specimen group/type (with median & 95th percentile).
+Run: python FigS7B_time2Final_2.py"""
+import re
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import numpy as np
 import pandas as pd
@@ -10,40 +17,45 @@ from matplotlib.lines import Line2D
 import fig_common as fc
 
 # =========================================================== SETTINGS (edit these) ===========================================================
-OUTPUT_DIR = Path("manuscript_png/FigS7B_time2Final")
-PNG_WIDTH = 4.2
-PNG_HEIGHT = 4.2
-LEGEND_COLUMNS = 1
-DPI = 300
-BARE = False
-figure_margin_size = 0.0
-set_background_transparent = True
-
-# Research/ClinicalLabSimulation
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SIM_DIR = Path(__file__).resolve().parent.parent
-OUTPUT_DIR = Path(SIM_DIR, "manuscript_png")         
-MC_DIR = Path(SIM_DIR, "results_experiments/scn_baseline")
+OUTPUT_DIR = SIM_DIR / "manuscript_png/FigS7B_time2Final"
+MC_DIR = SIM_DIR / "results_experiments/scn_baseline"
 
-OBS_2025 = [Path(SIM_DIR, "data/observed_2025_lis_clean.csv")]
-OBS_2024 = [Path(SIM_DIR, "data/observed_2024_lis_clean.csv")]
-OBS_EXCLUDE = None                                             
+PNG_WIDTH = 4.2
+PNG_HEIGHT = 3.4
+LEGEND_COLUMNS = 3
+DPI = 300
+GROUP_BY_VALIDATION_GROUPS = False   # False = every individual Type in specimens_*.csv.gz; True = fc.GROUPS_VALIDATION
+# ==============================================================================================================================================
 
 
-def save_both(fig, stem, out_dir: Path = OUTPUT_DIR, dpi: int = DPI, bare: bool = BARE):
-    """Save <stem>_labelled.png and <stem>_unlabelled.png with transparent background and zero margin."""
+def save_both(fig, stem, out_dir: Path = OUTPUT_DIR, dpi: int = DPI):
+    """Save <stem>_labelled.png (white bg, visible axes) and <stem>_unlabelled.png (transparent bg, tick marks only) on an identical canvas."""
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1. Labelled version: solid white background, visible axes, tick labels, text box, title, and legend
+    fig.patch.set_facecolor("white")
+    fig.patch.set_alpha(1.0)
+    for ax in fig.axes:
+        ax.set_facecolor("white")
+        ax.patch.set_alpha(1.0)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["bottom"].set_visible(True)
+        ax.spines["left"].set_visible(True)
+        ax.tick_params(which="both", bottom=True, left=True)
+
     fig.savefig(
         out_dir / f"{stem}_labelled.png",
         dpi=dpi,
-        transparent=set_background_transparent,
-        facecolor="none" if set_background_transparent else "white",
-        edgecolor="none",
-        bbox_inches="tight" if figure_margin_size == 0.0 else None,
-        pad_inches=0.0,
+        transparent=False,
+        facecolor="white",
     )
 
+    # 2. Strip all titles, axis labels, tick values, legends, and text annotations (keep tick marks & axis lines)
     for ax in fig.axes:
+        ax.set_title("")
         ax.set_xlabel("")
         ax.set_ylabel("")
         ax.tick_params(
@@ -51,27 +63,26 @@ def save_both(fig, stem, out_dir: Path = OUTPUT_DIR, dpi: int = DPI, bare: bool 
             bottom=True, left=True,
             labelbottom=False, labelleft=False, labelright=False, labeltop=False,
         )
-        if bare:
-            ax.set_title("")
-            if ax.get_legend():
-                ax.get_legend().remove()
-            for t in ax.texts:
-                t.set_visible(False)
+        if ax.get_legend():
+            ax.get_legend().remove()
+        for t in ax.texts:
+            t.set_visible(False)
 
-    if bare:
-        for lg in list(fig.legends):
-            lg.remove()
-        if fig._suptitle is not None:
-            fig._suptitle.set_visible(False)
+    for lg in list(fig.legends):
+        lg.remove()
+    if fig._suptitle is not None:
+        fig._suptitle.set_visible(False)
+
+    # 3. Unlabelled version: transparent background, visible axes & tick marks, identical canvas alignment
+    fig.patch.set_alpha(0.0)
+    for ax in fig.axes:
+        ax.patch.set_alpha(0.0)
 
     fig.savefig(
         out_dir / f"{stem}_unlabelled.png",
         dpi=dpi,
-        transparent=set_background_transparent,
-        facecolor="none" if set_background_transparent else "white",
-        edgecolor="none",
-        bbox_inches="tight" if figure_margin_size == 0.0 else None,
-        pad_inches=0.0,
+        transparent=True,
+        facecolor="none",
     )
     plt.close(fig)
     print(f"  wrote {stem}_labelled.png & {stem}_unlabelled.png")
@@ -79,8 +90,9 @@ def save_both(fig, stem, out_dir: Path = OUTPUT_DIR, dpi: int = DPI, bare: bool 
 
 def fig_time_to_finalization(sim):
     rows = []
+    group_col = "group" if (GROUP_BY_VALIDATION_GROUPS and "group" in sim.columns) else "Type"
 
-    for specimen_type, d in sim.groupby("Type", sort=True):
+    for specimen_type, d in sim.groupby(group_col, sort=True):
         x = pd.to_numeric(d["tat_h"], errors="coerce").dropna().to_numpy()
         x = x[np.isfinite(x) & (x >= 0)]
 
@@ -110,8 +122,8 @@ def fig_time_to_finalization(sim):
         })
 
         xs, ys = (np.sort(x), np.arange(1, len(x) + 1) / len(x))
-        fig, ax = plt.subplots(figsize=(3.6, 2.8))
-        fig.subplots_adjust(left=0.17, right=0.97, bottom=0.17, top=0.84)
+        fig, ax = plt.subplots(figsize=(PNG_WIDTH, PNG_HEIGHT))
+        fig.subplots_adjust(left=0.15, right=0.97, bottom=0.15, top=0.78)
 
         ax.step(xs, ys, where="post", color=fc.SIM_C, linewidth=1.6)
 
@@ -122,24 +134,34 @@ def fig_time_to_finalization(sim):
         ax.text(
             0.97, 0.05,
             f"n = {len(x):,}\nMedian = {p50:.1f} h\nP95 = {p95:.1f} h",
-            transform=ax.transAxes, ha="right", va="bottom", fontsize=7,
+            transform=ax.transAxes, ha="right", va="bottom", fontsize=7, color=fc.INK2,
         )
 
         ax.set_xlim(left=0)
-        ax.set_ylim(0, 1.01)
+        ax.set_ylim(0, 1.02)
         ax.set_xlabel("Receipt to final report (h)")
         ax.set_ylabel("Cumulative proportion")
-        ax.set_title(str(specimen_type), loc="left", fontsize=8, fontweight="bold")
+
+        fig.suptitle(str(specimen_type), x=0.15, y=0.96, ha="left", va="top", fontsize=9, fontweight="bold", color=fc.INK)
 
         handles = [
-            Line2D([0], [0], color=fc.SIM_C, lw=1.6, label="Simulated specimens"),
+            Line2D([0], [0], color=fc.SIM_C, lw=1.6, label="Simulated"),
             Line2D([0], [0], color=fc.INK2, lw=0.9, ls="--", label="Median"),
-            Line2D([0], [0], color=fc.OBS24_C, lw=0.9, ls=":", label="95th percentile"),
+            Line2D([0], [0], color=fc.OBS24_C, lw=0.9, ls=":", label="95th pct"),
         ]
-        fc.top_legend(ax, handles, ncol=1)
+        fig.legend(
+            handles=handles,
+            loc="upper left",
+            bbox_to_anchor=(0.15, 0.90),
+            ncol=LEGEND_COLUMNS,
+            frameon=False,
+            fontsize=7.0,
+            columnspacing=1.2,
+            handlelength=1.6,
+        )
 
         safe_type = re.sub(r"[^A-Za-z0-9]+", "_", str(specimen_type)).strip("_")
-        save_both(fig, f"16_time_to_finalization_{safe_type}")
+        save_both(fig, f"FigS7B_time_to_finalization_{safe_type}", OUTPUT_DIR, DPI)
 
     if rows:
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -152,10 +174,7 @@ def fig_time_to_finalization(sim):
 
 def main():
     fc.apply_style()
-    if set_background_transparent:
-        plt.rcParams.update({"figure.facecolor": "none", "axes.facecolor": "none"})
-
-    sim, _, _ = fc.load_sim(MC_DIR)
+    sim, _, _ = fc.load_sim(MC_DIR, fc.invert(fc.GROUPS_VALIDATION))
     fig_time_to_finalization(sim)
 
 

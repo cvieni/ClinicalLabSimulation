@@ -24,6 +24,8 @@ PNG_WIDTH = 10.0     # inches
 PNG_HEIGHT = 5.0     # inches
 DPI = 300
 
+BARE = True
+
 figure_margin_size = 0.0
 set_background_transparent = True
 
@@ -40,7 +42,7 @@ def save_labelled_and_unlabelled(fig, out_dir: Path, stem: str, dpi: int = 300):
     fig.savefig(
         labelled_path, 
         dpi=dpi, 
-        transparent=set_background_transparent,
+        transparent=False,
         facecolor="none" if set_background_transparent else "white",
         edgecolor="none",
         bbox_inches="tight" if figure_margin_size == 0.0 else None,

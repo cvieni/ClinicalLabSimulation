@@ -24,7 +24,7 @@ OUTPUT_DIR = Path("manuscript_png/FigS3_AccessTime_Bcx")
 DPI = 300
 PNG_WIDTH = 10.0     # inches
 PNG_HEIGHT = 5.0     # inches
-BARE = False                                 # True: the unlabelled version also loses the legend and in-plot text
+BARE = True                                 # True: the unlabelled version also loses the legend and in-plot text
 
 figure_margin_size = 0.0
 set_background_transparent = True

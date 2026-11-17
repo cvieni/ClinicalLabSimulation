@@ -93,7 +93,7 @@ def fig_agreement(tab):
     lo, hi = 20, 500
     xs = np.array([lo, hi])
     ax.plot(xs, xs, color=fc.INK, linewidth=0.8)
-    ax.fill_between(xs, xs * 0.8, xs * 1.2, color=fc.GRID, alpha=0.6, lw=0, zorder=0)
+    # ax.fill_between(xs, xs * 0.8, xs * 1.2, color=fc.GRID, alpha=0.6, lw=0, zorder=0)
     txt = []
     for stat, filled, mk in (("p50", True, "o"), ("p95", False, "s")):
         c = f"obs2025_{stat}"
@@ -128,7 +128,8 @@ def fig_agreement(tab):
         Line2D([0], [0], marker="s", color="w", markerfacecolor="white", markeredgecolor=fc.SIM_C, markersize=5, label="95th percentile"),
         Line2D([0], [0], color=fc.GRID, linewidth=6, label="±20%"),
     ]
-    fc.top_legend(ax, h, ncol=3)
+    # fc.top_legend(ax, h, ncol=3) # if confidence interval is present
+    fc.top_legend(ax, h, ncol=2)
     save_both(fig, "FigS2_agreement_obs_vs_sim", OUTPUT_DIR, dpi=DPI)
 
 
