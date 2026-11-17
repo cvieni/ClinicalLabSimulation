@@ -128,7 +128,9 @@ plt.rcParams.update({
     "xtick.major.width": 0.8, "ytick.major.width": 0.8,
     "xtick.major.size": 3.5, "ytick.major.size": 3.5,
     "axes.grid": True, "grid.color": GRID,
-    "grid.linewidth": 0.5, "axes.axisbelow": True, "figure.facecolor": "white", "axes.facecolor": "white",
+    "grid.linewidth": 0.5, "axes.axisbelow": True, 
+    "figure.facecolor": "none" if set_background_transparent else "white", 
+    "axes.facecolor": "none" if set_background_transparent else "white",
     "pdf.fonttype": 42, "svg.fonttype": "none",
 })
 
@@ -144,7 +146,17 @@ def norm(s):
 
 def save_both(fig, stem):
     OUT.mkdir(parents=True, exist_ok=True)
-    fig.savefig(OUT / f"{stem}_labelled.png", dpi=DPI, facecolor="white")
+    
+    # Save labelled version with transparent background & no whitespace margin
+    fig.savefig(
+        OUT / f"{stem}_labelled.png", 
+        dpi=DPI, 
+        transparent=set_background_transparent,
+        facecolor="none" if set_background_transparent else "white",
+        edgecolor='none',
+        bbox_inches="tight" if figure_margin_size == 0.0 else None,
+        pad_inches=0.0
+    )
 
     for ax in fig.axes:
         ax.set_title("")
@@ -165,7 +177,16 @@ def save_both(fig, stem):
     if fig._suptitle is not None:
         fig._suptitle.set_visible(False)
 
-    fig.savefig(OUT / f"{stem}_unlabelled.png", dpi=DPI, facecolor="white")
+    # Save unlabelled version with transparent background & no whitespace margin
+    fig.savefig(
+        OUT / f"{stem}_unlabelled.png", 
+        dpi=DPI, 
+        transparent=set_background_transparent,
+        facecolor="none" if set_background_transparent else "white",
+        edgecolor='none',
+        bbox_inches="tight" if figure_margin_size == 0.0 else None,
+        pad_inches=0.0
+    )
     plt.close(fig)
     print(f"  wrote {stem}_labelled.png & {stem}_unlabelled.png")
 

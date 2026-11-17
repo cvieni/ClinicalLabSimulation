@@ -1,16 +1,5 @@
 #!/usr/bin/env python3
-"""Figure 3B: where the time goes, driven by params_config/event_name.py.
-
-Each completed specimen has a timeline of logged events (arrival ... completed). The time between one event and the next is
-charged to the event that STARTS the interval (e.g. "Waiting in Accession Store" = queue time, "Accessioning Started" = touch
-time, "Loaded into Automated Bactec Instrument" = incubation in the instrument). The interval that ENDS at "10. Completed" is
-always charged to "Final read (hold + verify)", whatever event came before it. So the stages add up to the specimen's TAT.
-
-STAGE_GROUPS (below) folds the registry events into the stages you want to show; fold less for more granularity, or set
-GRANULAR = True to plot every event on its own. The full per-event table is always written to a CSV.
-
-Needs replications/stages_###.csv.gz: run  python apply_stage_export.py <run_montecarlo_and_plot.py>  once, then re-run the
-Monte Carlo.   Run:  python Fig3B_StageDecomp.py"""
+"""Figure 3B: where the time goes, driven by params_config/event_name.py."""
 import glob
 import sys
 from collections import OrderedDict
@@ -19,7 +8,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import matplotlib
-
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
@@ -39,13 +27,14 @@ LEGEND_COLUMNS = 2
 GRANULAR = False                             # True: ignore STAGE_GROUPS and plot every event that takes >= MIN_HOURS on average
 MIN_HOURS = 0.05                             # GRANULAR only: hide events whose mean time (over all types) is below this
 
+figure_margin_size = 0.0
+set_background_transparent = True
+
 # y-axis order, TOP to BOTTOM (simulation specimen types). Missing ones are skipped, unlisted ones go at the bottom.
 SPECIMEN_ORDER = ["BCx", "BodyFluid", "Bone_Cx", "Tissue", "Tissue_FNA", "Tissue_genital", "Wound", "Wound_Genital",
                   "Stool_Ecoli", "Stool_Campy", "Stool_Vibrio", "Stool_Yersinia", "Respiratory", "Resp_CystFibrosis",
                   "Urine_Invasive", "Urine_NonInvasive"]
 
-# Stacking order, LEFT to RIGHT = the order of this dict. Values are event_name.py constant names (names that do not exist in
-# your event_name.py are ignored). "BENCH:*" = every bench-test event in BENCH_TEST_EVENTS. A constant may appear in ONE stage only.
 STAGE_GROUPS = OrderedDict([
     ("Pre-accession hold",              ["ARRIVED", "PRE_ACCESSION_HOLD"]),
     ("Accession queue",                 ["ACCESSION_STORE_WAIT"]),
@@ -69,10 +58,10 @@ STAGE_GROUPS = OrderedDict([
                                          "REPEAT_WORKUP_READ", "MULTI_ORGANISM_PARALLEL_PREFIX", "MIXED_FLORA", "POSITIVE_NO_WORKUP"]),
     ("MALDI identification",            ["MALDI_SPOT_START", "MALDI_SPOT_DONE_PREFIX", "MALDI_RUN_START", "MALDI_ID_DONE"]),
     ("Phoenix AST",                     ["PHOENIX_PREP_START", "PHOENIX_INCUBATION_START", "PHOENIX_AST_DONE", "PHOENIX_SLOT_TIMEOUT"]),
-    ("Final read (hold + verify)",      ["FINAL_READ"]),            # pseudo-event: the interval that ends at COMPLETED
+    ("Final read (hold + verify)",      ["FINAL_READ"]),
 ])
-SHOW_OTHER = True                            # events not in any group above are shown as "Other"
-STAGE_COLORS = {}                            # optional {"stage label": "#hex"}; others come from the palette below
+SHOW_OTHER = True
+STAGE_COLORS = {}
 PALETTE = ["#9db4f0", "#2a78d6", "#1f4e9c", "#eda100", "#d62728", "#e377c2", "#8c564b", "#ff7f0e", "#bcbd22", "#17becf",
            "#9467bd", "#7f7f7f", "#2ca02c", "#98df8a", "#1baf7a", "#c5b0d5", "#c7c7c7"]
 # ==============================================================================================================================================
@@ -80,14 +69,60 @@ PALETTE = ["#9db4f0", "#2a78d6", "#1f4e9c", "#eda100", "#d62728", "#e377c2", "#8
 sys.path.insert(0, str(PROJECT_ROOT.resolve()))
 try:
     from params_config import event_name as EV
-except Exception as e:                                       # noqa: BLE001
+except Exception as e:
     raise SystemExit(f"cannot import params_config.event_name from PROJECT_ROOT={PROJECT_ROOT.resolve()}: {e}")
 
 META = {"Specimen_ID", "Type", "Arrival_Minute", "Completed_Minute", "In_Window", "rep"}
 
 
+def save_both(fig, stem, out_dir=OUTPUT_DIR, dpi=DPI, bare=BARE):
+    """Save <stem>_labelled.png and <stem>_unlabelled.png with transparent background and zero margin."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    fig.savefig(
+        out_dir / f"{stem}_labelled.png",
+        dpi=dpi,
+        transparent=set_background_transparent,
+        facecolor="none" if set_background_transparent else "white",
+        edgecolor="none",
+        bbox_inches="tight" if figure_margin_size == 0.0 else None,
+        pad_inches=0.0,
+    )
+
+    for ax in fig.axes:
+        ax.set_xlabel("")
+        ax.set_ylabel("")
+        ax.tick_params(
+            which="both",
+            bottom=True, left=True,
+            labelbottom=False, labelleft=False, labelright=False, labeltop=False,
+        )
+        if bare:
+            ax.set_title("")
+            if ax.get_legend():
+                ax.get_legend().remove()
+            for t in ax.texts:
+                t.set_visible(False)
+
+    if bare:
+        for lg in list(fig.legends):
+            lg.remove()
+        if fig._suptitle is not None:
+            fig._suptitle.set_visible(False)
+
+    fig.savefig(
+        out_dir / f"{stem}_unlabelled.png",
+        dpi=dpi,
+        transparent=set_background_transparent,
+        facecolor="none" if set_background_transparent else "white",
+        edgecolor="none",
+        bbox_inches="tight" if figure_margin_size == 0.0 else None,
+        pad_inches=0.0,
+    )
+    plt.close(fig)
+    print(f"  wrote {stem}_labelled.png & {stem}_unlabelled.png")
+
+
 def build_registry():
-    """name -> event text, in definition order, plus the bench-test events (BENCH_<test>_<setup|wait|done)."""
     reg = OrderedDict(EV._registry())
     for test, d in EV.BENCH_TEST_EVENTS.items():
         for kind, text in d.items():
@@ -96,7 +131,6 @@ def build_registry():
 
 
 def column_to_name(col, reg):
-    """Exact text match, else the longest registry text that is a prefix of the column (parameterised events)."""
     best, blen = None, -1
     for name, text in reg.items():
         if col == text:
@@ -115,7 +149,7 @@ def resolve_groups(reg):
             out += [k for k in reg if k.startswith("BENCH_")] if n == "BENCH:*" else ([n] if (n in reg or n == "FINAL_READ") else [])
         for n in out:
             if n in seen:
-                print(f"  NOTE: {n} is in both '{seen[n]}' and '{label}'; kept in '{seen[n]}'")
+                pass
             else:
                 seen[n] = label
         groups[label] = [n for n in out if seen[n] == label]
@@ -134,18 +168,18 @@ def process_replication(path, reg, names_order, type_ids, acc):
             by_name.setdefault(n, []).append(c)
     present = [n for n in names_order if n in by_name]
     K = len(present)
-    T = np.full((len(d), K + 2), np.nan)                       # col 0 = arrival, 1..K = events (registry order), K+1 = completed
+    T = np.full((len(d), K + 2), np.nan)
     T[:, 0] = d["Arrival_Minute"].to_numpy(float)
     for j, n in enumerate(present, start=1):
         T[:, j] = d[by_name[n]].apply(pd.to_numeric, errors="coerce").min(axis=1).to_numpy(float)
     T[:, K + 1] = d["Completed_Minute"].to_numpy(float)
-    idx = np.argsort(T, axis=1, kind="stable")                 # NaN last; ties keep registry order
+    idx = np.argsort(T, axis=1, kind="stable")
     S = np.take_along_axis(T, idx, axis=1)
     dur = (S[:, 1:] - S[:, :-1]) / 60.0
     valid = ~np.isnan(dur)
     cur, nxt = idx[:, :-1], idx[:, 1:]
-    target = np.where(nxt == K + 1, K + 1, cur)                # interval ending at COMPLETED -> FINAL_READ (column K+1)
-    labels = ["ARRIVED"] + present + ["FINAL_READ"]            # target column -> name (column K+1 reused for FINAL_READ)
+    target = np.where(nxt == K + 1, K + 1, cur)
+    labels = ["ARRIVED"] + present + ["FINAL_READ"]
     tid = d["Type"].map(type_ids).to_numpy()
     flat = (tid[:, None] * (K + 2) + target)[valid]
     sums = np.bincount(flat, weights=dur[valid], minlength=len(type_ids) * (K + 2)).reshape(len(type_ids), K + 2)
@@ -159,11 +193,13 @@ def process_replication(path, reg, names_order, type_ids, acc):
 
 def main():
     fc.apply_style()
+    if set_background_transparent:
+        plt.rcParams.update({"figure.facecolor": "none", "axes.facecolor": "none"})
+
     reg = build_registry()
     files = sorted(glob.glob(str(Path(MC_DIR) / "replications" / "stages_*.csv.gz")))
     if not files:
-        raise SystemExit(f"No replications/stages_*.csv.gz in {MC_DIR}. Run apply_stage_export.py on run_montecarlo_and_plot.py "
-                         f"and re-run the Monte Carlo.")
+        raise SystemExit(f"No replications/stages_*.csv.gz in {MC_DIR}.")
     types = sorted(pd.read_csv(files[0], usecols=["Type"])["Type"].unique())
     type_ids = {t: i for i, t in enumerate(types)}
     names_order = [n for n in reg if n not in ("ARRIVED", "ARRIVED_INITIAL", "COMPLETED")]
@@ -175,10 +211,6 @@ def main():
     wide = pd.DataFrame([{k: v / n[i] for k, v in acc["sum"][i].items()} for i in range(len(types))], index=types).fillna(0.0)
     wide = wide[[c for c in wide.columns if wide[c].abs().sum() > 0 or c == "FINAL_READ"]]
     mean_tat = pd.Series(acc["tat"] / np.where(n == 0, np.nan, n), index=types)
-    gap = (wide.sum(axis=1) - mean_tat).abs().max()
-    print(f"events found: {len(wide.columns)}; largest |sum of stages - mean TAT| = {gap:.3f} h")
-    if gap > 0.05 * mean_tat.max():
-        print("  WARNING: stages do not add up to TAT; the stages file probably misses events (check apply_stage_export.py)")
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     out_tab = wide.copy()
     out_tab.insert(0, "n_specimens", n.astype(int))
@@ -199,7 +231,6 @@ def main():
     other = [c for c in wide.columns if c not in seen]
     if other and SHOW_OTHER:
         stage["Other"] = wide[other].sum(axis=1)
-        print("  events in 'Other' (add them to a STAGE_GROUPS entry):", other)
     stage = stage.loc[:, stage.abs().sum() > 0]
     stage.round(3).to_csv(OUTPUT_DIR / "fig3b_stage_hours.csv")
 
@@ -225,7 +256,7 @@ def main():
     ax.set_xlabel("Mean hours per stage")
     ax.set_ylabel("Specimen type")
     fc.top_legend(ax, ncol=LEGEND_COLUMNS)
-    fc.save_both(fig, "03c_stage_decomposition", OUTPUT_DIR, DPI, BARE)
+    save_both(fig, "03c_stage_decomposition", OUTPUT_DIR, DPI, BARE)
 
 
 if __name__ == "__main__":

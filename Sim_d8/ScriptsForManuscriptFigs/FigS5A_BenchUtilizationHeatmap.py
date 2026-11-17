@@ -27,7 +27,7 @@ PNG_HEIGHT = None                            # inches; None = automatic from the
 DPI = 300
 BARE = False                                 # True: the unlabelled version also loses the legend and in-plot text
 
-figure_margin_size = 0.1
+figure_margin_size = 0.0
 set_background_transparent = True
 
 # Research/ClinicalLabSimulation
@@ -73,7 +73,9 @@ plt.rcParams.update({
     "axes.edgecolor": INK2, "axes.labelcolor": INK, "xtick.color": INK2, "ytick.color": INK2, "text.color": INK,
     "axes.spines.top": False, "axes.spines.right": False, "axes.linewidth": 0.8,
     "xtick.major.width": 0.8, "ytick.major.width": 0.8, "axes.grid": True, "grid.color": GRID,
-    "grid.linewidth": 0.5, "axes.axisbelow": True, "figure.facecolor": "white", "axes.facecolor": "white",
+    "grid.linewidth": 0.5, "axes.axisbelow": True, 
+    "figure.facecolor": "none" if set_background_transparent else "white", 
+    "axes.facecolor": "none" if set_background_transparent else "white",
     "pdf.fonttype": 42, "svg.fonttype": "none",
 })
 
@@ -92,7 +94,15 @@ def shift_of_hour(h):
 
 def save_both(fig, stem):
     OUT.mkdir(parents=True, exist_ok=True)
-    fig.savefig(OUT / f"{stem}_labelled.png", dpi=DPI, facecolor="white")
+    fig.savefig(
+        OUT / f"{stem}_labelled.png", 
+        dpi=DPI, 
+        transparent=set_background_transparent,
+        facecolor="none" if set_background_transparent else "white",
+        edgecolor="none",
+        bbox_inches="tight" if figure_margin_size == 0.0 else None,
+        pad_inches=0.0
+    )
     for ax in fig.axes:
         ax.set_xlabel("")
         ax.set_ylabel("")
@@ -106,7 +116,15 @@ def save_both(fig, stem):
     if BARE:
         for lg in list(fig.legends):
             lg.remove()
-    fig.savefig(OUT / f"{stem}_unlabelled.png", dpi=DPI, facecolor="white")
+    fig.savefig(
+        OUT / f"{stem}_unlabelled.png", 
+        dpi=DPI, 
+        transparent=set_background_transparent,
+        facecolor="none" if set_background_transparent else "white",
+        edgecolor="none",
+        bbox_inches="tight" if figure_margin_size == 0.0 else None,
+        pad_inches=0.0
+    )
     plt.close(fig)
     print(f"  wrote {stem}_labelled.png & {stem}_unlabelled.png")
 

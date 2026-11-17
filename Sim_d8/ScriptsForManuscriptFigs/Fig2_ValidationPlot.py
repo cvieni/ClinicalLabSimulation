@@ -6,6 +6,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
@@ -19,6 +21,9 @@ LEGEND_COLUMNS = 1
 PNG_HEIGHT = None                            # inches; None = automatic from the number of rows (0.3 in per row + 1.4)
 DPI = 300
 BARE = False                                 # True: the unlabelled version also loses the legend and in-plot text
+
+figure_margin_size = 0.0
+set_background_transparent = True
 
 MC_DIR = "results_experiments/mc_gerada_gram"                       # Monte Carlo folder (has replications/ and run_table.csv)
 OBS_2025 = ["data/observed_2025_lis_clean.csv"]                     # list of RAW LIS files (tuned / calibration year)
@@ -37,8 +42,58 @@ SPECIMEN_ORDER = [
 # ==============================================================================================================================================
 
 
+def save_both(fig, stem, out_dir=OUTPUT_DIR, dpi=DPI, bare=BARE):
+    """Save <stem>_labelled.png and <stem>_unlabelled.png with transparent background and zero margin."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    fig.savefig(
+        out_dir / f"{stem}_labelled.png",
+        dpi=dpi,
+        transparent=set_background_transparent,
+        facecolor="none" if set_background_transparent else "white",
+        edgecolor="none",
+        bbox_inches="tight" if figure_margin_size == 0.0 else None,
+        pad_inches=0.0,
+    )
+
+    for ax in fig.axes:
+        ax.set_xlabel("")
+        ax.set_ylabel("")
+        ax.tick_params(
+            which="both",
+            bottom=True, left=True,
+            labelbottom=False, labelleft=False, labelright=False, labeltop=False,
+        )
+        if bare:
+            ax.set_title("")
+            if ax.get_legend():
+                ax.get_legend().remove()
+            for t in ax.texts:
+                t.set_visible(False)
+
+    if bare:
+        for lg in list(fig.legends):
+            lg.remove()
+        if fig._suptitle is not None:
+            fig._suptitle.set_visible(False)
+
+    fig.savefig(
+        out_dir / f"{stem}_unlabelled.png",
+        dpi=dpi,
+        transparent=set_background_transparent,
+        facecolor="none" if set_background_transparent else "white",
+        edgecolor="none",
+        bbox_inches="tight" if figure_margin_size == 0.0 else None,
+        pad_inches=0.0,
+    )
+    plt.close(fig)
+    print(f"  wrote {stem}_labelled.png & {stem}_unlabelled.png")
+
+
 def main():
     fc.apply_style()
+    if set_background_transparent:
+        plt.rcParams.update({"figure.facecolor": "none", "axes.facecolor": "none"})
+
     sim, rt, n_days = fc.load_sim(MC_DIR, fc.invert(fc.GROUPS_VALIDATION))
     obs25 = fc.load_obs(OBS_2025, OBS_EXCLUDE) if OBS_2025 else None
     obs24 = fc.load_obs(OBS_2024, OBS_EXCLUDE) if OBS_2024 else None
@@ -77,7 +132,7 @@ def main():
         if "obs2024_p50" in tab:
             h.append(Line2D([0], [0], marker="D", color="w", markerfacecolor="white", markeredgecolor=fc.OBS24_C, markersize=5, label=LABEL_2024))
         fc.top_legend(ax, h, ncol=LEGEND_COLUMNS)
-        fc.save_both(fig, stem, OUTPUT_DIR, DPI, BARE)
+        save_both(fig, stem, OUTPUT_DIR, DPI, BARE)
 
 
 if __name__ == "__main__":

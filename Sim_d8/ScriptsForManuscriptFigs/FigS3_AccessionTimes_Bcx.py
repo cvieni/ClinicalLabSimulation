@@ -26,8 +26,8 @@ PNG_WIDTH = 10.0     # inches
 PNG_HEIGHT = 5.0     # inches
 BARE = False                                 # True: the unlabelled version also loses the legend and in-plot text
 
-figure_margin_size = 0.1
-set_background_clear = True
+figure_margin_size = 0.0
+set_background_transparent = True
 
 # =========================================================== SETTINGS (edit these) ===========================================================
 
@@ -37,8 +37,16 @@ def save_labelled_and_unlabelled(fig, out_dir: Path, stem: str, dpi: int = 300):
     labelled_path = out_dir / f"{stem}_labelled.png"
     unlabelled_path = out_dir / f"{stem}_unlabelled.png"
 
-    # 1. Save full labelled version
-    fig.savefig(labelled_path, dpi=dpi, facecolor="white")
+    # 1. Save full labelled version with transparent background and zero margin
+    fig.savefig(
+        labelled_path, 
+        dpi=dpi, 
+        transparent=set_background_transparent,
+        facecolor="none" if set_background_transparent else "white",
+        edgecolor="none",
+        bbox_inches="tight" if figure_margin_size == 0.0 else None,
+        pad_inches=0.0
+    )
 
     # 2. Strip titles, axis titles, tick value labels, legends, and text annotations (keep tick marks)
     for ax in fig.axes:
@@ -60,8 +68,16 @@ def save_labelled_and_unlabelled(fig, out_dir: Path, stem: str, dpi: int = 300):
     if fig._suptitle is not None:
         fig._suptitle.set_visible(False)
 
-    # 3. Save unlabelled version with exact same figure/axes layout
-    fig.savefig(unlabelled_path, dpi=dpi, facecolor="white")
+    # 3. Save unlabelled version with transparent background and zero margin
+    fig.savefig(
+        unlabelled_path, 
+        dpi=dpi, 
+        transparent=set_background_transparent,
+        facecolor="none" if set_background_transparent else "white",
+        edgecolor="none",
+        bbox_inches="tight" if figure_margin_size == 0.0 else None,
+        pad_inches=0.0
+    )
     plt.close(fig)
     print(f"--> Saved: {labelled_path} & {unlabelled_path}")
 

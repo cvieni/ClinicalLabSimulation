@@ -7,6 +7,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 import fig_common as fc
@@ -31,7 +33,7 @@ DPI = 300
 BARE = False
 LEGEND_COLUMNS = 3
 
-figure_margin_size = 0.1
+figure_margin_size = 0.0
 set_background_transparent = True
 
 BENCH_LABELS = {
@@ -47,6 +49,53 @@ BENCH_LABELS = {
     "tech_supervisor": "Supervisor",
 }
 # ================================================================================================================================
+
+
+def save_both(fig, stem, out_dir: Path, dpi: int = 300, bare: bool = False):
+    """Save <stem>_labelled.png and <stem>_unlabelled.png with transparent background and zero margin."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    fig.savefig(
+        out_dir / f"{stem}_labelled.png",
+        dpi=dpi,
+        transparent=set_background_transparent,
+        facecolor="none" if set_background_transparent else "white",
+        edgecolor="none",
+        bbox_inches="tight" if figure_margin_size == 0.0 else None,
+        pad_inches=0.0,
+    )
+
+    for ax in fig.axes:
+        ax.set_xlabel("")
+        ax.set_ylabel("")
+        ax.tick_params(
+            which="both",
+            bottom=True, left=True,
+            labelbottom=False, labelleft=False, labelright=False, labeltop=False,
+        )
+        if bare:
+            ax.set_title("")
+            if ax.get_legend():
+                ax.get_legend().remove()
+            for t in ax.texts:
+                t.set_visible(False)
+
+    if bare:
+        for lg in list(fig.legends):
+            lg.remove()
+        if fig._suptitle is not None:
+            fig._suptitle.set_visible(False)
+
+    fig.savefig(
+        out_dir / f"{stem}_unlabelled.png",
+        dpi=dpi,
+        transparent=set_background_transparent,
+        facecolor="none" if set_background_transparent else "white",
+        edgecolor="none",
+        bbox_inches="tight" if figure_margin_size == 0.0 else None,
+        pad_inches=0.0,
+    )
+    plt.close(fig)
+    print(f"  wrote {stem}_labelled.png & {stem}_unlabelled.png")
 
 
 def load_state_daily(mc_dir):
@@ -85,6 +134,9 @@ def load_state_daily(mc_dir):
 
 def main():
     fc.apply_style()
+    if set_background_transparent:
+        plt.rcParams.update({"figure.facecolor": "none", "axes.facecolor": "none"})
+
     st = load_state_daily(MC_DIR)
 
     benches = [b for b in BENCH_LABELS if f"Res_{b}_in_use" in st and f"Res_{b}_capacity" in st]
@@ -130,7 +182,7 @@ def main():
     ax.legend(loc="upper right", frameon=False, ncol=3)
 
     fc.top_legend(axes[0], ncol=LEGEND_COLUMNS)
-    fc.save_both(fig, "FigS5BC_utilization_over_time", OUTPUT_DIR, dpi=DPI, bare=BARE)
+    save_both(fig, "FigS5BC_utilization_over_time", OUTPUT_DIR, dpi=DPI, bare=BARE)
 
 
 if __name__ == "__main__":

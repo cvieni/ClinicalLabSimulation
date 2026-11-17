@@ -20,8 +20,8 @@ PNG_WIDTH = 3.5      # inches
 PNG_HEIGHT = 3.5     # inches
 DPI = 300
 
-figure_margin_size = 0.1
-set_background_clear = True
+figure_margin_size = 0.0
+set_background_transparent = True
 
 # Research/ClinicalLabSimulation
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -40,7 +40,17 @@ OBS_EXCLUDE = None   # drop LIS rows whose source file name contains this text
 def save_both(fig, stem, out_dir: Path, dpi: int = 300):
     """Save <stem>_labelled.png and <stem>_unlabelled.png on an identical canvas (tick marks kept, all text removed)."""
     out_dir.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out_dir / f"{stem}_labelled.png", dpi=dpi, facecolor="white")
+    
+    # Save labelled version with transparent background and zero margin
+    fig.savefig(
+        out_dir / f"{stem}_labelled.png", 
+        dpi=dpi, 
+        transparent=set_background_transparent,
+        facecolor="none" if set_background_transparent else "white",
+        edgecolor="none",
+        bbox_inches="tight" if figure_margin_size == 0.0 else None,
+        pad_inches=0.0
+    )
 
     for ax in fig.axes:
         ax.set_title("")
@@ -63,7 +73,16 @@ def save_both(fig, stem, out_dir: Path, dpi: int = 300):
     if fig._suptitle is not None:
         fig._suptitle.set_visible(False)
 
-    fig.savefig(out_dir / f"{stem}_unlabelled.png", dpi=dpi, facecolor="white")
+    # Save unlabelled version with transparent background and zero margin
+    fig.savefig(
+        out_dir / f"{stem}_unlabelled.png", 
+        dpi=dpi, 
+        transparent=set_background_transparent,
+        facecolor="none" if set_background_transparent else "white",
+        edgecolor="none",
+        bbox_inches="tight" if figure_margin_size == 0.0 else None,
+        pad_inches=0.0
+    )
     plt.close(fig)
     print(f"  wrote {stem}_labelled.png & {stem}_unlabelled.png")
 

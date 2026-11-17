@@ -9,6 +9,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
@@ -20,7 +22,6 @@ OUTPUT_DIR = SIM_DIR / "manuscript_png/FigS6_Media"
 MC_DIR = SIM_DIR / "results_experiments/scn_baseline"
 PNG_WIDTH = 4.6                              # inches
 PNG_HEIGHT = 7.2                             # inches (all panels + legend); about 1.5 in per panel is comfortable
-LEFT_MARGIN_IN = 0.85                        # room for the y-axis labels
 DPI = 300
 BARE = False                                 # True: the unlabelled version also loses the legend and panel titles
 LEGEND_COLUMNS = 3
@@ -31,7 +32,7 @@ SHOW_ORDERS = True                           # single replication only: dashed v
 SHADE_OUTSIDE_WINDOW = True                  # grey out warm-up and cool-down (from run_table.csv window_start_min/window_end_min)
 HIDE_UNUSED = True                           # drop media that are never used
 
-figure_margin_size = 0.1
+figure_margin_size = 0.0
 set_background_transparent = True
 
 # panels, TOP to BOTTOM: any of  used | cumulative | expired | on_hand | ordered | delivered
@@ -52,6 +53,53 @@ PANEL_DEFS = {   # key: (column, y label, title, linestyle, linewidth)
     "ordered":    ("Ordered", "Plates ordered / day", "Daily media orders", "-", 1.2),
     "delivered":  ("Delivered", "Plates delivered / day", "Daily media deliveries", "-", 1.2),
 }
+
+
+def save_both(fig, stem, out_dir: Path, dpi: int = 300, bare: bool = False):
+    """Save <stem>_labelled.png and <stem>_unlabelled.png with transparent background and zero margin."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    fig.savefig(
+        out_dir / f"{stem}_labelled.png",
+        dpi=dpi,
+        transparent=set_background_transparent,
+        facecolor="none" if set_background_transparent else "white",
+        edgecolor="none",
+        bbox_inches="tight" if figure_margin_size == 0.0 else None,
+        pad_inches=0.0,
+    )
+
+    for ax in fig.axes:
+        ax.set_xlabel("")
+        ax.set_ylabel("")
+        ax.tick_params(
+            which="both",
+            bottom=True, left=True,
+            labelbottom=False, labelleft=False, labelright=False, labeltop=False,
+        )
+        if bare:
+            ax.set_title("")
+            if ax.get_legend():
+                ax.get_legend().remove()
+            for t in ax.texts:
+                t.set_visible(False)
+
+    if bare:
+        for lg in list(fig.legends):
+            lg.remove()
+        if fig._suptitle is not None:
+            fig._suptitle.set_visible(False)
+
+    fig.savefig(
+        out_dir / f"{stem}_unlabelled.png",
+        dpi=dpi,
+        transparent=set_background_transparent,
+        facecolor="none" if set_background_transparent else "white",
+        edgecolor="none",
+        bbox_inches="tight" if figure_margin_size == 0.0 else None,
+        pad_inches=0.0,
+    )
+    plt.close(fig)
+    print(f"  wrote {stem}_labelled.png & {stem}_unlabelled.png")
 
 
 def load_media(mc_dir):
@@ -75,6 +123,9 @@ def window_days(mc_dir):
 
 def main():
     fc.apply_style()
+    if set_background_transparent:
+        plt.rcParams.update({"figure.facecolor": "none", "axes.facecolor": "none"})
+
     d = load_media(MC_DIR)
     reps = sorted(d["rep"].unique())
     media = fc.ordered(MEDIA_ORDER, d["Media"].unique())
@@ -102,7 +153,7 @@ def main():
     n = len(PANELS)
     fig, axes = plt.subplots(n, 1, figsize=(PNG_WIDTH, PNG_HEIGHT), sharex=True, squeeze=False)
     axes = axes[:, 0]
-    fig.subplots_adjust(left=LEFT_MARGIN_IN / PNG_WIDTH, right=1 - 0.2 / PNG_WIDTH, bottom=0.65 / PNG_HEIGHT,
+    fig.subplots_adjust(left=1.75 / PNG_WIDTH, right=1 - 0.2 / PNG_WIDTH, bottom=0.65 / PNG_HEIGHT,
                         top=1 - (top_in + 0.3) / PNG_HEIGHT, hspace=0.5)
     win = window_days(MC_DIR) if SHADE_OUTSIDE_WINDOW else None
     for k, (ax, key) in enumerate(zip(axes, PANELS)):
@@ -132,7 +183,7 @@ def main():
         ax.grid(axis="y", linestyle=":", alpha=0.6)
     axes[-1].set_xlabel("Simulation day")
     fc.top_legend(axes[0], handles=handles, ncol=LEGEND_COLUMNS)
-    fc.save_both(fig, "S6_media_usage", OUTPUT_DIR, DPI, BARE)
+    save_both(fig, "S6_media_usage", OUTPUT_DIR, DPI, BARE)
 
     # ---- per-media summary over all replications (measured window only if known)
     full = load_media(MC_DIR)
