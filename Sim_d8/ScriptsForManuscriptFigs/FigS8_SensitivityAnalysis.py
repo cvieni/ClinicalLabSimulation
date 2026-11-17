@@ -99,10 +99,11 @@ PARAMETER_LABELS = {
 
 # Figure settings
 PNG_WIDTH = 6.5
-LEFT_MARGIN_IN = 2.0
 PNG_HEIGHT = 7.5
 DPI = 300
 BARE = False
+figure_margin_size = 0.1
+set_background_transparent = True
 
 # Colors for the four parameter settings
 SETTING_COLORS = {

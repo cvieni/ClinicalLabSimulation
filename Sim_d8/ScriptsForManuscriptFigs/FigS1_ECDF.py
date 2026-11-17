@@ -25,10 +25,13 @@ from matplotlib.lines import Line2D
 from scipy import stats
 
 # =========================================================== SETTINGS (edit these) ===========================================================
-PNG_WIDTH = 4.2                              # inches
-LEFT_MARGIN_IN = 1.75                        # room for the y-axis labels (inches); raise it if a label is cut off
+PNG_WIDTH = 4.2                             
+PNG_HEIGHT = 4.2                           
+
+figure_margin_size = 0.1
+set_background_transparent = True
+
 LEGEND_COLUMNS = 1
-PNG_HEIGHT = None                            # inches; None = automatic from the number of rows (0.3 in per row + 1.4)
 DPI = 300
 BARE = False                                 # True: the unlabelled version also loses the legend and in-plot text
 
@@ -58,11 +61,11 @@ ECDF_GROUPS = {
     "Body fluid": [
         "BodyFluid"
     ],
-    "Bone": [
-        "Bone_Cx"
-    ],
+    # "Bone": [
+    #     "Bone_Cx"
+    # ],
     "Wound & Tissue": [
-        "Tissue", "Tissue_FNA", "Tissue_genital", "Wound", "Wound_Genital"
+        "Tissue", "Tissue_FNA", "Tissue_genital", "Wound", "Wound_Genital", "Bone_Cx",
     ],
     "Stool": [
         "Stool", "Stool_Ecoli", "Stool_EcoliRoutine", "Stool_Campy", "Stool_Vibrio", "Stool_Yersinia",

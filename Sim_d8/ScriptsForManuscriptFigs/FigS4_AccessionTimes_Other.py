@@ -23,6 +23,10 @@ OUTPUT_DIR = Path("manuscript_png/FigS4_AccessTime_Others")
 PNG_WIDTH = 10.0     # inches
 PNG_HEIGHT = 5.0     # inches
 DPI = 300
+
+figure_margin_size = 0.1
+set_background_transparent = True
+
 # ==============================================================================================================================================
 
 

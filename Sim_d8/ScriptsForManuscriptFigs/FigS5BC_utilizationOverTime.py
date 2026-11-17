@@ -31,6 +31,9 @@ DPI = 300
 BARE = False
 LEGEND_COLUMNS = 3
 
+figure_margin_size = 0.1
+set_background_transparent = True
+
 BENCH_LABELS = {
     "tech_accession": "Accessioning",
     "tech_float_accession": "Float (accession/plating)",

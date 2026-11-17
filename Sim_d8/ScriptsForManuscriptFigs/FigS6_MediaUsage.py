@@ -31,6 +31,9 @@ SHOW_ORDERS = True                           # single replication only: dashed v
 SHADE_OUTSIDE_WINDOW = True                  # grey out warm-up and cool-down (from run_table.csv window_start_min/window_end_min)
 HIDE_UNUSED = True                           # drop media that are never used
 
+figure_margin_size = 0.1
+set_background_transparent = True
+
 # panels, TOP to BOTTOM: any of  used | cumulative | expired | on_hand | ordered | delivered
 PANELS = ["used", "cumulative", "expired", "on_hand"]
 # media order = line/legend order. Media in the data but not listed here are added at the end.

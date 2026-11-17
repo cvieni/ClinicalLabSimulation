@@ -26,6 +26,9 @@ PNG_WIDTH = 10.0     # inches
 PNG_HEIGHT = 5.0     # inches
 BARE = False                                 # True: the unlabelled version also loses the legend and in-plot text
 
+figure_margin_size = 0.1
+set_background_clear = True
+
 # =========================================================== SETTINGS (edit these) ===========================================================
 
 def save_labelled_and_unlabelled(fig, out_dir: Path, stem: str, dpi: int = 300):

@@ -14,13 +14,15 @@ from matplotlib.lines import Line2D
 import fig_common as fc
 
 # =========================================================== SETTINGS (edit these) ===========================================================
-OUTPUT_DIR = Path("manuscript_png")          # where the PNGs (and table2_validation.csv) go
+OUTPUT_DIR = Path("manuscript_png/FigS7B_time2Final")          # where the PNGs (and table2_validation.csv) go
 PNG_WIDTH = 4.2                              # inches
-LEFT_MARGIN_IN = 1.75                        # room for the y-axis labels (inches); raise it if a label is cut off
+PNG_HEIGHT = 4.2
 LEGEND_COLUMNS = 1
 PNG_HEIGHT = None                            # inches; None = automatic from the number of rows (0.3 in per row + 1.4)
 DPI = 300
 BARE = False                                 # True: the unlabelled version also loses the legend and in-plot text
+figure_margin_size = 0.1
+set_background_transparent = True
 
 # Research/ClinicalLabSimulation
 BASE_DIR = Path(__file__).resolve().parent.parent.parent

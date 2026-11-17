@@ -20,6 +20,9 @@ PNG_WIDTH = 3.5      # inches
 PNG_HEIGHT = 3.5     # inches
 DPI = 300
 
+figure_margin_size = 0.1
+set_background_clear = True
+
 # Research/ClinicalLabSimulation
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # Research/ClinicalLabSimulation/Sim_d8
