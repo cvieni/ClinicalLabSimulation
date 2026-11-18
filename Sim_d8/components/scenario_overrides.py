@@ -8,7 +8,7 @@ from modules.ml_pipeline import NO_RESPONSE, to_overrides
 # order of the scenario controls as passed to the callbacks (id suffix, build_overrides keyword)
 _SUFFIX_KEYS = [
     ("volume_x", "volume_x"), ("media_x", "media_x"), ("lead_days", "lead_days"),
-    ("biochem", "biochem"), ("lit_gram", "lit_gram"), ("plating_x", "plating_x"),
+    ("biochem", "biochem"), ("plating_x", "plating_x"),
     ("shortage_on", "shortage_on"), ("sh_media", "sh_media"), ("sh_start", "sh_start"),
     ("sh_duration", "sh_duration"), ("sh_severity", "sh_severity"),
     ("exp_on", "exp_on"), ("exp_lead", "exp_lead"), ("exp_trigger", "exp_trigger"), ("exp_qty", "exp_qty"),
@@ -33,7 +33,7 @@ def _num(v, default):
         return default
 
 
-def build_overrides(volume_x=1.0, media_x=1.0, lead_days=None, biochem=True, lit_gram=False, plating_x=1.0,
+def build_overrides(volume_x=1.0, media_x=1.0, lead_days=None, biochem=True, plating_x=1.0,
                     shortage_on=False, sh_media=None, sh_start=20, sh_duration=10, sh_severity=0.8,
                     exp_on=False, exp_lead=1.0, exp_trigger=3.0, exp_qty=5.0, res_days=0.0, res_trigger=4.0,
                     spare_on=False, spare_trigger=3.0, advanced="", base_plating=None):
@@ -51,8 +51,6 @@ def build_overrides(volume_x=1.0, media_x=1.0, lead_days=None, biochem=True, lit
         ov["scenario_media_json"] = json.dumps(m)
     if biochem is not None and not bool(biochem):
         ov["biochem_tests_enabled"] = 0
-    if lit_gram:
-        ov["use_literature_task_times"] = 1
     px = _num(plating_x, 1.0)
     if abs(px - 1.0) > 1e-9 and base_plating:
         mn, av, mxx = base_plating

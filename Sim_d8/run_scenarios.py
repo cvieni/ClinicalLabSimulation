@@ -6,13 +6,14 @@
     python run_scenarios.py --force                           # rerun even if the folder already has results
 
 Each scenario -> results_experiments/scn_<name>/  (resumable: finished folders are skipped).
-Finishes by printing the make_manuscript_figures_micro.py command that uses all of them.
+Finishes by listing the scn_<name> folders for the manuscript figure scripts.
 Define scenarios in scenarios_def.py (helpers: volume_x, volume_add, volume_all, staff_add, staff_set, instrument, param,
 sweep_volume, combine) or ad hoc with --quick.
 """
 import argparse
 import json
 import shlex
+import shutil
 import subprocess
 import sys
 import time
@@ -23,6 +24,14 @@ import scenarios_def as sd
 SCENARIOS = sd.SCENARIOS
 
 
+def _parse_value(s):
+    """'False' / 'true' / '8' / '1e-3' / '[1, 2]' -> a real Python value (a bare "False" string would be truthy)."""
+    try:
+        return json.loads(s.lower() if s.lower() in ("true", "false", "null") else s)
+    except ValueError:
+        return s
+
+
 def parse_quick(spec):
     """--quick "name=op;op"   ops: volume_x:BCx:2 | volume_add:BCx:2000 | volume_all:1.5 | staff_add:tech_routine:1[:Evening]
     | staff_set:tech_float_accession:0[:shift] | media_x:1.5[:Blood_Agar] | instrument:bc_instrument:864 | param:name:value"""
@@ -31,7 +40,7 @@ def parse_quick(spec):
     for op in ops.split(";"):
         k, *v = [x.strip() for x in op.split(":")]
         if k == "param":
-            parts.append(sd.param(**{v[0]: float(v[1]) if v[1].replace(".", "", 1).lstrip("-").isdigit() else v[1]}))
+            parts.append(sd.param(**{v[0]: _parse_value(v[1])}))
         elif k in ("volume_x", "volume_add"):
             parts.append(getattr(sd, k)(v[0], float(v[1])))
         elif k == "volume_all":
@@ -89,6 +98,7 @@ for n in names:
     if cfg.get("instruments"):
         ov["scenario_instrument_json"] = json.dumps(cfg["instruments"])
     out.mkdir(parents=True, exist_ok=True)
+    shutil.rmtree(out / "replications", ignore_errors=True)   # never mix replications from an earlier run of this folder
     cmd = [sys.executable, a.mc_script, "--iterations", str(a.iterations), "--sim-days", str(a.sim_days),
            "--seed", str(a.seed), "--out", str(out)]
     if a.workers:
@@ -107,6 +117,5 @@ for n in names:
 
 (Path(a.results_dir) / "scenarios_manifest.json").write_text(
     json.dumps({n: {"folder": str(p), **SCENARIOS[n]} for n, p in done.items()}, indent=2), encoding="utf-8")
-print("\nAll scenarios finished. Figures:\n")
-print("python make_manuscript_figures_micro.py --mc-dir " + str(done.get("baseline", next(iter(done.values())))) +
-      " --obs-2025 <LIS 2025 files> " + " ".join(f"--scenario {n}={p}" for n, p in done.items()))
+print(f"\nAll scenarios finished. Results are in {Path(a.results_dir)}/scn_<name>/.")
+print("Point Fig3_Scenario.py / Fig3_StressTests.py (SCENARIOS dict) in ScriptsForManuscriptFigs at these folders.")

@@ -114,7 +114,6 @@ def sweep_volume_all(factors, media=True):
 #     # **sweep_volume("BCx", [1.25, 1.5, 2.0]),
 # }
 # SCENARIOS["no_biochem"] = param(biochem_tests_enabled=0)            # all bench tests off (oxidase/TSI/indole/catalase/PBP2a/latex)
-# SCENARIOS["lit_gram"] = param(use_literature_task_times=1)          # Gram-stain time from the literature (Gerada 2024) instead of the old range
 
 
 
@@ -126,7 +125,6 @@ SCENARIOS = {
     "evening_routine_plus1": staff_add("tech_routine", 1, shift="Day"),
     "stool_biochem_x2": param(stool_biochem_time_multiplier=2.0),
     "no_biochem": param(biochem_tests_enabled=0),
-    "lit_gram": param(use_literature_task_times=1),
 
     # --- Stress Tests (matching Fig3_StressTests.py) ---
     "Volume_all_1pt5x": combine(volume_all(1.5), media_x(1.5)),

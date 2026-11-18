@@ -14,20 +14,16 @@ from matplotlib.lines import Line2D
 import fig_common as fc
 
 # =========================================================== SETTINGS (edit these) ===========================================================
-OUTPUT_DIR = Path("manuscript_png")          # where the PNGs (and table2_validation.csv) go
+OUTPUT_DIR = Path("manuscript_png/Fig2_Validation")          # where the PNGs (and table2_validation.csv) go
 PNG_WIDTH = 4.2                              # inches
 LEFT_MARGIN_IN = 1.75                        # room for the y-axis labels (inches); raise it if a label is cut off
 LEGEND_COLUMNS = 1
 PNG_HEIGHT = None                            # inches; None = automatic from the number of rows (0.3 in per row + 1.4)
 DPI = 300
-BARE = False                                 # True: the unlabelled version also loses the legend and in-plot text
 
-figure_margin_size = 0.0
-set_background_transparent = True
-
-MC_DIR = "results_experiments/mc_gerada_gram"                       # Monte Carlo folder (has replications/ and run_table.csv)
+MC_DIR = "results_experiments/scn_baseline"                       # Monte Carlo folder (has replications/ and run_table.csv)
 OBS_2025 = ["data/observed_2025_lis_clean.csv"]                     # list of RAW LIS files (tuned / calibration year)
-OBS_2024 = []                                                       # list of RAW LIS files (held-out validation year); [] = none
+OBS_2024 = ["data/observed_2024_lis_clean.csv"]                                                       # list of RAW LIS files (held-out validation year); [] = none
 OBS_EXCLUDE = None                                                  # drop LIS rows whose source file name contains this text
 LABEL_2025 = "LIS 2025 (tuned)"
 LABEL_2024 = "LIS 2024 (validation)"
@@ -42,20 +38,35 @@ SPECIMEN_ORDER = [
 # ==============================================================================================================================================
 
 
-def save_both(fig, stem, out_dir=OUTPUT_DIR, dpi=DPI, bare=BARE):
-    """Save <stem>_labelled.png and <stem>_unlabelled.png with transparent background and zero margin."""
+def save_both(fig, stem, out_dir=OUTPUT_DIR, dpi=DPI):
+    """Save <stem>_labelled.png (white bg, visible axes & labels) and <stem>_unlabelled.png (transparent bg, tight crop around axes & ticks)."""
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1. Labelled version: solid white background, visible axes, tick labels, titles, and legends
+    fig.patch.set_facecolor("white")
+    fig.patch.set_alpha(1.0)
+    for ax in fig.axes:
+        ax.set_facecolor("white")
+        ax.patch.set_alpha(1.0)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["bottom"].set_visible(True)
+        ax.spines["left"].set_visible(True)
+        ax.tick_params(which="both", bottom=True, left=True)
+
     fig.savefig(
         out_dir / f"{stem}_labelled.png",
         dpi=dpi,
-        transparent=set_background_transparent,
-        facecolor="none" if set_background_transparent else "white",
+        transparent=False,
+        facecolor="white",
         edgecolor="none",
-        bbox_inches="tight" if figure_margin_size == 0.0 else None,
-        pad_inches=0.0,
+        bbox_inches="tight",
+        pad_inches=0.04,
     )
 
+    # 2. Strip all titles, axis labels, tick values, legends, and text annotations (keep tick marks & axis lines)
     for ax in fig.axes:
+        ax.set_title("")
         ax.set_xlabel("")
         ax.set_ylabel("")
         ax.tick_params(
@@ -63,27 +74,31 @@ def save_both(fig, stem, out_dir=OUTPUT_DIR, dpi=DPI, bare=BARE):
             bottom=True, left=True,
             labelbottom=False, labelleft=False, labelright=False, labeltop=False,
         )
-        if bare:
-            ax.set_title("")
-            if ax.get_legend():
-                ax.get_legend().remove()
-            for t in ax.texts:
-                t.set_visible(False)
+        if ax.get_legend():
+            ax.get_legend().remove()
+        for t in ax.texts:
+            t.set_visible(False)
 
-    if bare:
-        for lg in list(fig.legends):
-            lg.remove()
-        if fig._suptitle is not None:
-            fig._suptitle.set_visible(False)
+    for lg in list(fig.legends):
+        lg.remove()
+    if fig._suptitle is not None:
+        fig._suptitle.set_visible(False)
+
+    # 3. Unlabelled version: transparent background, tight crop around axes & tick marks
+    fig.patch.set_facecolor("none")
+    fig.patch.set_alpha(0.0)
+    for ax in fig.axes:
+        ax.set_facecolor("none")
+        ax.patch.set_alpha(0.0)
 
     fig.savefig(
         out_dir / f"{stem}_unlabelled.png",
         dpi=dpi,
-        transparent=set_background_transparent,
-        facecolor="none" if set_background_transparent else "white",
+        transparent=True,
+        facecolor="none",
         edgecolor="none",
-        bbox_inches="tight" if figure_margin_size == 0.0 else None,
-        pad_inches=0.0,
+        bbox_inches="tight",
+        pad_inches=0.02,
     )
     plt.close(fig)
     print(f"  wrote {stem}_labelled.png & {stem}_unlabelled.png")
@@ -91,8 +106,7 @@ def save_both(fig, stem, out_dir=OUTPUT_DIR, dpi=DPI, bare=BARE):
 
 def main():
     fc.apply_style()
-    if set_background_transparent:
-        plt.rcParams.update({"figure.facecolor": "none", "axes.facecolor": "none"})
+    plt.rcParams.update({"figure.facecolor": "white", "axes.facecolor": "white"})
 
     sim, rt, n_days = fc.load_sim(MC_DIR, fc.invert(fc.GROUPS_VALIDATION))
     obs25 = fc.load_obs(OBS_2025, OBS_EXCLUDE) if OBS_2025 else None
@@ -132,7 +146,7 @@ def main():
         if "obs2024_p50" in tab:
             h.append(Line2D([0], [0], marker="D", color="w", markerfacecolor="white", markeredgecolor=fc.OBS24_C, markersize=5, label=LABEL_2024))
         fc.top_legend(ax, h, ncol=LEGEND_COLUMNS)
-        save_both(fig, stem, OUTPUT_DIR, DPI, BARE)
+        save_both(fig, stem, OUTPUT_DIR, DPI)
 
 
 if __name__ == "__main__":

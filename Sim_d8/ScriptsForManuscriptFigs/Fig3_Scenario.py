@@ -16,24 +16,29 @@ from scipy import stats
 import fig_common as fc
 
 # =========================================================== SETTINGS (edit these) ===========================================================
-OUTPUT_DIR = Path("manuscript_png")
-PNG_WIDTH = 4.2                              # inches
-LEFT_MARGIN_IN = 1.1                         # room for the scenario names (inches)
+OUTPUT_DIR = Path("manuscript_png/Fig3_Scenario")
+SCENARIO_DIR = Path("results_experiments")
+
+PNG_WIDTH = 4.5                              # inches
+LEFT_MARGIN_IN = 1.35                        # room for the scenario names (inches)
 PNG_HEIGHT = None                            # inches; None = automatic (0.7 in per scenario + 1.6)
 DPI = 300
-BARE = False
-
-figure_margin_size = 0.0
-set_background_transparent = True
 
 BASELINE = "baseline"
 SCENARIOS = {                                # name -> Monte Carlo folder. Same seeds in every folder (paired by replication)
-    "baseline":   "results_experiments/mc_A",
-    "no_biochem": "results_experiments/mc_B",
-    "no_float":   "results_experiments/mc_C",
+    "baseline":                SCENARIO_DIR / "scn_baseline",
+    "no_biochem":              SCENARIO_DIR / "scn_no_biochem",
+    "no_float":                SCENARIO_DIR / "scn_no_float",
+    "evening_routine_plus1":   SCENARIO_DIR / "scn_evening_routine_plus1",
+    "stool_biochem_x2":        SCENARIO_DIR / "scn_stool_biochem_x2",
 }
 # y-axis order of the scenarios, TOP to BOTTOM (baseline is the reference and is not drawn)
-SCENARIO_ORDER = ["no_biochem", "no_float"]
+SCENARIO_ORDER = [
+    "no_biochem",
+    "no_float",
+    "evening_routine_plus1",
+    "stool_biochem_x2",
+]
 # order of the dots WITHIN each scenario row (top to bottom) and of the legend
 SPECIMEN_ORDER = ["Blood culture", "Body fluid", "Bone", "Tissue", "Tissue (FNA)", "Tissue (genital)", "Wound", "Wound (genital)",
                   "Stool", "Respiratory (non-CF)", "Respiratory (CF)", "Urine_nonInv", "Urine_Inv"]
@@ -54,20 +59,35 @@ GROUPS = {                                   # display group -> simulation types
 }
 
 
-def save_both(fig, stem, out_dir=OUTPUT_DIR, dpi=DPI, bare=BARE):
-    """Save <stem>_labelled.png and <stem>_unlabelled.png with transparent background and zero margin."""
+def save_both(fig, stem, out_dir=OUTPUT_DIR, dpi=DPI):
+    """Save <stem>_labelled.png (white bg, visible axes & labels) and <stem>_unlabelled.png (transparent bg, tight crop around axes & ticks)."""
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1. Labelled version: solid white background, visible axes, tick labels, titles, and legends
+    fig.patch.set_facecolor("white")
+    fig.patch.set_alpha(1.0)
+    for ax in fig.axes:
+        ax.set_facecolor("white")
+        ax.patch.set_alpha(1.0)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["bottom"].set_visible(True)
+        ax.spines["left"].set_visible(True)
+        ax.tick_params(which="both", bottom=True, left=True)
+
     fig.savefig(
         out_dir / f"{stem}_labelled.png",
         dpi=dpi,
-        transparent=set_background_transparent,
-        facecolor="none" if set_background_transparent else "white",
+        transparent=False,
+        facecolor="white",
         edgecolor="none",
-        bbox_inches="tight" if figure_margin_size == 0.0 else None,
-        pad_inches=0.0,
+        bbox_inches="tight",
+        pad_inches=0.04,
     )
 
+    # 2. Strip all titles, axis labels, tick values, legends, and text annotations (keep tick marks & axis lines)
     for ax in fig.axes:
+        ax.set_title("")
         ax.set_xlabel("")
         ax.set_ylabel("")
         ax.tick_params(
@@ -75,27 +95,31 @@ def save_both(fig, stem, out_dir=OUTPUT_DIR, dpi=DPI, bare=BARE):
             bottom=True, left=True,
             labelbottom=False, labelleft=False, labelright=False, labeltop=False,
         )
-        if bare:
-            ax.set_title("")
-            if ax.get_legend():
-                ax.get_legend().remove()
-            for t in ax.texts:
-                t.set_visible(False)
+        if ax.get_legend():
+            ax.get_legend().remove()
+        for t in ax.texts:
+            t.set_visible(False)
 
-    if bare:
-        for lg in list(fig.legends):
-            lg.remove()
-        if fig._suptitle is not None:
-            fig._suptitle.set_visible(False)
+    for lg in list(fig.legends):
+        lg.remove()
+    if fig._suptitle is not None:
+        fig._suptitle.set_visible(False)
+
+    # 3. Unlabelled version: transparent background, tight crop around axes & tick marks
+    fig.patch.set_facecolor("none")
+    fig.patch.set_alpha(0.0)
+    for ax in fig.axes:
+        ax.set_facecolor("none")
+        ax.patch.set_alpha(0.0)
 
     fig.savefig(
         out_dir / f"{stem}_unlabelled.png",
         dpi=dpi,
-        transparent=set_background_transparent,
-        facecolor="none" if set_background_transparent else "white",
+        transparent=True,
+        facecolor="none",
         edgecolor="none",
-        bbox_inches="tight" if figure_margin_size == 0.0 else None,
-        pad_inches=0.0,
+        bbox_inches="tight",
+        pad_inches=0.02,
     )
     plt.close(fig)
     print(f"  wrote {stem}_labelled.png & {stem}_unlabelled.png")
@@ -104,6 +128,10 @@ def save_both(fig, stem, out_dir=OUTPUT_DIR, dpi=DPI, bare=BARE):
 def scenario_frames():
     out = []
     for name, folder in SCENARIOS.items():
+        folder = Path(folder)
+        if not folder.exists():
+            print(f"  WARNING: skipping missing folder {folder}")
+            continue
         print(f"Loading '{name}' from {folder}")
         s, _, _ = fc.load_sim(folder, fc.invert(GROUPS))
         r = s.groupby(["group", "rep"])["tat_h"].agg(p50=lambda x: np.percentile(x, 50), p95=lambda x: np.percentile(x, 95),
@@ -115,8 +143,7 @@ def scenario_frames():
 
 def main():
     fc.apply_style()
-    if set_background_transparent:
-        plt.rcParams.update({"figure.facecolor": "none", "axes.facecolor": "none"})
+    plt.rcParams.update({"figure.facecolor": "white", "axes.facecolor": "white"})
 
     scn = scenario_frames()
     base = scn[scn.scenario == BASELINE]
@@ -157,7 +184,7 @@ def main():
         ax.set_ylabel("Scenario")
         h = [Line2D([0], [0], marker="o", color="w", markerfacecolor=colors[g_], markersize=5, label=g_) for g_ in groups]
         fc.top_legend(ax, h, ncol=LEGEND_COLUMNS)
-        save_both(fig, stem, OUTPUT_DIR, DPI, BARE)
+        save_both(fig, stem, OUTPUT_DIR, DPI)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     pd.concat(allrows).to_csv(OUTPUT_DIR / "table4_scenarios.csv", index=False, float_format="%.3f")
 

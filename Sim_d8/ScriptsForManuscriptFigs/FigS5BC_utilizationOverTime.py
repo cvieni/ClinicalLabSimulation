@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
-"""Figure S5B–F: Five separate standalone figures for bench utilization & queue length:
-  1. FigS5B_daily_utilization_by_bench   (daily mean % utilization by bench across simulation days)
-  2. FigS5C_daily_utilization_by_shift   (daily mean % utilization by shift across simulation days)
-  3. FigS5D_utilization_by_hour          (folded 24 h % utilization by bench, mean & 95% band)
-  4. FigS5E_utilization_timeline         (single-replication % utilization timeline over days)
-  5. FigS5F_queue_by_hour                (folded 24 h normalized queue length by bench, mean & 95% band)
+"""Figure S5B–F: Standalone figures for bench utilization & queue length:
+  1. FigS5B_daily_utilization_by_bench                 (all benches, full window + weekend shading)
+  2. FigS5B_1_daily_utilization_front_end              (Front-end & setup benches, full window)
+  3. FigS5B_2_daily_utilization_core_culture           (Core culture benches, full window)
+  4. FigS5B_3_daily_utilization_specialized            (Specialized & oversight benches, full window)
+  5. FigS5B_7day_*                                     (7-day window comparison versions of all 4 above)
+  6. FigS5C_daily_utilization_by_shift                 (daily mean % utilization by shift across simulation days)
+  7. FigS5D_utilization_by_hour                        (folded 24 h % utilization by bench, mean & 95% band)
+  8. FigS5E_utilization_timeline                       (single-replication % utilization timeline over days)
+  9. FigS5F_queue_by_hour                              (folded 24 h normalized queue length by bench, mean & 95% band)
+ 10. FigS5F_1_queue_by_hour_front_end                  (Front-end & setup benches queue length by hour)
+ 11. FigS5F_2_queue_by_hour_core_culture               (Core culture benches queue length by hour)
+ 12. FigS5F_3_queue_by_hour_specialized                (Specialized & oversight benches queue length by hour)
 
 Each figure is saved as <stem>_labelled.png (white background, visible axes & labels)
-and <stem>_unlabelled.png (transparent background, visible axes & tick marks, no text/legends).
+and <stem>_unlabelled.png (transparent background, visible axes & tick marks, no text/legends, tight crop).
 """
 import glob
 import math
@@ -41,8 +48,8 @@ DPI = 300
 LEGEND_COLUMNS = 3
 
 TIMELINE_REP = 0              # replication index for the timeline plot
-TIMELINE_DAYS = 7             # number of days shown in the timeline plot
-TOP_N_QUEUES = 8              # maximum number of individual bench queues plotted
+TIMELINE_DAYS = 7             # number of days shown in the timeline plot & 7-day comparison plots
+TOP_N_QUEUES = 8              # maximum number of individual bench queues plotted in the combined plot
 QUEUE_NORM_MODE = "max_queue" # "max_queue" (% of each bench's peak queue) or "daily_specimens" (% of mean daily specimens)
 
 BENCH_LABELS = {
@@ -56,6 +63,35 @@ BENCH_LABELS = {
     "tech_float_newroutine": "Float (new/routine)",
     "tech_routine": "Routine bench",
     "tech_supervisor": "Supervisor",
+}
+
+# Defined arrays to group benches into separate plots (edit bench keys here as needed)
+BENCH_GROUPS = {
+    "front_end": {
+        "title": "Front-end & setup",
+        "benches": [
+            "tech_accession",
+            "tech_float_accession",
+            "tech_plating",
+        ],
+    },
+    "core_culture": {
+        "title": "Core culture benches",
+        "benches": [
+            "tech_urine",
+            "tech_routine",
+            "tech_new",
+            "tech_float_newroutine",
+        ],
+    },
+    "specialized": {
+        "title": "Specialized & oversight",
+        "benches": [
+            "tech_blood",
+            "tech_stool",
+            "tech_supervisor",
+        ],
+    },
 }
 
 QUEUE_LABELS = {
@@ -84,13 +120,19 @@ DISTINCT_COLORS = [
     "#637939", "#8c6d31",
 ]
 
+BENCH_COLORS = {
+    label: DISTINCT_COLORS[i % len(DISTINCT_COLORS)]
+    for i, label in enumerate(BENCH_LABELS.values())
+}
+
+WEEKEND_SHADE_COLOR = "#d9d8d0"
 SHIFT_COLORS = {"Day": "#FFE98A", "Evening": "#FFB86B", "Night": "#9DB4F0"}
 SHIFT_ORDER = ["Day", "Evening", "Night"]
 # ================================================================================================================================
 
 
 def save_both(fig, stem, out_dir: Path, dpi: int = 300):
-    """Save <stem>_labelled.png (white bg, visible axes) and <stem>_unlabelled.png (transparent bg, tick marks only) on an identical canvas."""
+    """Save <stem>_labelled.png (white bg, visible axes) and <stem>_unlabelled.png (transparent bg, tight crop around axes & ticks)."""
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # 1. Labelled version: solid white background, visible axes, tick labels, titles, and legends
@@ -132,7 +174,7 @@ def save_both(fig, stem, out_dir: Path, dpi: int = 300):
     if fig._suptitle is not None:
         fig._suptitle.set_visible(False)
 
-    # 3. Unlabelled version: transparent background, visible axes & tick marks, identical canvas alignment
+    # 3. Unlabelled version: transparent background, tight crop around axes & tick marks
     fig.patch.set_alpha(0.0)
     for ax in fig.axes:
         ax.patch.set_alpha(0.0)
@@ -142,18 +184,20 @@ def save_both(fig, stem, out_dir: Path, dpi: int = 300):
         dpi=dpi,
         transparent=True,
         facecolor="none",
+        bbox_inches="tight",
+        pad_inches=0.02,
     )
     plt.close(fig)
     print(f"  wrote {stem}_labelled.png & {stem}_unlabelled.png")
 
 
-def style_top_header(fig, ax, title: str, ncol: int = 3, has_shifts: bool = False):
-    """Place title, optional shift legend on top-right, and bench line legend below title with zero overlap."""
+def style_top_header(fig, ax, title: str, ncol: int = 3, has_shifts: bool = False, has_weekends: bool = False):
+    """Place title, optional shift/weekend legend on top-right, and bench line legend below title with zero overlap."""
     handles, labels = ax.get_legend_handles_labels()
     n_items = len(handles)
     n_rows = max(1, math.ceil(n_items / max(1, ncol)))
 
-    # Reserve enough vertical space at top for title + optional shift bar + bench legend rows
+    # Reserve enough vertical space at top for title + optional shift/weekend bar + bench legend rows
     top_margin = max(0.62, 0.88 - 0.045 * n_rows)
     fig.subplots_adjust(left=0.10, right=0.98, bottom=0.13, top=top_margin)
 
@@ -172,6 +216,19 @@ def style_top_header(fig, ax, title: str, ncol: int = 3, has_shifts: bool = Fals
             frameon=False,
             fontsize=6.8,
             columnspacing=1.0,
+            handlelength=1.2,
+        )
+    elif has_weekends:
+        wknd_handles = [
+            Patch(facecolor=WEEKEND_SHADE_COLOR, edgecolor="none", alpha=0.55, label="Weekend (Sat–Sun)")
+        ]
+        fig.legend(
+            handles=wknd_handles,
+            loc="upper right",
+            bbox_to_anchor=(0.98, 0.975),
+            ncol=1,
+            frameon=False,
+            fontsize=6.8,
             handlelength=1.2,
         )
 
@@ -208,6 +265,13 @@ def shade_shifts(ax, n_days: int = 1):
             if e <= s:
                 continue
             ax.axvspan(d * 24 + s, d * 24 + e, color=SHIFT_COLORS[name], alpha=0.28, lw=0, zorder=0)
+
+
+def shade_weekends(ax, days_rel, start_day_abs: int):
+    """Shade weekend days (day_abs % 7 >= 5) along a daily x-axis without adding duplicate legend entries."""
+    for d_rel in sorted(set(int(d) for d in days_rel)):
+        if (start_day_abs + d_rel) % 7 >= 5:
+            ax.axvspan(d_rel - 0.5, d_rel + 0.5, color=WEEKEND_SHADE_COLOR, alpha=0.45, lw=0, zorder=0)
 
 
 def _band(ax, x, frame: pd.DataFrame, color, label):
@@ -298,13 +362,83 @@ def extract_individual_series(state: pd.DataFrame):
     return util_series, queue_series
 
 
+def _plot_daily_bench_panel(
+    by_bench: pd.DataFrame,
+    bench_labels: list[str],
+    title: str,
+    stem: str,
+    out_dir: Path,
+    start_day_abs: int,
+    max_days: int | None = None,
+    ncol: int = 3,
+):
+    """Render a daily bench utilisation plot (full window or 7-day window) with weekend shading."""
+    sub = by_bench.copy()
+    if max_days is not None:
+        sub = sub[sub.index < max_days]
+    if sub.empty:
+        return
+
+    fig, ax = plt.subplots(figsize=(PNG_WIDTH, PNG_HEIGHT))
+    shade_weekends(ax, sub.index, start_day_abs)
+
+    for label in bench_labels:
+        if label in sub.columns:
+            ax.plot(sub.index, sub[label], label=label, color=BENCH_COLORS[label], lw=1.4)
+
+    ax.set_xlim(sub.index.min() - 0.5, sub.index.max() + 0.5)
+    if max_days is not None:
+        ax.set_xticks(list(sub.index))
+    ax.set_ylabel("Mean utilisation (%)")
+    ax.set_xlabel("Measured simulation day")
+    ax.set_ylim(0, 105)
+    ax.grid(alpha=0.35)
+    style_top_header(fig, ax, title, ncol=ncol, has_shifts=False, has_weekends=True)
+    save_both(fig, stem, out_dir, dpi=DPI)
+
+
+def _plot_hourly_queue_panel(
+    state: pd.DataFrame,
+    norm_qseries: dict,
+    bench_labels: list[str],
+    title: str,
+    y_label: str,
+    stem: str,
+    out_dir: Path,
+    ncol: int = 3,
+):
+    """Render a folded 24 h normalized queue length panel for a selected list of benches."""
+    selected = [name for name in bench_labels if name in norm_qseries]
+    if not selected:
+        return
+
+    fig, ax = plt.subplots(figsize=(PNG_WIDTH, PNG_HEIGHT))
+    shade_shifts(ax)
+    hourly_map = _hourly_by_rep(state, {name: norm_qseries[name] for name in selected})
+    for k, name in enumerate(selected):
+        frame = hourly_map[name]
+        color = BENCH_COLORS.get(name, DISTINCT_COLORS[k % len(DISTINCT_COLORS)])
+        _band(ax, frame.columns.values + 0.5, frame, color, name)
+
+    ax.set_xlim(0, 24)
+    ax.set_xticks(range(0, 25, 3))
+    ax.set_ylim(0, 105)
+    ax.set_xlabel("Hour of day")
+    ax.set_ylabel(y_label)
+    ax.grid(alpha=0.35)
+    style_top_header(fig, ax, title, ncol=ncol, has_shifts=True)
+    save_both(fig, stem, out_dir, dpi=DPI)
+
+
 def plot_all_separate(state: pd.DataFrame, window, n_days: float, rep: int, days: int, out_dir: Path, mc_dir: Path):
     util_series, queue_series = extract_individual_series(state)
     print(f"  individual bench utilization series ({len(util_series)}): {list(util_series)}")
     print(f"  individual queue series ({len(queue_series)}): {list(queue_series)}")
 
+    start_day_abs = int(window[0] // 1440)
+
     # ------------------------------------------------------------------
-    # 1. Daily mean utilization by bench across simulation days (FigS5B)
+    # 1. Daily mean utilization by bench across simulation days (FigS5B + 3 groups + 7-day comparison versions)
     # ------------------------------------------------------------------
     daily_records = []
     for b, label in BENCH_LABELS.items():
@@ -321,31 +455,79 @@ def plot_all_separate(state: pd.DataFrame, window, n_days: float, rep: int, days
         out_dir.mkdir(parents=True, exist_ok=True)
         df_util.to_csv(out_dir / "table_s5bc_utilization_over_time.csv", index=False, float_format="%.2f")
 
-        fig_b, ax_b = plt.subplots(figsize=(PNG_WIDTH, PNG_HEIGHT))
         by_bench = df_util.groupby(["day_rel", "bench"])["util_pct"].mean().unstack("bench")
-        for i, label in enumerate([lbl for lbl in BENCH_LABELS.values() if lbl in by_bench.columns]):
-            ax_b.plot(by_bench.index, by_bench[label], label=label, color=DISTINCT_COLORS[i % len(DISTINCT_COLORS)], lw=1.4)
-        ax_b.set_ylabel("Mean utilisation (%)")
-        ax_b.set_xlabel("Measured simulation day")
-        ax_b.set_ylim(0, 105)
-        ax_b.grid(alpha=0.35)
-        style_top_header(fig_b, ax_b, "Daily bench utilisation across simulation window", ncol=LEGEND_COLUMNS, has_shifts=False)
-        save_both(fig_b, "FigS5B_daily_utilization_by_bench", out_dir, dpi=DPI)
+        all_labels = [lbl for lbl in BENCH_LABELS.values() if lbl in by_bench.columns]
+
+        # 1A. Original combined plot (full simulation window + weekend shading)
+        _plot_daily_bench_panel(
+            by_bench=by_bench,
+            bench_labels=all_labels,
+            title="Daily bench utilisation across simulation window",
+            stem="FigS5B_daily_utilization_by_bench",
+            out_dir=out_dir,
+            start_day_abs=start_day_abs,
+            max_days=None,
+            ncol=LEGEND_COLUMNS,
+        )
+
+        # 1B. 7-day window comparison for all benches combined
+        _plot_daily_bench_panel(
+            by_bench=by_bench,
+            bench_labels=all_labels,
+            title=f"Daily bench utilisation ({days}-day window)",
+            stem=f"FigS5B_{days}day_daily_utilization_by_bench",
+            out_dir=out_dir,
+            start_day_abs=start_day_abs,
+            max_days=days,
+            ncol=LEGEND_COLUMNS,
+        )
+
+        # 1C. Three grouped bench plots (full window + 7-day window comparison for each group)
+        for idx, (grp_key, grp_cfg) in enumerate(BENCH_GROUPS.items(), start=1):
+            grp_labels = [
+                BENCH_LABELS[b] for b in grp_cfg["benches"]
+                if b in BENCH_LABELS and BENCH_LABELS[b] in by_bench.columns
+            ]
+            grp_ncol = min(len(grp_labels), 2) if len(grp_labels) == 4 else min(len(grp_labels), 3)
+
+            _plot_daily_bench_panel(
+                by_bench=by_bench,
+                bench_labels=grp_labels,
+                title=f"Daily bench utilisation: {grp_cfg['title']}",
+                stem=f"FigS5B_{idx}_daily_utilization_{grp_key}",
+                out_dir=out_dir,
+                start_day_abs=start_day_abs,
+                max_days=None,
+                ncol=max(1, grp_ncol),
+            )
+
+            _plot_daily_bench_panel(
+                by_bench=by_bench,
+                bench_labels=grp_labels,
+                title=f"Daily bench utilisation: {grp_cfg['title']} ({days}-day window)",
+                stem=f"FigS5B_{days}day_{idx}_daily_utilization_{grp_key}",
+                out_dir=out_dir,
+                start_day_abs=start_day_abs,
+                max_days=days,
+                ncol=max(1, grp_ncol),
+            )
 
         # ------------------------------------------------------------------
         # 2. Daily mean utilization by shift across simulation days (FigS5C)
         # ------------------------------------------------------------------
         fig_c, ax_c = plt.subplots(figsize=(PNG_WIDTH, PNG_HEIGHT))
+        shade_weekends(ax_c, df_util["day_rel"].unique(), start_day_abs)
         shift_line_colors = {"Day": fc.SIM_C, "Evening": fc.OBS24_C, "Night": fc.INK2}
         by_shift = df_util.groupby(["day_rel", "shift"])["util_pct"].mean().unstack("shift")
         for sh in ("Day", "Evening", "Night"):
             if sh in by_shift.columns:
                 ax_c.plot(by_shift.index, by_shift[sh], label=f"{sh} shift", color=shift_line_colors[sh], lw=1.6)
+        ax_c.set_xlim(by_shift.index.min() - 0.5, by_shift.index.max() + 0.5)
         ax_c.set_ylabel("Mean utilisation (%)")
         ax_c.set_xlabel("Measured simulation day")
         ax_c.set_ylim(0, 105)
         ax_c.grid(alpha=0.35)
-        style_top_header(fig_c, ax_c, "Mean bench utilisation by shift across simulation window", ncol=3, has_shifts=False)
+        style_top_header(fig_c, ax_c, "Mean bench utilisation by shift across simulation window", ncol=3, has_shifts=False, has_weekends=True)
         save_both(fig_c, "FigS5C_daily_utilization_by_shift", out_dir, dpi=DPI)
 
     # ------------------------------------------------------------------
@@ -355,7 +537,7 @@ def plot_all_separate(state: pd.DataFrame, window, n_days: float, rep: int, days
         fig_d, ax_d = plt.subplots(figsize=(PNG_WIDTH, PNG_HEIGHT))
         shade_shifts(ax_d)
         for k, (name, frame) in enumerate(_hourly_by_rep(state, util_series).items()):
-            _band(ax_d, frame.columns.values + 0.5, frame, DISTINCT_COLORS[k % len(DISTINCT_COLORS)], name)
+            _band(ax_d, frame.columns.values + 0.5, frame, BENCH_COLORS.get(name, DISTINCT_COLORS[k % len(DISTINCT_COLORS)]), name)
         ax_d.set_xlim(0, 24)
         ax_d.set_xticks(range(0, 25, 3))
         ax_d.set_ylim(0, 105)
@@ -374,7 +556,7 @@ def plot_all_separate(state: pd.DataFrame, window, n_days: float, rep: int, days
             fig_e, ax_e = plt.subplots(figsize=(PNG_WIDTH, PNG_HEIGHT))
             shade_shifts(ax_e, n_days=days)
             for k, (name, s) in enumerate(util_series.items()):
-                ax_e.plot((r["Minute"] - t0) / 60.0, s.loc[r.index], color=DISTINCT_COLORS[k % len(DISTINCT_COLORS)], lw=1.2, label=name)
+                ax_e.plot((r["Minute"] - t0) / 60.0, s.loc[r.index], color=BENCH_COLORS.get(name, DISTINCT_COLORS[k % len(DISTINCT_COLORS)]), lw=1.2, label=name)
             ax_e.set_xlim(0, days * 24)
             ax_e.set_xticks(range(0, days * 24 + 1, 24))
             ax_e.set_ylim(0, 105)
@@ -387,43 +569,56 @@ def plot_all_separate(state: pd.DataFrame, window, n_days: float, rep: int, days
             print(f"  SKIPPED timeline plot: no state rows found for replication {rep}")
 
     # ------------------------------------------------------------------
-    # 5. Folded 24 h queue length by bench (normalized %) (FigS5F)
+    # 5. Folded 24 h queue length by bench (normalized %) (FigS5F + 3 grouped figures)
     # ------------------------------------------------------------------
     if queue_series:
-        # Rank benches by raw mean queue length, keeping non-zero queues
-        non_empty = [c for c in queue_series if queue_series[c].max() > 0]
-        top = sorted(non_empty, key=lambda c: -queue_series[c].mean())[:TOP_N_QUEUES]
-
         norm_qseries = {}
         if QUEUE_NORM_MODE == "daily_specimens":
             daily_spec = compute_mean_daily_specimens(mc_dir, n_days)
             if not np.isfinite(daily_spec) or daily_spec <= 0:
                 raise SystemExit("Could not compute daily specimens for QUEUE_NORM_MODE='daily_specimens'.")
-            for name in top:
-                norm_qseries[name] = 100.0 * queue_series[name] / daily_spec
+            for name, series in queue_series.items():
+                norm_qseries[name] = 100.0 * series / daily_spec
             y_label = "Queue length (% of daily specimens)"
             title_txt = "Relative queue length by hour of day (% of daily specimens)"
         else:
-            # Normalize each bench by its 99th-percentile / peak queue length so small and large benches share a 0-100% scale
-            for name in top:
-                peak = float(queue_series[name].max())
-                norm_qseries[name] = 100.0 * queue_series[name] / max(peak, 1.0)
+            for name, series in queue_series.items():
+                peak = float(series.max())
+                norm_qseries[name] = 100.0 * series / max(peak, 1.0)
             y_label = "Queue length (% of bench peak)"
             title_txt = "Normalized queue length by hour of day (% of bench peak)"
 
-        fig_f, ax_f = plt.subplots(figsize=(PNG_WIDTH, PNG_HEIGHT))
-        shade_shifts(ax_f)
-        for k, name in enumerate(top):
-            frame = _hourly_by_rep(state, {name: norm_qseries[name]})[name]
-            _band(ax_f, frame.columns.values + 0.5, frame, DISTINCT_COLORS[k % len(DISTINCT_COLORS)], name)
-        ax_f.set_xlim(0, 24)
-        ax_f.set_xticks(range(0, 25, 3))
-        ax_f.set_ylim(0, 105)
-        ax_f.set_xlabel("Hour of day")
-        ax_f.set_ylabel(y_label)
-        ax_f.grid(alpha=0.35)
-        style_top_header(fig_f, ax_f, title_txt, ncol=LEGEND_COLUMNS, has_shifts=True)
-        save_both(fig_f, "FigS5F_queue_by_hour", out_dir, dpi=DPI)
+        # 5A. Original combined queue plot (top non-empty queues)
+        non_empty = [c for c in queue_series if queue_series[c].max() > 0]
+        top = sorted(non_empty, key=lambda c: -queue_series[c].mean())[:TOP_N_QUEUES]
+        _plot_hourly_queue_panel(
+            state=state,
+            norm_qseries=norm_qseries,
+            bench_labels=top,
+            title=title_txt,
+            y_label=y_label,
+            stem="FigS5F_queue_by_hour",
+            out_dir=out_dir,
+            ncol=LEGEND_COLUMNS,
+        )
+
+        # 5B. Three grouped queue-length plots matching BENCH_GROUPS
+        for idx, (grp_key, grp_cfg) in enumerate(BENCH_GROUPS.items(), start=1):
+            grp_labels = [
+                BENCH_LABELS[b] for b in grp_cfg["benches"]
+                if b in BENCH_LABELS and BENCH_LABELS[b] in norm_qseries
+            ]
+            grp_ncol = min(len(grp_labels), 2) if len(grp_labels) == 4 else min(len(grp_labels), 3)
+            _plot_hourly_queue_panel(
+                state=state,
+                norm_qseries=norm_qseries,
+                bench_labels=grp_labels,
+                title=f"{title_txt}: {grp_cfg['title']}",
+                y_label=y_label,
+                stem=f"FigS5F_{idx}_queue_by_hour_{grp_key}",
+                out_dir=out_dir,
+                ncol=max(1, grp_ncol),
+            )
 
 
 def main():

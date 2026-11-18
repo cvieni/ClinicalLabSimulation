@@ -6,7 +6,7 @@ from params_config import event_name as EV
 from modules.spec_proc_helpers import req_resource
 
 
-def process_BioFire(env, spec_id, spec_type, resources, tracker, spec_priority, requested_tech):
+def process_BioFire(env, spec_id, spec_type, resources, tracker, spec_priority, requested_tech, rng=None):
     tech_BioFire = resources.get(requested_tech)
     with req_resource(tech_BioFire, spec_priority) as req:
         yield req

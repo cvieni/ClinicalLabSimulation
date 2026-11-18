@@ -13,6 +13,12 @@ python run_scenarios.py --iterations 30 --sim-days 60 --seed 42
 python run_scenarios.py --only baseline,BCx_x1.25,BCx_x1.5,BCx_x2.0,all_x1.25,all_x1.5,all_x2.0 --iterations 30 --sim-days 60 --seed 42
 
 
+# Optional: check what will run and see the time estimate first
+python run_sensitivity.py --dry-run --iterations 30 --sim-days 60 --seed 42 --baseline-dir results_experiments/scn_baseline
+
+# Run the sensitivity analysis (creates results_experiments/sens/<param>__lo|hi/)
+python run_sensitivity.py --iterations 30 --sim-days 60 --seed 42 --baseline-dir results_experiments/scn_baseline
+
 
 
 

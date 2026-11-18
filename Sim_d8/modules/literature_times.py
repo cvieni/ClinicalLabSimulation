@@ -7,7 +7,7 @@ Distributions: uniform(a, b) | lognormal(mean, sd on the LOG scale) | gamma(shap
 `python -m modules.literature_times` prints, for every fitted distribution, the median it implies next to the median reported in the
 paper, so the unit assumption above is checked against your own numbers (a large ratio = wrong unit or a transcription error).
 
-Use in the sim: gram_stain_minutes(rng) is called by process_GramStain when p.use_literature_task_times is True.
+process_GramStain now always uses modules.gerada_times.step_minutes; gram_stain_minutes() here is only a helper for checks.
 """
 import math
 

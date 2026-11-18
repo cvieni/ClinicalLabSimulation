@@ -142,7 +142,7 @@ def sample_time_to_positive(specimen_type="BloodCult", rng=None):
 # Overall Simulation Parameters
 # -------------------------
 # sim_max_time = 31
-sim_max_time = 60 # given 5 day warm up and 7 day cool down --> 43 - 5 - 7 = 31 total days
+sim_max_time = 60   # 60 sim days - 7 warm-up - 20 cool-down = 33 measured days
 seed_input = 42
 
 stat_skip_hold = True                    # STAT skips the pre-accession hold
@@ -165,7 +165,7 @@ order_lead_time_days = 2.5 # days
 # The window is (sim_days - warmup - cooldown) long: with the defaults, use sim_days >= 37 for a
 # 30-day measured window. n_incomplete_in_window in the run stats should be ~0.
 warmup_days = 7.0
-cooldown_days = 15.0
+cooldown_days = 20.0     # was 15; the longest work-up chain (genital tissue) is ~17 d. Check: python run_settings_check.py cooldown
 sim_start_weekday = 0     # sim t=0 is midnight on this weekday (0=Mon). Must match shift_manager.
 
 # -------------------------
@@ -399,6 +399,7 @@ stool_biochem_time_multiplier = 1.0  # multiplies the rapid-biochemical time for
 scenario_volume_json = ""           # {"global":1.5,"multipliers":{"BCx":2},"add_per_day":{"BCx":2000}}
 scenario_instrument_json = ""       # {"bc_instrument": 864}
 scenario_media_json = ""            # {"global":1.5,"per_media":{"Blood_Agar":2},"lead_time_days":3}
+export_diagnostic_timeseries = False   # run_simulation(export_diagnostics=None) reads this
 
 
 
@@ -697,7 +698,4 @@ multi_isolate_maldi_rate = None  # P(isolate is spotted | specimen has >= 2 isol
 multi_isolate_ast_rate = None    # P(identified isolate gets AST | specimen has >= 2 isolates); None = same as Phoenix_test_percent
 export_isolate_ledger = False    # True: write results_experiments/isolate_ledger_proc_<pid>_seed<seed>.csv for every run
 
-# --- literature task times (modules/literature_times.py) ---
-# use_literature_task_times = False   # True: one Gram stain of one isolate = prepare smear + stain + dry + read/report (Table 1, about 15 min median)
-use_literature_task_times = True   # True: one Gram stain of one isolate = prepare smear + stain + dry + read/report (Table 1, about 15 min median)
-# gram_stain_time = 5.0
+# --- Gram stain time: always the Gerada 2024 Table 1 steps (modules/GramStain.py, params_config/accession_steps.py); there is no switch ---

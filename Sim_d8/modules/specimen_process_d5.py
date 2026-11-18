@@ -274,12 +274,12 @@ def _handle_blood_culture_path(env, spec_id, spec_type, spec_cfg, rng, resources
     })
     yield plating_done_event
 
-    yield from process_BioFire(env, spec_id, spec_type, resources, tracker, spec_priority, "tech_blood")
+    yield from process_BioFire(env, spec_id, spec_type, resources, tracker, spec_priority, "tech_blood", rng=rng.py)
     isolates = get_isolates(env, spec_id, spec_type,
                             lambda r: _sample_num_colonies(spec_cfg, PyRng(r), is_blood_culture))
     for iso in isolates.pending("gram"):                 # exactly one Gram stain per isolate
         isolates.mark(iso, "gram")
-        yield from process_GramStain(env, spec_id, spec_type, resources, tracker, spec_priority, "tech_blood")
+        yield from process_GramStain(env, spec_id, spec_type, resources, tracker, spec_priority, "tech_blood", rng=rng.py)
 
     with resources["incubator"].request() as inc_req:
         yield inc_req

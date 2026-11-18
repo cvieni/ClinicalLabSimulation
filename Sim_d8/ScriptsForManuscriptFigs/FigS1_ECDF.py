@@ -4,12 +4,12 @@ Standalone script to generate individual ECDF figures by combined specimen group
 comparing simulation against LIS 2025 and optional LIS 2024 data.
 
 Usage:
-    python figS1_ECDF.py \
-        --mc-dir results_experiments/mc_my_run \
+    python FigS1_ECDF_2.py \
+        --mc-dir results_experiments/scn_baseline \
         --obs-2025 data/observed_2025_lis_clean.csv \
         [--obs-2024 data/observed_2024_lis_clean.csv] \
         [--obs-exclude UofU] \
-        [--out manuscript_png/FigS1_ECDF] [--bare]
+        [--out manuscript_png/FigS1_ECDF]
 """
 import argparse
 import glob
@@ -21,35 +21,26 @@ import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
 from scipy import stats
 
 # =========================================================== SETTINGS (edit these) ===========================================================
-PNG_WIDTH = 4.2                             
-PNG_HEIGHT = 4.2                           
-
-figure_margin_size = 0.1
-set_background_transparent = True
-
-LEGEND_COLUMNS = 1
+PNG_WIDTH = 5.0
+PNG_HEIGHT = 4.0
 DPI = 300
-BARE = False                                 # True: the unlabelled version also loses the legend and in-plot text
 
 # Research/ClinicalLabSimulation
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # Research/ClinicalLabSimulation/Sim_d8
 SIM_DIR = Path(__file__).resolve().parent.parent
-# Research/ClinicalLabSimulation/Sim_d8/manuscript_png
-OUTPUT_DIR = Path(SIM_DIR, "manuscript_png/FigS1_ECDF")         
+# Research/ClinicalLabSimulation/Sim_d8/manuscript_png/FigS1_ECDF
+OUTPUT_DIR = Path(SIM_DIR, "manuscript_png/FigS1_ECDF")
 MC_DIR = Path(SIM_DIR, "results_experiments/scn_baseline")
 
 OBS_2025 = [Path(SIM_DIR, "data/observed_2025_lis_clean.csv")]
 OBS_2024 = [Path(SIM_DIR, "data/observed_2024_lis_clean.csv")]
 
 OBS_EXCLUDE = None                                                  # drop LIS rows whose source file name contains this text
-
 # ==============================================================================================================================================
-
 
 # ----------------------------------------------------------------------------
 # CONFIG & COMBINED GROUP DEFINITIONS (Edit combinations here)
@@ -61,9 +52,6 @@ ECDF_GROUPS = {
     "Body fluid": [
         "BodyFluid"
     ],
-    # "Bone": [
-    #     "Bone_Cx"
-    # ],
     "Wound & Tissue": [
         "Tissue", "Tissue_FNA", "Tissue_genital", "Wound", "Wound_Genital", "Bone_Cx",
     ],
@@ -128,9 +116,9 @@ plt.rcParams.update({
     "xtick.major.width": 0.8, "ytick.major.width": 0.8,
     "xtick.major.size": 3.5, "ytick.major.size": 3.5,
     "axes.grid": True, "grid.color": GRID,
-    "grid.linewidth": 0.5, "axes.axisbelow": True, 
-    "figure.facecolor": "none" if set_background_transparent else "white", 
-    "axes.facecolor": "none" if set_background_transparent else "white",
+    "grid.linewidth": 0.5, "axes.axisbelow": True,
+    "figure.facecolor": "white",
+    "axes.facecolor": "white",
     "pdf.fonttype": 42, "svg.fonttype": "none",
 })
 
@@ -145,19 +133,29 @@ def norm(s):
 
 
 def save_both(fig, stem):
+    """Save <stem>_labelled.png (white bg, visible axes) and <stem>_unlabelled.png (transparent bg, tick marks only) on an identical canvas."""
     OUT.mkdir(parents=True, exist_ok=True)
-    
-    # Save labelled version with transparent background & no whitespace margin
+
+    # 1. Labelled version: solid white background, visible axes, tick labels, title, legend, and D-statistic
+    fig.patch.set_facecolor("white")
+    fig.patch.set_alpha(1.0)
+    for ax in fig.axes:
+        ax.set_facecolor("white")
+        ax.patch.set_alpha(1.0)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["bottom"].set_visible(True)
+        ax.spines["left"].set_visible(True)
+        ax.tick_params(which="both", bottom=True, left=True)
+
     fig.savefig(
-        OUT / f"{stem}_labelled.png", 
-        dpi=DPI, 
-        transparent=set_background_transparent,
-        facecolor="none" if set_background_transparent else "white",
-        edgecolor='none',
-        bbox_inches="tight" if figure_margin_size == 0.0 else None,
-        pad_inches=0.0
+        OUT / f"{stem}_labelled.png",
+        dpi=DPI,
+        transparent=False,
+        facecolor="white",
     )
 
+    # 2. Strip all titles, axis labels, tick values, legends, and text annotations (keep tick marks & axis lines)
     for ax in fig.axes:
         ax.set_title("")
         ax.set_xlabel("")
@@ -177,16 +175,20 @@ def save_both(fig, stem):
     if fig._suptitle is not None:
         fig._suptitle.set_visible(False)
 
-    # Save unlabelled version with transparent background & no whitespace margin
+    # 3. Unlabelled version: transparent background, visible axes & tick marks, identical canvas alignment
+    fig.patch.set_alpha(0.0)
+    for ax in fig.axes:
+        ax.patch.set_alpha(0.0)
+
     fig.savefig(
-        OUT / f"{stem}_unlabelled.png", 
-        dpi=DPI, 
-        transparent=set_background_transparent,
-        facecolor="none" if set_background_transparent else "white",
-        edgecolor='none',
-        bbox_inches="tight" if figure_margin_size == 0.0 else None,
-        pad_inches=0.0
+        OUT / f"{stem}_unlabelled.png",
+        dpi=DPI,
+        transparent=True,
+        facecolor="none",
+        bbox_inches="tight",
+        pad_inches=0.02,
     )
+
     plt.close(fig)
     print(f"  wrote {stem}_labelled.png & {stem}_unlabelled.png")
 
@@ -279,7 +281,6 @@ def generate_individual_ecdfs(sim, obs25, obs24):
         fig.subplots_adjust(left=0.15, right=0.95, bottom=0.15, top=0.85)
 
         s = np.sort(sim[sim.group == g]["tat_h"].values)
-        allv = [s]
 
         # Plot simulation ECDF
         if len(s) > 0:
@@ -289,22 +290,15 @@ def generate_individual_ecdfs(sim, obs25, obs24):
         if obs25 is not None and g in set(obs25["group"]):
             v25 = np.sort(obs25[obs25.group == g]["tat_h"].values)
             if len(v25) > 0:
-                allv.append(v25)
                 ax.step(v25, np.arange(1, len(v25) + 1) / len(v25), where="post", color=OBS_C, linewidth=1.2, linestyle="--", label="LIS 2025")
 
         # Plot LIS 2024 ECDF
         if obs24 is not None and g in set(obs24["group"]):
             v24 = np.sort(obs24[obs24.group == g]["tat_h"].values)
             if len(v24) > 0:
-                allv.append(v24)
                 ax.step(v24, np.arange(1, len(v24) + 1) / len(v24), where="post", color=OBS24_C, linewidth=1.2, linestyle=":", label="LIS 2024")
 
-        if allv:
-            cat = np.concatenate(allv)
-            lo, hi = np.percentile(cat, 0.5), np.percentile(cat, 99.8)
-            pad = 0.04 * (hi - lo)
-            ax.set_xlim(max(0, lo - pad), hi + pad)
-
+        ax.set_xlim(0, 350)
         ax.set_ylim(0, 1.02)
         ax.set_title(g, fontsize=8, fontweight="bold")
         ax.set_xlabel("TAT (h)")
@@ -333,18 +327,16 @@ def generate_individual_ecdfs(sim, obs25, obs24):
 # MAIN EXECUTION
 # ----------------------------------------------------------------------------
 def main():
-    global OUT, BARE
+    global OUT
     ap = argparse.ArgumentParser(description="Generate individual ECDF figures for combined specimen groups.")
     ap.add_argument("--mc-dir", default=str(MC_DIR), help="Path to Monte Carlo run directory.")
     ap.add_argument("--obs-2025", default=OBS_2025, nargs="+", help="One or more LIS 2025 CSV files.")
     ap.add_argument("--obs-2024", default=OBS_2024, nargs="+", help="One or more LIS 2024 CSV files.")
     ap.add_argument("--obs-exclude", default=OBS_EXCLUDE, help="Drop LIS rows whose source file name contains this text.")
     ap.add_argument("--out", default=str(OUTPUT_DIR), help="Output directory for generated PNGs.")
-    ap.add_argument("--bare", action="store_true", default=BARE, help="Unlabelled versions also drop legends, panel titles, and text.")
     args = ap.parse_args()
 
     OUT = Path(args.out)
-    BARE = args.bare
 
     print("----------------------------")
     print("Input Directory: ", args.mc_dir)

@@ -1,36 +1,10 @@
-
-# Sensi_Analysis/
-# │
-# ├── mc_A/                         # Baseline
-# │
-# ├── mc_B/                         # BCx culture positivity
-# │   ├── set1/
-# │   ├── set2/
-# │   ├── set3/
-# │   └── set4/
-# │
-# ├── mc_C/                         # Urine culture positivity
-# │   ├── set1/
-# │   ├── set2/
-# │   ├── set3/
-# │   └── set4/
-# │
-# ├── mc_D/                         # Stool culture positivity
-# │   ├── set1/
-# │   ├── set2/
-# │   ├── set3/
-# │   └── set4/
-# │
-# └── ... mc_I/
-
-#!/usr/bin/env python3
-
 #!/usr/bin/env python3
 """
 Parameter sensitivity analysis: Tornado plots for median and 95th percentile TAT.
 
-Each parameter has four subdirectories (set1, set2, set3, set4), compared against
-the common baseline (mc_A) paired by Monte Carlo replication.
+Reads one-at-a-time sensitivity runs produced by run_sensitivity.py
+(results_experiments/sens/<param>__lo and <param>__hi, plus manifest.csv),
+compared against the common baseline paired by Monte Carlo replication.
 
 Outputs (in Sim_d8/manuscript_png/FigS8_SensiAnalysis):
     FigS8A_tornado_median_tat_labelled.png & _unlabelled.png
@@ -40,6 +14,7 @@ Outputs (in Sim_d8/manuscript_png/FigS8_SensiAnalysis):
 Run:
     python FigS8_SensitivityAnalysis.py
 """
+import json
 import sys
 from pathlib import Path
 
@@ -61,8 +36,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SIM_DIR = Path(__file__).resolve().parent.parent
 
 OUTPUT_DIR = SIM_DIR / "manuscript_png/FigS8_SensiAnalysis"
-SCENARIO_DIR = SIM_DIR / "results_experiments/Sensi_Analysis"
-BASELINE_DIR = SCENARIO_DIR / "mc_A"
+SENS_DIR = SIM_DIR / "results_experiments/sens"
+BASELINE_DIR = SIM_DIR / "results_experiments/scn_baseline"
 
 OBSERVED_2024 = SIM_DIR / "data/observed_2024.csv"
 OBSERVED_2025 = SIM_DIR / "data/observed_2025.csv"
@@ -72,54 +47,36 @@ OBSERVED_COLORS = {
     "2025 observed average": "#B2182B",
 }
 
-PARAMETER_SWEEPS = {
-    "BCx_culture_positivity": SCENARIO_DIR / "mc_B",
-    "Urine_culture_positivity": SCENARIO_DIR / "mc_C",
-    "Stool_culture_positivity": SCENARIO_DIR / "mc_D",
-    "Routines_culture_positivity": SCENARIO_DIR / "mc_E",
-    "Routines_MultipleIsolatePercent": SCENARIO_DIR / "mc_F",
-    "Plating_time": SCENARIO_DIR / "mc_G",
-    "Subculture_EvalTime": SCENARIO_DIR / "mc_H",
-    "Repeat_ReadTime": SCENARIO_DIR / "mc_I",
+LEVELS = ["lo", "hi"]
+
+LEVEL_LABELS = {
+    "lo": "Low (-)",
+    "hi": "High (+)",
 }
 
-SETTINGS = ["set1", "set2", "set3", "set4"]
+LEVEL_COLORS = {
+    "lo": "#2166AC",
+    "hi": "#B2182B",
+}
 
+# Optional display names for parameters (falls back to formatted parameter name)
 PARAMETER_LABELS = {
-    "BCx_culture_positivity": "Blood culture positivity",
-    "Urine_culture_positivity": "Urine culture positivity",
-    "Stool_culture_positivity": "Stool culture positivity",
-    "Routines_culture_positivity": "Routine culture positivity",
-    "Routines_MultipleIsolatePercent": "Multiple isolate percentage",
-    "Plating_time": "Plating time",
-    "Subculture_EvalTime": "Subculture evaluation time",
-    "Repeat_ReadTime": "Repeat read time",
+    "positive_specimen_rate": "Culture positivity rate",
+    "phoenix_run_time_hours": "Phoenix AST run time",
 }
 
-SETTING_LABELS = {
-    "set1": "Setting 1",
-    "set2": "Setting 2",
-    "set3": "Setting 3",
-    "set4": "Setting 4",
-}
-
-# Colors for the four parameter settings
-SETTING_COLORS = {
-    "set1": "#2166AC",
-    "set2": "#67A9CF",
-    "set3": "#EF8A62",
-    "set4": "#B2182B",
-}
+# Optional filter: list parameter names to include, or None to include all found in SENS_DIR
+ONLY_PARAMETERS = None
 
 # Figure dimensions
 PNG_WIDTH = 6.5
-PNG_HEIGHT = 5.4
-LEFT_MARGIN_IN = 1.85
+PNG_HEIGHT = None            # None = automatic from number of parameters (0.42 in per parameter + 1.4)
+LEFT_MARGIN_IN = 2.15
 RIGHT_MARGIN_IN = 0.25
 BOTTOM_MARGIN_IN = 0.60
 TOP_MARGIN_IN = 0.72
 DPI = 300
-LEGEND_COLUMNS = 4
+LEGEND_COLUMNS = 2
 
 # Specimen mapping used by fig_common
 GROUPS = {
@@ -144,10 +101,9 @@ GROUPS = {
 
 
 def save_both(fig, stem, out_dir: Path = OUTPUT_DIR, dpi: int = DPI):
-    """Save <stem>_labelled.png (white bg, visible axes) and <stem>_unlabelled.png (transparent bg, tick marks only) on an identical canvas."""
+    """Save <stem>_labelled.png (white bg, visible axes) and <stem>_unlabelled.png (transparent bg, tight crop around axes & ticks)."""
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. Labelled version: solid white background, visible axes, tick labels, titles, and legend
     fig.patch.set_facecolor("white")
     fig.patch.set_alpha(1.0)
     for ax in fig.axes:
@@ -164,9 +120,11 @@ def save_both(fig, stem, out_dir: Path = OUTPUT_DIR, dpi: int = DPI):
         dpi=dpi,
         transparent=False,
         facecolor="white",
+        edgecolor="none",
+        bbox_inches="tight",
+        pad_inches=0.04,
     )
 
-    # 2. Strip all titles, axis labels, tick values, legends, and text annotations (keep tick marks & axis lines)
     for ax in fig.axes:
         ax.set_title("")
         ax.set_xlabel("")
@@ -186,9 +144,10 @@ def save_both(fig, stem, out_dir: Path = OUTPUT_DIR, dpi: int = DPI):
     if fig._suptitle is not None:
         fig._suptitle.set_visible(False)
 
-    # 3. Unlabelled version: transparent background, visible axes & tick marks, identical canvas alignment
+    fig.patch.set_facecolor("none")
     fig.patch.set_alpha(0.0)
     for ax in fig.axes:
+        ax.set_facecolor("none")
         ax.patch.set_alpha(0.0)
 
     fig.savefig(
@@ -196,28 +155,23 @@ def save_both(fig, stem, out_dir: Path = OUTPUT_DIR, dpi: int = DPI):
         dpi=dpi,
         transparent=True,
         facecolor="none",
+        edgecolor="none",
+        bbox_inches="tight",
+        pad_inches=0.02,
     )
     plt.close(fig)
     print(f"  wrote {stem}_labelled.png & {stem}_unlabelled.png")
 
 
-# ============================================================
-# LOAD AND SUMMARIZE SIMULATION DATA
-# ============================================================
 def replication_metrics(folder: Path) -> pd.DataFrame:
     """Load simulation data and calculate median and p95 TAT for each Monte Carlo replication."""
     print(f"Loading: {folder}")
-
     if not folder.exists():
         raise FileNotFoundError(f"Missing simulation folder: {folder}")
 
     s, _, _ = fc.load_sim(folder, fc.invert(GROUPS))
     if s.empty:
         raise ValueError(f"No simulation data found in {folder}")
-
-    missing = {"rep", "tat_h"} - set(s.columns)
-    if missing:
-        raise ValueError(f"Missing columns {missing} in {folder}")
 
     return (
         s.groupby("rep")["tat_h"]
@@ -238,8 +192,7 @@ def load_observed_tat():
 
     obs24 = pd.read_csv(OBSERVED_2024)
     obs25 = pd.read_csv(OBSERVED_2025)
-
-    observed = {
+    return {
         "p50": {
             "2024 observed average": obs24["tat_median"].mean(),
             "2025 observed average": obs25["tat_median"].mean(),
@@ -250,76 +203,94 @@ def load_observed_tat():
         },
     }
 
-    print("\nObserved average TAT:")
-    print(f"  2024 median: {observed['p50']['2024 observed average']:.2f} h")
-    print(f"  2025 median: {observed['p50']['2025 observed average']:.2f} h")
-    print(f"  2024 p95:    {observed['p95']['2024 observed average']:.2f} h")
-    print(f"  2025 p95:    {observed['p95']['2025 observed average']:.2f} h")
-    return observed
+
+def discover_sensitivity_runs():
+    """Find (parameter, level, folder) runs from SENS_DIR/manifest.csv or <param>__lo|hi folders."""
+    if not SENS_DIR.exists():
+        raise SystemExit(
+            f"Sensitivity folder not found: {SENS_DIR}\n"
+            f"Run: python run_sensitivity.py --iterations 30 --sim-days 60 --seed 42 --baseline-dir results_experiments/scn_baseline"
+        )
+
+    runs = []
+    base_dir = BASELINE_DIR if BASELINE_DIR.exists() else (SENS_DIR / "_baseline")
+    manifest_path = SENS_DIR / "manifest.csv"
+
+    if manifest_path.exists():
+        mf = pd.read_csv(manifest_path)
+        for _, row in mf.iterrows():
+            param = str(row["param"])
+            lev = str(row["level"])
+            folder = Path(row["folder"])
+            if not folder.is_absolute():
+                folder = (SIM_DIR / folder).resolve()
+            if param == "baseline" or lev == "base":
+                if folder.exists():
+                    base_dir = folder
+                continue
+            if ONLY_PARAMETERS and param not in ONLY_PARAMETERS:
+                continue
+            if (folder / "run_table.csv").exists():
+                runs.append((param, lev, folder))
+    else:
+        for d in sorted(SENS_DIR.iterdir()):
+            if not d.is_dir() or "__" not in d.name:
+                continue
+            param, lev = d.name.rsplit("__", 1)
+            if lev not in LEVELS:
+                continue
+            if ONLY_PARAMETERS and param not in ONLY_PARAMETERS:
+                continue
+            if (d / "run_table.csv").exists():
+                runs.append((param, lev, d))
+
+    return base_dir, runs
 
 
-# ============================================================
-# PAIRED PARAMETER SENSITIVITY ANALYSIS
-# ============================================================
 def sensitivity_frames() -> pd.DataFrame:
-    print("\nLoading baseline simulations...")
-    base = replication_metrics(BASELINE_DIR)
-    if base.empty:
-        raise ValueError("Baseline contains no replications.")
+    base_dir, runs = discover_sensitivity_runs()
+    if not runs:
+        raise SystemExit(
+            f"No completed sensitivity runs found in {SENS_DIR}.\n"
+            f"Run: python run_sensitivity.py --iterations 30 --sim-days 60 --seed 42 --baseline-dir results_experiments/scn_baseline"
+        )
+
+    print(f"\nLoading baseline simulations from {base_dir}...")
+    base = replication_metrics(base_dir)
     print(f"Baseline replications: {len(base)}")
 
     results = []
-    for parameter, folder in PARAMETER_SWEEPS.items():
-        print(f"\nParameter: {parameter}")
-        for setting in SETTINGS:
-            setting_dir = folder / setting
-            current = replication_metrics(setting_dir)
+    for parameter, level, folder in runs:
+        current = replication_metrics(folder)
+        paired = current.merge(
+            base[["rep", "p50", "p95"]].rename(columns={"p50": "p50_base", "p95": "p95_base"}),
+            on="rep",
+            how="inner",
+            validate="one_to_one",
+        )
+        if paired.empty:
+            raise ValueError(f"No paired replications for {parameter}__{level}")
 
-            paired = current.merge(
-                base[["rep", "p50", "p95"]].rename(columns={"p50": "p50_base", "p95": "p95_base"}),
-                on="rep",
-                how="inner",
-                validate="one_to_one",
-            )
+        for metric in ["p50", "p95"]:
+            delta = paired[metric] - paired[f"{metric}_base"]
+            n = delta.count()
+            mean = delta.mean()
+            se = delta.sem()
+            ci = stats.t.ppf(0.975, n - 1) * se if n > 1 else np.nan
 
-            if paired.empty:
-                raise ValueError(f"No paired replications for {parameter}/{setting}")
-
-            if len(paired) != len(current) or len(paired) != len(base):
-                print(
-                    f"  WARNING: {parameter}/{setting}: {len(paired)} paired replications "
-                    f"(baseline={len(base)}, setting={len(current)})"
-                )
-
-            for metric in ["p50", "p95"]:
-                delta = paired[metric] - paired[f"{metric}_base"]
-                n = delta.count()
-                mean = delta.mean()
-                se = delta.sem()
-                ci = stats.t.ppf(0.975, n - 1) * se if n > 1 else np.nan
-
-                results.append({
-                    "parameter": parameter,
-                    "setting": setting,
-                    "metric": metric,
-                    "mean_delta": mean,
-                    "se": se,
-                    "ci95": ci,
-                    "n_rep": n,
-                })
-
-                print(
-                    f"  {setting} | {metric}: {mean:+.3f} h (95% CI: {mean - ci:+.3f}, {mean + ci:+.3f})"
-                    if np.isfinite(ci)
-                    else f"  {setting} | {metric}: {mean:+.3f} h"
-                )
+            results.append({
+                "parameter": parameter,
+                "level": level,
+                "metric": metric,
+                "mean_delta": mean,
+                "se": se,
+                "ci95": ci,
+                "n_rep": n,
+            })
 
     return pd.DataFrame(results)
 
 
-# ============================================================
-# TORNADO PLOT
-# ============================================================
 def tornado_plot(data: pd.DataFrame, metric: str, xlabel: str, filename: str, observed=None):
     s = data[data["metric"] == metric].copy()
     if s.empty:
@@ -331,21 +302,22 @@ def tornado_plot(data: pd.DataFrame, metric: str, xlabel: str, filename: str, ob
         .sort_values(ascending=False)
     )
     parameter_order = ranking.index.tolist()
+    h_in = PNG_HEIGHT if PNG_HEIGHT else max(3.2, 0.42 * len(parameter_order) + 1.4)
 
     fig, ax = fc.new_fig(
         PNG_WIDTH,
-        PNG_HEIGHT,
+        h_in,
         left_in=LEFT_MARGIN_IN,
         right_in=RIGHT_MARGIN_IN,
         bottom_in=BOTTOM_MARGIN_IN,
         top_in=TOP_MARGIN_IN,
     )
 
-    offsets = np.linspace(-0.30, 0.30, len(SETTINGS))
+    offsets = np.linspace(-0.18, 0.18, len(LEVELS))
 
     for i, parameter in enumerate(parameter_order):
-        for j, setting in enumerate(SETTINGS):
-            r = s[(s["parameter"] == parameter) & (s["setting"] == setting)]
+        for j, level in enumerate(LEVELS):
+            r = s[(s["parameter"] == parameter) & (s["level"] == level)]
             if r.empty:
                 continue
             r = r.iloc[0]
@@ -357,8 +329,8 @@ def tornado_plot(data: pd.DataFrame, metric: str, xlabel: str, filename: str, ob
                 i + offsets[j],
                 mean,
                 xerr=xerr,
-                height=0.15,
-                color=SETTING_COLORS[setting],
+                height=0.30,
+                color=LEVEL_COLORS[level],
                 edgecolor="white",
                 linewidth=0.4,
                 error_kw={
@@ -370,7 +342,7 @@ def tornado_plot(data: pd.DataFrame, metric: str, xlabel: str, filename: str, ob
 
     ax.axvline(0, color=fc.INK, linewidth=0.9, linestyle="-", zorder=0)
 
-    labels = [PARAMETER_LABELS.get(p, p.replace("_", " ")) for p in parameter_order]
+    labels = [PARAMETER_LABELS.get(p, p.replace("_", " ").capitalize()) for p in parameter_order]
     ax.set_yticks(range(len(parameter_order)))
     ax.set_yticklabels(labels)
     ax.set_ylim(-0.6, len(parameter_order) - 0.4)
@@ -390,8 +362,8 @@ def tornado_plot(data: pd.DataFrame, metric: str, xlabel: str, filename: str, ob
     ax.grid(axis="y", visible=False)
 
     handles = [
-        Patch(facecolor=SETTING_COLORS[st], edgecolor="none", label=SETTING_LABELS.get(st, st))
-        for st in SETTINGS
+        Patch(facecolor=LEVEL_COLORS[lv], edgecolor="none", label=LEVEL_LABELS.get(lv, lv))
+        for lv in LEVELS
     ]
     if observed and metric in observed:
         for label in observed[metric]:
@@ -413,11 +385,9 @@ def tornado_plot(data: pd.DataFrame, metric: str, xlabel: str, filename: str, ob
     save_both(fig, filename, OUTPUT_DIR, DPI)
 
 
-# ============================================================
-# MAIN
-# ============================================================
 def main():
     fc.apply_style()
+    plt.rcParams.update({"figure.facecolor": "white", "axes.facecolor": "white"})
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     results = sensitivity_frames()

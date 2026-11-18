@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
+import copy
 import os
 import sys
 import traceback
@@ -115,7 +116,7 @@ def _get_active_worker_pool(shift_staffing_profile):
             if not isinstance(shift_cfg, dict):
                 continue
             accession = max(accession, int(shift_cfg.get("tech_accession", 1)) + int(shift_cfg.get("tech_float_accession", 0)))
-            plating = accession = max(accession, int(shift_cfg.get("tech_plating", 1)) + int(shift_cfg.get("tech_float_accession", 0)))
+            plating = max(plating, int(shift_cfg.get("tech_plating", 1)) + int(shift_cfg.get("tech_float_accession", 0)))
     return {"tech_accession": accession, "tech_plating": plating}
 
 
@@ -209,10 +210,10 @@ def _run_simulation_impl(sim_days, seed, instrument_resources, shift_staffing_pr
                          export_diagnostics):
     if shift_staffing_profile is None:
         shift_staffing_profile = SHIFT_STAFFING_PROFILE
-    shift_staffing_profile = apply_staffing_changes(shift_staffing_profile, getattr(p, 'scenario_staffing_json', ''))
+    shift_staffing_profile = apply_staffing_changes(copy.deepcopy(shift_staffing_profile), getattr(p, 'scenario_staffing_json', ''))
     if instrument_resources is None:
         instrument_resources = Instrument_resources
-    instrument_resources = apply_instrument_changes(instrument_resources, getattr(p, 'scenario_instrument_json', ''))
+    instrument_resources = apply_instrument_changes(copy.deepcopy(instrument_resources), getattr(p, 'scenario_instrument_json', ''))
     if export_diagnostics is None:
         export_diagnostics = p.export_diagnostic_timeseries
 

@@ -82,6 +82,7 @@ def _run_one(task):
     rep_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
 
+    inv_mod.LAST_DAILY = None          # a failed run must not leave the previous replication's media log behind
     df_pivot, df_state, _media, _ai, stats = run_simulation(
         sim_days=a["sim_days"],
         seed=seed,
@@ -105,6 +106,9 @@ def _run_one(task):
     spec = df_pivot[[c for c in SPEC_COLS if c in df_pivot.columns]].copy()
     spec["rep"] = i
     spec.to_csv(rep_dir / f"specimens_{i:03d}.csv.gz", index=False)
+    if a.get("save_stages"):
+        df_pivot.assign(rep=i).to_csv(rep_dir / f"stages_{i:03d}.csv.gz", index=False)
+
     if df_state is not None and not df_state.empty:
         df_state.assign(rep=i).to_csv(rep_dir / f"state_{i:03d}.csv.gz", index=False)
 
@@ -514,6 +518,8 @@ def main():
     ap.add_argument("--timeline-days", type=int, default=7)
     ap.add_argument("--util-filter", type=str, default="tech", help="regex selecting resources for the utilization plot")
     ap.add_argument("--plots-only", action="store_true", help="re-plot an existing --out directory")
+    ap.add_argument("--save-stages", action="store_true", help="save full per-event df_pivot logs as replications/stages_###.csv.gz")
+
     a = ap.parse_args()
 
     if a.make_observed_template:
@@ -531,7 +537,9 @@ def main():
         sys.exit(f"--observed file not found: {Path(a.observed).resolve()}\n"
                  f"Create a template with:  python run_montecarlo_and_plot.py --make-observed-template {a.observed}")
 
-    if a.initial_conditions is None and INITIAL_CONDITIONS_PATH.exists():
+    if a.initial_conditions and str(a.initial_conditions).lower() == "none":
+        a.initial_conditions = None          # explicit: start empty and apply warmup_days
+    elif a.initial_conditions is None and INITIAL_CONDITIONS_PATH.exists():
         a.initial_conditions = str(INITIAL_CONDITIONS_PATH)
         print(f"Initial conditions not provided, defaulting to \n {INITIAL_CONDITIONS_PATH}")
 
@@ -575,8 +583,10 @@ def main():
              "initial_conditions": a.initial_conditions, "ttp_source": p.TTP_SOURCE,
              "warmup_days": p.warmup_days, "cooldown_days": p.cooldown_days,
              "scheduled_reads_enabled": p.scheduled_reads_enabled}, indent=2, default=str))
+
         task_args = {"out": str(out), "sim_days": a.sim_days, "initial_conditions": a.initial_conditions,
-                     "overrides": overrides}
+                     "overrides": overrides, "save_stages": a.save_stages}
+        
         tasks = [(i, a.seed + i, task_args) for i in range(a.iterations)]
         workers = a.workers or min(__import__("os").cpu_count() or 4, a.iterations)
         print(f"Running {a.iterations} replications x {a.sim_days} days on {workers} workers -> {out}")
@@ -614,7 +624,6 @@ def main():
                   ("Stool_Vibrio", "60136 Vibrio"), ("Stool_Yersinia", "60137 Yersinia")]
         _m = summary.set_index("metric")
         for _k, _lab in _codes:
-            _n = None
             for _st in ("p50", "p95"):
                 _r = _m.loc[f"tat_{_st}_{_k}"] if f"tat_{_st}_{_k}" in _m.index else None
                 if _r is not None:

@@ -29,7 +29,6 @@ def create_scenario_controls(prefix="sc"):
         html.Hr(),
         html.H6("Workflow options", className="text-primary"),
         dbc.Switch(id=f"{prefix}_biochem", label="Bench biochemical tests (spot indole, oxidase, ...)", value=True),
-        dbc.Switch(id=f"{prefix}_lit_gram", label="Literature task times for Gram stain (Gerada 2024)", value=False),
         html.Hr(),
         html.H6("Supply disruption", className="text-primary"),
         dbc.Switch(id=f"{prefix}_shortage_on", label="Inject a supply disruption", value=False),

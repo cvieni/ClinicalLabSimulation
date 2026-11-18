@@ -29,21 +29,33 @@ BARE = True
 figure_margin_size = 0.0
 set_background_transparent = True
 
+# Fixed Axis Bounds
+ACC_XLIM = (0, 60)
+ACC_XTICKS = np.arange(0, 61, 10)
+
+PCT_YLIM = (0, 60)
+PCT_YTICKS = np.arange(0, 61, 10)
 # ==============================================================================================================================================
 
 
 def save_labelled_and_unlabelled(fig, out_dir: Path, stem: str, dpi: int = 300):
-    """Save <stem>_labelled.png and <stem>_unlabelled.png on an identical canvas."""
+    """Save <stem>_labelled.png (white bg) and <stem>_unlabelled.png (transparent bg) on an identical canvas."""
     out_dir.mkdir(parents=True, exist_ok=True)
     labelled_path = out_dir / f"{stem}_labelled.png"
     unlabelled_path = out_dir / f"{stem}_unlabelled.png"
 
-    # 1. Save full labelled version with transparent background and zero margin
+    # 1. Save full labelled version with solid white background
+    fig.patch.set_facecolor("white")
+    fig.patch.set_alpha(1.0)
+    for ax in fig.axes:
+        ax.set_facecolor("white")
+        ax.patch.set_alpha(1.0)
+
     fig.savefig(
-        labelled_path, 
-        dpi=dpi, 
+        labelled_path,
+        dpi=dpi,
         transparent=False,
-        facecolor="none" if set_background_transparent else "white",
+        facecolor="white",
         edgecolor="none",
         bbox_inches="tight" if figure_margin_size == 0.0 else None,
         pad_inches=0.0
@@ -70,9 +82,15 @@ def save_labelled_and_unlabelled(fig, out_dir: Path, stem: str, dpi: int = 300):
         fig._suptitle.set_visible(False)
 
     # 3. Save unlabelled version with transparent background and zero margin
+    fig.patch.set_facecolor("none")
+    fig.patch.set_alpha(0.0)
+    for ax in fig.axes:
+        ax.set_facecolor("none")
+        ax.patch.set_alpha(0.0)
+
     fig.savefig(
-        unlabelled_path, 
-        dpi=dpi, 
+        unlabelled_path,
+        dpi=dpi,
         transparent=set_background_transparent,
         facecolor="none" if set_background_transparent else "white",
         edgecolor="none",
@@ -216,12 +234,15 @@ def Process_and_Plot_Group(df, base_filename, out_dir, year, save_plots=True):
         ax=ax2,
     )
 
-    ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: "{:.1f}%".format(y)))
+    ax2.set_xlim(-0.5, 23.5)
+    ax2.set_xticks(ticks=range(0, 24))
+    ax2.set_xticklabels([f"{h:02d}:00" for h in range(0, 24)], rotation=45)
+    ax2.set_ylim(*PCT_YLIM)
+    ax2.set_yticks(PCT_YTICKS)
+    ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.0f}%"))
     ax2.set_title(f"{base_filename} Average Sample Arrival Share by Hour", fontsize=14, fontweight="bold")
     ax2.set_xlabel("Hour of Day (00:00 - 23:00)", fontsize=12)
     ax2.set_ylabel("Percentage Share of Daily Arrivals (%)", fontsize=12)
-    ax2.set_xticks(ticks=range(0, 24))
-    ax2.set_xticklabels([f"{h:02d}:00" for h in range(0, 24)], rotation=45)
     ax2.legend(title="Day Type", frameon=True)
     fig1.tight_layout()
 
@@ -281,9 +302,10 @@ def Process_and_Plot_Group(df, base_filename, out_dir, year, save_plots=True):
     # -------------------------------------------------------------
     if not valid_acc.empty:
         fig3, ax_acc = plt.subplots(figsize=(PNG_WIDTH, PNG_HEIGHT))
+        bin_edges_acc = np.linspace(ACC_XLIM[0], ACC_XLIM[1], 31)
         sns.histplot(
             valid_acc,
-            bins=40,
+            bins=bin_edges_acc,
             stat="percent",
             color="#2ca02c",
             edgecolor="black",
@@ -294,10 +316,14 @@ def Process_and_Plot_Group(df, base_filename, out_dir, year, save_plots=True):
         ax_acc.axvline(mean_val, color="red", linestyle="--", linewidth=2, label=f"Mean: {mean_val:.1f} min")
         ax_acc.axvline(p99_val, color="darkorange", linestyle=":", linewidth=2, label=f"99th Percentile: {p99_val:.1f} min")
 
+        ax_acc.set_xlim(*ACC_XLIM)
+        ax_acc.set_xticks(ACC_XTICKS)
+        ax_acc.set_ylim(*PCT_YLIM)
+        ax_acc.set_yticks(PCT_YTICKS)
+        ax_acc.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.0f}%"))
         ax_acc.set_title(f"{base_filename} Accessioning Processing Time Distribution", fontsize=14, fontweight="bold")
         ax_acc.set_xlabel("Accessioning Duration (Minutes)", fontsize=12)
         ax_acc.set_ylabel("Percentage of Samples (%)", fontsize=12)
-        ax_acc.set_xlim(0, max(p99_val * 1.15, 10))
         ax_acc.legend(frameon=True)
         fig3.tight_layout()
 

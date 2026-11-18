@@ -24,25 +24,41 @@ OUTPUT_DIR = Path("manuscript_png/FigS3_AccessTime_Bcx")
 DPI = 300
 PNG_WIDTH = 10.0     # inches
 PNG_HEIGHT = 5.0     # inches
-BARE = True                                 # True: the unlabelled version also loses the legend and in-plot text
+BARE = True          # True: the unlabelled version also loses the legend and in-plot text
 
 figure_margin_size = 0.0
 set_background_transparent = True
 
-# =========================================================== SETTINGS (edit these) ===========================================================
+# Fixed Axis Bounds
+TTP_XLIM = (0, 120)
+TTP_XTICKS = np.arange(0, 121, 24)
+
+ACC_XLIM = (0, 60)
+ACC_XTICKS = np.arange(0, 61, 10)
+
+PCT_YLIM = (0, 60)
+PCT_YTICKS = np.arange(0, 61, 10)
+# ==============================================================================================================================================
+
 
 def save_labelled_and_unlabelled(fig, out_dir: Path, stem: str, dpi: int = 300):
-    """Save <stem>_labelled.png and <stem>_unlabelled.png on an identical canvas."""
+    """Save <stem>_labelled.png (white bg) and <stem>_unlabelled.png (transparent bg) on an identical canvas."""
     out_dir.mkdir(parents=True, exist_ok=True)
     labelled_path = out_dir / f"{stem}_labelled.png"
     unlabelled_path = out_dir / f"{stem}_unlabelled.png"
 
-    # 1. Save full labelled version with transparent background and zero margin
+    # 1. Save full labelled version with solid white background
+    fig.patch.set_facecolor("white")
+    fig.patch.set_alpha(1.0)
+    for ax in fig.axes:
+        ax.set_facecolor("white")
+        ax.patch.set_alpha(1.0)
+
     fig.savefig(
-        labelled_path, 
-        dpi=dpi, 
-        transparent=set_background_transparent,
-        facecolor="none" if set_background_transparent else "white",
+        labelled_path,
+        dpi=dpi,
+        transparent=False,
+        facecolor="white",
         edgecolor="none",
         bbox_inches="tight" if figure_margin_size == 0.0 else None,
         pad_inches=0.0
@@ -69,9 +85,15 @@ def save_labelled_and_unlabelled(fig, out_dir: Path, stem: str, dpi: int = 300):
         fig._suptitle.set_visible(False)
 
     # 3. Save unlabelled version with transparent background and zero margin
+    fig.patch.set_facecolor("none")
+    fig.patch.set_alpha(0.0)
+    for ax in fig.axes:
+        ax.set_facecolor("none")
+        ax.patch.set_alpha(0.0)
+
     fig.savefig(
-        unlabelled_path, 
-        dpi=dpi, 
+        unlabelled_path,
+        dpi=dpi,
         transparent=set_background_transparent,
         facecolor="none" if set_background_transparent else "white",
         edgecolor="none",
@@ -203,11 +225,12 @@ def Extract_and_Plot_Metrics(csv_path, out_dir, year, save_plots=True):
     # 3. GRAPH 1: Time to Positivity (TTP) Distribution + Fit (Percentage)
     # -------------------------------------------------------------
     fig1, ax1 = plt.subplots(figsize=(PNG_WIDTH, PNG_HEIGHT))
+    bin_edges_ttp = np.linspace(TTP_XLIM[0], TTP_XLIM[1], 41)
     sns.histplot(
         positive_ttps_hrs,
         kde=False,
-        stat="probability",
-        bins=40,
+        stat="percent",
+        bins=bin_edges_ttp,
         color="#2b5c8f",
         edgecolor="black",
         alpha=0.6,
@@ -215,17 +238,19 @@ def Extract_and_Plot_Metrics(csv_path, out_dir, year, save_plots=True):
         ax=ax1,
     )
 
-    ax1.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: "{:,.1f}%".format(y * 100)))
-
-    x_axis = np.linspace(0, positive_ttps_hrs.max(), 300)
+    x_axis = np.linspace(TTP_XLIM[0], TTP_XLIM[1], 300)
     pdf_fitted = stats.lognorm.pdf(x_axis, s=shape, loc=loc, scale=scale)
-    bin_width = positive_ttps_hrs.max() / 40
-    ax1.plot(x_axis, pdf_fitted * bin_width, "r-", lw=2.5, label=f"Fitted LogNorm (shape={shape:.2f}, scale={scale:.2f})")
+    bin_width = (TTP_XLIM[1] - TTP_XLIM[0]) / 40.0
+    ax1.plot(x_axis, pdf_fitted * bin_width * 100.0, "r-", lw=2.5, label=f"Fitted LogNorm (shape={shape:.2f}, scale={scale:.2f})")
 
+    ax1.set_xlim(*TTP_XLIM)
+    ax1.set_xticks(TTP_XTICKS)
+    ax1.set_ylim(*PCT_YLIM)
+    ax1.set_yticks(PCT_YTICKS)
+    ax1.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.0f}%"))
     ax1.set_title(f"{base_filename} Time-to-Positivity (TTP) Distribution", fontsize=14, fontweight="bold")
     ax1.set_ylabel("Percentage of Positive Samples (%)", fontsize=12)
     ax1.set_xlabel("Time to Positivity (Hours)", fontsize=12)
-    ax1.set_xlim(0, max(positive_ttps_hrs.max(), 120))
     ax1.legend(frameon=True)
     fig1.tight_layout()
 
@@ -259,12 +284,15 @@ def Extract_and_Plot_Metrics(csv_path, out_dir, year, save_plots=True):
         ax=ax2,
     )
 
-    ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: "{:.1f}%".format(y)))
+    ax2.set_xlim(-0.5, 23.5)
+    ax2.set_xticks(ticks=range(0, 24))
+    ax2.set_xticklabels([f"{h:02d}:00" for h in range(0, 24)], rotation=45)
+    ax2.set_ylim(*PCT_YLIM)
+    ax2.set_yticks(PCT_YTICKS)
+    ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.0f}%"))
     ax2.set_title(f"{base_filename} Average Sample Arrival Share by Hour", fontsize=14, fontweight="bold")
     ax2.set_xlabel("Hour of Day (00:00 - 23:00)", fontsize=12)
     ax2.set_ylabel("Percentage Share of Daily Arrivals (%)", fontsize=12)
-    ax2.set_xticks(ticks=range(0, 24))
-    ax2.set_xticklabels([f"{h:02d}:00" for h in range(0, 24)], rotation=45)
     ax2.legend(title="Day Type", frameon=True)
     fig2.tight_layout()
 
@@ -278,9 +306,10 @@ def Extract_and_Plot_Metrics(csv_path, out_dir, year, save_plots=True):
     # -------------------------------------------------------------
     if PROC_TIMESTAMP_COL in df.columns and not valid_acc.empty:
         fig3, ax_acc = plt.subplots(figsize=(PNG_WIDTH, PNG_HEIGHT))
+        bin_edges_acc = np.linspace(ACC_XLIM[0], ACC_XLIM[1], 31)
         sns.histplot(
             valid_acc,
-            bins=40,
+            bins=bin_edges_acc,
             stat="percent",
             color="#2ca02c",
             edgecolor="black",
@@ -294,10 +323,14 @@ def Extract_and_Plot_Metrics(csv_path, out_dir, year, save_plots=True):
         ax_acc.axvline(mean_val, color="red", linestyle="--", linewidth=2, label=f"Mean: {mean_val:.1f} min")
         ax_acc.axvline(p99_val, color="darkorange", linestyle=":", linewidth=2, label=f"99th Percentile: {p99_val:.1f} min")
 
+        ax_acc.set_xlim(*ACC_XLIM)
+        ax_acc.set_xticks(ACC_XTICKS)
+        ax_acc.set_ylim(*PCT_YLIM)
+        ax_acc.set_yticks(PCT_YTICKS)
+        ax_acc.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.0f}%"))
         ax_acc.set_title(f"{base_filename} Accessioning Processing Time Distribution", fontsize=14, fontweight="bold")
         ax_acc.set_xlabel("Accessioning Duration (Minutes)", fontsize=12)
         ax_acc.set_ylabel("Percentage of Samples (%)", fontsize=12)
-        ax_acc.set_xlim(0, max(p99_val * 1.15, 10))
         ax_acc.legend(frameon=True)
         fig3.tight_layout()
 

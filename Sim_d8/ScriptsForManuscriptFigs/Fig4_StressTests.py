@@ -3,8 +3,9 @@
 """
 Figure 4: Stress-test scenario comparison.
 
-Change in TAT (scenario minus baseline), paired by replication,
-mean and 95% CI.
+Top row: Baseline TAT (hours, mean and 95% CI across replications).
+Subsequent rows: Change in TAT (scenario minus baseline), paired by replication,
+mean and 95% CI, for both 95th percentile (03a) and median (03b).
 """
 
 from pathlib import Path
@@ -31,33 +32,44 @@ PNG_WIDTH = 4.5
 LEFT_MARGIN_IN = 1.5
 PNG_HEIGHT = None
 DPI = 300
-BARE = False
 
-figure_margin_size = 0.0
-set_background_transparent = True
-
-SCENARIO_DIR = Path("results_experiments/StressTest")
+SCENARIO_DIR = Path("results_experiments")
 
 BASELINE = "baseline"
 
 INCLUDE_MEDIA_SHORTAGE = True
 
 SCENARIOS = {
-    "baseline": SCENARIO_DIR / "scn_baseline",
-    "Volume_all_1pt5x": SCENARIO_DIR / "scn_Volume_all_1pt5x",
-    "Volume_all_2pt0x": SCENARIO_DIR / "scn_Volume_all_2pt0x",
-    "BCx_Vol_double": SCENARIO_DIR / "scn_BCx_Vol_double",
-    "Urine_Vol_1pt5x": SCENARIO_DIR / "scn_Urine_Vol_1pt5x",
-    "Stool_Vol_1pt5x": SCENARIO_DIR / "scn_Stool_Vol_1pt5x",
-    "BCx_Bottle_Shortage": SCENARIO_DIR / "scn_BCx_Bottle_Shortage",
-    "BloodAgar__Shortage": SCENARIO_DIR / "scn_BloodAgar__Shortage",
+    "baseline":                   SCENARIO_DIR / "scn_baseline",
+    "all_x1.25":                  SCENARIO_DIR / "scn_all_x1.25",
+    "all_x1.5":                   SCENARIO_DIR / "scn_all_x1.5",
+    "all_x2":                     SCENARIO_DIR / "scn_all_x2",
+    "all_x2.5":                   SCENARIO_DIR / "scn_all_x2.5",
+    "Volume_all_1pt5x":           SCENARIO_DIR / "scn_Volume_all_1pt5x",
+    "Volume_all_2pt0x":           SCENARIO_DIR / "scn_Volume_all_2pt0x",
+    "BCx_x1.25":                  SCENARIO_DIR / "scn_BCx_x1.25",
+    "BCx_x1.5":                   SCENARIO_DIR / "scn_BCx_x1.5",
+    "BCx_x2":                     SCENARIO_DIR / "scn_BCx_x2",
+    "BCx_Vol_double":             SCENARIO_DIR / "scn_BCx_Vol_double",
+    "Urine_Vol_1pt5x":            SCENARIO_DIR / "scn_Urine_Vol_1pt5x",
+    "Stool_Vol_1pt5x":            SCENARIO_DIR / "scn_Stool_Vol_1pt5x",
+    "BCx_Bottle_Shortage":        SCENARIO_DIR / "scn_BCx_Bottle_Shortage",
+    "BloodAgar__Shortage":        SCENARIO_DIR / "scn_BloodAgar__Shortage",
     "Accessioning_tech_day_0pt5": SCENARIO_DIR / "scn_Accessioning_tech_day_0pt5",
-    "Routine_day_0pt5": SCENARIO_DIR / "scn_Routine_day_0pt5",
+    "Routine_day_0pt5":           SCENARIO_DIR / "scn_Routine_day_0pt5",
 }
 
 SCENARIO_ORDER = [
+    "baseline",
+    "all_x1.25",
+    "all_x1.5",
+    "all_x2",
+    "all_x2.5",
     "Volume_all_1pt5x",
     "Volume_all_2pt0x",
+    "BCx_x1.25",
+    "BCx_x1.5",
+    "BCx_x2",
     "BCx_Vol_double",
     "Urine_Vol_1pt5x",
     "Stool_Vol_1pt5x",
@@ -133,20 +145,35 @@ GROUPS = {
 }
 
 
-def save_both(fig, stem, out_dir=OUTPUT_DIR, dpi=DPI, bare=BARE):
-    """Save <stem>_labelled.png and <stem>_unlabelled.png with transparent background and zero margin."""
+def save_both(fig, stem, out_dir=OUTPUT_DIR, dpi=DPI):
+    """Save <stem>_labelled.png (white bg, visible axes & labels) and <stem>_unlabelled.png (transparent bg, tight crop around axes & ticks)."""
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1. Labelled version: solid white background, visible axes, tick labels, titles, and legends
+    fig.patch.set_facecolor("white")
+    fig.patch.set_alpha(1.0)
+    for ax in fig.axes:
+        ax.set_facecolor("white")
+        ax.patch.set_alpha(1.0)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["bottom"].set_visible(True)
+        ax.spines["left"].set_visible(True)
+        ax.tick_params(which="both", bottom=True, left=True)
+
     fig.savefig(
         out_dir / f"{stem}_labelled.png",
         dpi=dpi,
-        transparent=set_background_transparent,
-        facecolor="none" if set_background_transparent else "white",
+        transparent=False,
+        facecolor="white",
         edgecolor="none",
-        bbox_inches="tight" if figure_margin_size == 0.0 else None,
-        pad_inches=0.0,
+        bbox_inches="tight",
+        pad_inches=0.04,
     )
 
+    # 2. Strip all titles, axis labels, tick values, legends, and text annotations (keep tick marks & axis lines)
     for ax in fig.axes:
+        ax.set_title("")
         ax.set_xlabel("")
         ax.set_ylabel("")
         ax.tick_params(
@@ -154,27 +181,31 @@ def save_both(fig, stem, out_dir=OUTPUT_DIR, dpi=DPI, bare=BARE):
             bottom=True, left=True,
             labelbottom=False, labelleft=False, labelright=False, labeltop=False,
         )
-        if bare:
-            ax.set_title("")
-            if ax.get_legend():
-                ax.get_legend().remove()
-            for t in ax.texts:
-                t.set_visible(False)
+        if ax.get_legend():
+            ax.get_legend().remove()
+        for t in ax.texts:
+            t.set_visible(False)
 
-    if bare:
-        for lg in list(fig.legends):
-            lg.remove()
-        if fig._suptitle is not None:
-            fig._suptitle.set_visible(False)
+    for lg in list(fig.legends):
+        lg.remove()
+    if fig._suptitle is not None:
+        fig._suptitle.set_visible(False)
+
+    # 3. Unlabelled version: transparent background, tight crop around axes & tick marks
+    fig.patch.set_facecolor("none")
+    fig.patch.set_alpha(0.0)
+    for ax in fig.axes:
+        ax.set_facecolor("none")
+        ax.patch.set_alpha(0.0)
 
     fig.savefig(
         out_dir / f"{stem}_unlabelled.png",
         dpi=dpi,
-        transparent=set_background_transparent,
-        facecolor="none" if set_background_transparent else "white",
+        transparent=True,
+        facecolor="none",
         edgecolor="none",
-        bbox_inches="tight" if figure_margin_size == 0.0 else None,
-        pad_inches=0.0,
+        bbox_inches="tight",
+        pad_inches=0.02,
     )
     plt.close(fig)
     print(f"  wrote {stem}_labelled.png & {stem}_unlabelled.png")
@@ -193,7 +224,9 @@ def scenario_frames():
     scenarios = selected_scenarios()
     for name, folder in scenarios.items():
         if not folder.exists():
-            raise FileNotFoundError(f"Missing scenario directory: {folder}")
+            print(f"  WARNING: skipping missing scenario directory: {folder}")
+            continue
+        print(f"Loading '{name}' from {folder}")
         s, _, _ = fc.load_sim(folder, fc.invert(GROUPS))
         if s.empty:
             raise ValueError(f"No simulation data found in {folder}")
@@ -238,6 +271,17 @@ def calculate_scenario_differences(scn):
         raise SystemExit(f"SCENARIOS has no entry named '{BASELINE}'")
 
     allrows = []
+
+    # Baseline summary rows (absolute TAT in hours, mean and 95% CI across replications)
+    for metric in ["p50", "p95"]:
+        g_base = base.groupby(["group"])[metric]
+        s_base = pd.DataFrame({"mean": g_base.mean(), "se": g_base.sem(), "n": g_base.count()}).reset_index()
+        s_base["ci"] = stats.t.ppf(0.975, (s_base["n"] - 1).clip(lower=1)) * s_base["se"]
+        s_base["scenario"] = BASELINE
+        s_base["metric"] = metric
+        allrows.append(s_base)
+
+    # Paired differences (scenario minus baseline)
     for scenario in scn.scenario.unique():
         if scenario == BASELINE:
             continue
@@ -299,8 +343,17 @@ def scenario_plot(s, metric, xlabel, stem, scens):
             )
 
     ax.axvline(0, color=fc.INK, linewidth=0.8)
+    if BASELINE in scens and len(scens) > 1:
+        base_idx = scens.index(BASELINE)
+        ax.axhspan(base_idx - 0.5, base_idx + 0.5, color="#f2f2f2", zorder=0)
+        ax.axhline(base_idx + 0.5, color=fc.INK, linewidth=0.6, linestyle="--", alpha=0.5)
+
+    ylabels = [
+        "Baseline TAT (h)" if x == BASELINE else textwrap.fill(x.replace("_", " "), 22)
+        for x in scens
+    ]
     ax.set_yticks(range(len(scens)))
-    ax.set_yticklabels([textwrap.fill(x.replace("_", " "), 22) for x in scens])
+    ax.set_yticklabels(ylabels)
     ax.set_ylim(-0.6, len(scens) - 0.4)
     ax.invert_yaxis()
     ax.grid(axis="y", visible=False)
@@ -309,15 +362,13 @@ def scenario_plot(s, metric, xlabel, stem, scens):
 
     handles = [Line2D([0], [0], marker="o", color="w", markerfacecolor=colors[g_], markersize=5, label=g_) for g_ in groups]
     fc.top_legend(ax, handles, ncol=LEGEND_COLUMNS)
-    save_both(fig, stem, OUTPUT_DIR, DPI, BARE)
-    plt.close(fig)
+    save_both(fig, stem, OUTPUT_DIR, DPI)
 
 
 def main():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     fc.apply_style()
-    if set_background_transparent:
-        plt.rcParams.update({"figure.facecolor": "none", "axes.facecolor": "none"})
+    plt.rcParams.update({"figure.facecolor": "white", "axes.facecolor": "white"})
 
     scn = scenario_frames()
     results = calculate_scenario_differences(scn)
@@ -326,8 +377,8 @@ def main():
     results.to_csv(OUTPUT_DIR / "table4_stress_scenarios.csv", index=False, float_format="%.3f")
 
     for metric, xlabel, stem in [
-        ("p95", "Δ 95th percentile TAT vs baseline (h)", "03a_stress_delta_p95"),
-        ("p50", "Δ median TAT vs baseline (h)", "03b_stress_delta_p50"),
+        ("p95", "95th percentile TAT: baseline (h) & Δ vs baseline (h)", "03a_stress_delta_p95"),
+        ("p50", "Median TAT: baseline (h) & Δ vs baseline (h)", "03b_stress_delta_p50"),
     ]:
         s = results[results.metric == metric]
         scenario_plot(s, metric, xlabel, stem, available)
