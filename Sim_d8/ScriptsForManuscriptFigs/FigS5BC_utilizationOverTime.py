@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """Figure S5B–F: Standalone figures for bench utilization & queue length:
-  1. FigS5B_daily_utilization_by_bench                 (all benches, full window + weekend shading)
-  2. FigS5B_1_daily_utilization_front_end              (Front-end & setup benches, full window)
-  3. FigS5B_2_daily_utilization_core_culture           (Core culture benches, full window)
-  4. FigS5B_3_daily_utilization_specialized            (Specialized & oversight benches, full window)
-  5. FigS5B_7day_*                                     (7-day window comparison versions of all 4 above)
-  6. FigS5C_daily_utilization_by_shift                 (daily mean % utilization by shift across simulation days)
-  7. FigS5D_utilization_by_hour                        (folded 24 h % utilization by bench, mean & 95% band)
-  8. FigS5E_utilization_timeline                       (single-replication % utilization timeline over days)
-  9. FigS5F_queue_by_hour                              (folded 24 h normalized queue length by bench, mean & 95% band)
- 10. FigS5F_1_queue_by_hour_front_end                  (Front-end & setup benches queue length by hour)
- 11. FigS5F_2_queue_by_hour_core_culture               (Core culture benches queue length by hour)
- 12. FigS5F_3_queue_by_hour_specialized                (Specialized & oversight benches queue length by hour)
+1. FigS5B_daily_utilization_by_bench                 (all benches, full window + weekend shading)
+2. FigS5B_1_daily_utilization_front_end              (Front-end & setup benches, full window)
+3. FigS5B_2_daily_utilization_core_culture           (Core culture benches, full window)
+4. FigS5B_3_daily_utilization_specialized            (Specialized & oversight benches, full window)
+5. FigS5B_7day_*                                     (7-day window comparison versions of all 4 above)
+6. FigS5C_daily_utilization_by_shift                 (daily mean % utilization by shift across simulation days)
+7. FigS5D_utilization_by_hour                        (folded 24 h % utilization by bench, mean & 95% band)
+8. FigS5E_utilization_timeline                       (single-replication % utilization timeline over days)
+9. FigS5F_queue_by_hour                              (folded 24 h normalized queue length by bench, mean & 95% band)
+10. FigS5F_1_queue_by_hour_front_end                  (Front-end & setup benches queue length by hour)
+11. FigS5F_2_queue_by_hour_core_culture               (Core culture benches queue length by hour)
+12. FigS5F_3_queue_by_hour_specialized                (Specialized & oversight benches queue length by hour)
 
 Each figure is saved as <stem>_labelled.png (white background, visible axes & labels)
 and <stem>_unlabelled.png (transparent background, visible axes & tick marks, no text/legends, tight crop).
@@ -65,6 +65,23 @@ BENCH_LABELS = {
     "tech_supervisor": "Supervisor",
 }
 
+# Explicit color assignment per tech bench key (edit hex codes directly to customize)
+BENCH_COLOR_MAP = {
+    # Front-end & setup
+    "tech_accession": "#1f77b4",        # steel blue
+    "tech_float_accession": "#17becf",  # cyan / teal
+    "tech_plating": "#ff7f0e",          # safety orange
+    # Core culture benches
+    "tech_urine": "#DCDC00",            
+    "tech_routine": "#bcbd22",          # crimson red
+    "tech_new": "#9467bd",              # medium purple
+    "tech_float_newroutine": "#e377c2", # orchid pink
+    # Specialized & oversight
+    "tech_blood": "#d62728",            # warm brown
+    "tech_stool": "#8c564b",            # olive / chartuse
+    "tech_supervisor": "#393b79",       # deep indigo
+}
+
 # Defined arrays to group benches into separate plots (edit bench keys here as needed)
 BENCH_GROUPS = {
     "front_end": {
@@ -78,18 +95,18 @@ BENCH_GROUPS = {
     "core_culture": {
         "title": "Core culture benches",
         "benches": [
+            "tech_blood",
+            "tech_stool",
             "tech_urine",
             "tech_routine",
-            "tech_new",
-            "tech_float_newroutine",
         ],
     },
     "specialized": {
         "title": "Specialized & oversight",
         "benches": [
-            "tech_blood",
-            "tech_stool",
             "tech_supervisor",
+            "tech_new",
+            "tech_float_newroutine",
         ],
     },
 }
@@ -113,17 +130,28 @@ EXCLUDE_COLS_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
-# 12 distinct colors so every bench gets a unique color
+# Fallback palette if any bench/series is not present in BENCH_COLOR_MAP
 DISTINCT_COLORS = [
     "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
     "#8c564b", "#e377c2", "#17becf", "#bcbd22", "#393b79",
     "#637939", "#8c6d31",
 ]
 
-BENCH_COLORS = {
-    label: DISTINCT_COLORS[i % len(DISTINCT_COLORS)]
-    for i, label in enumerate(BENCH_LABELS.values())
-}
+# Map display labels (both bench labels and queue labels) to their assigned bench color
+BENCH_COLORS = {}
+for bench_key, bench_label in BENCH_LABELS.items():
+    if bench_key in BENCH_COLOR_MAP:
+        BENCH_COLORS[bench_label] = BENCH_COLOR_MAP[bench_key]
+for q_col, q_label in QUEUE_LABELS.items():
+    if q_label in BENCH_COLORS:
+        continue
+    # Match queue column name against known bench keys (case-insensitive)
+    matched_key = next(
+        (k for k in BENCH_COLOR_MAP if k.replace("tech_", "") in q_col.lower()),
+        None,
+    )
+    if matched_key:
+        BENCH_COLORS[q_label] = BENCH_COLOR_MAP[matched_key]
 
 WEEKEND_SHADE_COLOR = "#d9d8d0"
 SHIFT_COLORS = {"Day": "#FFE98A", "Evening": "#FFB86B", "Night": "#9DB4F0"}
@@ -382,9 +410,10 @@ def _plot_daily_bench_panel(
     fig, ax = plt.subplots(figsize=(PNG_WIDTH, PNG_HEIGHT))
     shade_weekends(ax, sub.index, start_day_abs)
 
-    for label in bench_labels:
+    for k, label in enumerate(bench_labels):
         if label in sub.columns:
-            ax.plot(sub.index, sub[label], label=label, color=BENCH_COLORS[label], lw=1.4)
+            color = BENCH_COLORS.get(label, DISTINCT_COLORS[k % len(DISTINCT_COLORS)])
+            ax.plot(sub.index, sub[label], label=label, color=color, lw=1.4)
 
     ax.set_xlim(sub.index.min() - 0.5, sub.index.max() + 0.5)
     if max_days is not None:
