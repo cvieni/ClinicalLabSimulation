@@ -59,6 +59,13 @@ LEVEL_COLORS = {
     "hi": "#B2182B",
 }
 
+# Fixed X-axis limits & ticks (set to None for automatic scaling)
+P50_XLIM = (-1.5, 1.5)
+P50_XTICKS = np.arange(-1.50, 1.5, 0.5)
+
+P95_XLIM = (-1.5, 1.5)
+P95_XTICKS = np.arange(-1.50, 1.5, 0.5)
+
 # Optional display names for parameters (falls back to formatted parameter name)
 PARAMETER_LABELS = {
     "positive_specimen_rate": "Culture positivity rate",
@@ -68,13 +75,17 @@ PARAMETER_LABELS = {
 # Optional filter: list parameter names to include, or None to include all found in SENS_DIR
 ONLY_PARAMETERS = None
 
+# Optional explicit top-to-bottom parameter order shared across both plots, or None to rank by RANK_BY_METRIC
+PARAMETER_ORDER = None
+RANK_BY_METRIC = "p50"       # "p50" or "p95" — determines shared parameter ordering when PARAMETER_ORDER is None
+
 # Figure dimensions
 PNG_WIDTH = 6.5
-PNG_HEIGHT = None            # None = automatic from number of parameters (0.42 in per parameter + 1.4)
-LEFT_MARGIN_IN = 2.15
-RIGHT_MARGIN_IN = 0.25
-BOTTOM_MARGIN_IN = 0.60
-TOP_MARGIN_IN = 0.72
+PNG_HEIGHT = 3.0
+LEFT_MARGIN_IN = 0.0
+RIGHT_MARGIN_IN = 0.0
+BOTTOM_MARGIN_IN = 0.00
+TOP_MARGIN_IN = 0.0
 DPI = 300
 LEGEND_COLUMNS = 2
 
@@ -291,17 +302,39 @@ def sensitivity_frames() -> pd.DataFrame:
     return pd.DataFrame(results)
 
 
-def tornado_plot(data: pd.DataFrame, metric: str, xlabel: str, filename: str, observed=None):
+def resolve_parameter_order(data: pd.DataFrame) -> list[str]:
+    """Determine a single consistent parameter ordering shared across all tornado plots."""
+    available = list(dict.fromkeys(data["parameter"].tolist()))
+    if PARAMETER_ORDER:
+        ordered = [p for p in PARAMETER_ORDER if p in available]
+        remaining = [p for p in available if p not in ordered]
+        return ordered + remaining
+
+    ref = data[data["metric"] == RANK_BY_METRIC]
+    if ref.empty:
+        ref = data
+    ranking = (
+        ref.groupby("parameter")["mean_delta"]
+        .apply(lambda x: x.abs().max())
+        .sort_values(ascending=False)
+    )
+    return ranking.index.tolist()
+
+
+def tornado_plot(
+    data: pd.DataFrame,
+    metric: str,
+    parameter_order: list[str],
+    xlabel: str,
+    filename: str,
+    xlim=None,
+    xticks=None,
+    observed=None,
+):
     s = data[data["metric"] == metric].copy()
     if s.empty:
         raise ValueError(f"No data available for {metric}")
 
-    ranking = (
-        s.groupby("parameter")["mean_delta"]
-        .apply(lambda x: x.abs().max())
-        .sort_values(ascending=False)
-    )
-    parameter_order = ranking.index.tolist()
     h_in = PNG_HEIGHT if PNG_HEIGHT else max(3.2, 0.42 * len(parameter_order) + 1.4)
 
     fig, ax = fc.new_fig(
@@ -348,14 +381,20 @@ def tornado_plot(data: pd.DataFrame, metric: str, xlabel: str, filename: str, ob
     ax.set_ylim(-0.6, len(parameter_order) - 0.4)
     ax.invert_yaxis()
 
-    extent = np.abs(s["mean_delta"].to_numpy())
-    ci_extent = s["ci95"].fillna(0).to_numpy()
-    max_extent = np.max(extent + ci_extent)
-    if not np.isfinite(max_extent) or max_extent == 0:
-        max_extent = 1.0
-    max_extent *= 1.12
+    if xlim is not None:
+        ax.set_xlim(*xlim)
+    else:
+        extent = np.abs(s["mean_delta"].to_numpy())
+        ci_extent = s["ci95"].fillna(0).to_numpy()
+        max_extent = np.max(extent + ci_extent)
+        if not np.isfinite(max_extent) or max_extent == 0:
+            max_extent = 1.0
+        max_extent *= 1.12
+        ax.set_xlim(-max_extent, max_extent)
 
-    ax.set_xlim(-max_extent, max_extent)
+    if xticks is not None:
+        ax.set_xticks(xticks)
+
     ax.set_xlabel(xlabel)
     ax.set_ylabel("Parameter")
     ax.grid(axis="x", alpha=0.25, linewidth=0.6)
@@ -398,20 +437,27 @@ def main():
     )
 
     observed = load_observed_tat()
+    shared_order = resolve_parameter_order(results)
 
     tornado_plot(
-        results,
-        metric="p50",
-        xlabel="Change in median TAT vs baseline (hours)",
-        filename="FigS8A_tornado_median_tat",
-        observed=observed,
+            results,
+            metric="p50",
+            parameter_order=shared_order,
+            xlabel="Change in median TAT vs baseline (hours)",
+            filename="FigS8A_tornado_median_tat",
+            xlim=P50_XLIM,
+            xticks=P50_XTICKS,
+            observed=observed,
     )
 
     tornado_plot(
         results,
         metric="p95",
+        parameter_order=shared_order,
         xlabel="Change in 95th percentile TAT vs baseline (hours)",
         filename="FigS8B_tornado_p95_tat",
+        xlim=P95_XLIM,
+        xticks=P95_XTICKS,
         observed=observed,
     )
 

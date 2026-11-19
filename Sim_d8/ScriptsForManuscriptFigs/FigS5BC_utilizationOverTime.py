@@ -99,14 +99,14 @@ BENCH_GROUPS = {
             "tech_stool",
             "tech_urine",
             "tech_routine",
+            "tech_new",
+            "tech_float_newroutine",
         ],
     },
     "specialized": {
         "title": "Specialized & oversight",
         "benches": [
             "tech_supervisor",
-            "tech_new",
-            "tech_float_newroutine",
         ],
     },
 }

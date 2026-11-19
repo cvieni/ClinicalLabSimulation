@@ -20,6 +20,8 @@ python run_sensitivity.py --dry-run --iterations 30 --sim-days 60 --seed 42 --ba
 python run_sensitivity.py --iterations 30 --sim-days 60 --seed 42 --baseline-dir results_experiments/scn_baseline
 
 
+# Run for stage decomposition
+python run_montecarlo_and_plot.py --iterations 30 --sim-days 60 --seed 42 --out results_experiments/scn_baseline_stages --save-stages
 
 
 

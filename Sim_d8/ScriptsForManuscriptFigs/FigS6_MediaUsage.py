@@ -64,10 +64,10 @@ PANEL_DEFS = {   # key: (column, y label, title, linestyle, linewidth)
 
 
 def save_both(fig, stem, out_dir: Path, dpi: int = 300):
-    """Save <stem>_labelled.png (white bg, visible axes) and <stem>_unlabelled.png (transparent bg, tick marks only) on an identical canvas."""
+    """Save <stem>_labelled.png (white bg, tight crop) and <stem>_unlabelled.png (transparent bg, tight crop around axes & ticks)."""
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. Labelled version: solid white background, visible axes, tick labels, titles, and legends
+    # 1. Labelled version: solid white background, tight bounding box
     fig.patch.set_facecolor("white")
     fig.patch.set_alpha(1.0)
     for ax in fig.axes:
@@ -84,6 +84,9 @@ def save_both(fig, stem, out_dir: Path, dpi: int = 300):
         dpi=dpi,
         transparent=False,
         facecolor="white",
+        edgecolor="none",
+        bbox_inches="tight",
+        pad_inches=0.02,
     )
 
     # 2. Strip all titles, axis labels, tick values, legends, and text annotations (keep tick marks & axis lines)
@@ -106,9 +109,11 @@ def save_both(fig, stem, out_dir: Path, dpi: int = 300):
     if fig._suptitle is not None:
         fig._suptitle.set_visible(False)
 
-    # 3. Unlabelled version: transparent background, visible axes & tick marks, identical canvas alignment
+    # 3. Unlabelled version: transparent background, tight crop around axes & tick marks
+    fig.patch.set_facecolor("none")
     fig.patch.set_alpha(0.0)
     for ax in fig.axes:
+        ax.set_facecolor("none")
         ax.patch.set_alpha(0.0)
 
     fig.savefig(
@@ -116,28 +121,37 @@ def save_both(fig, stem, out_dir: Path, dpi: int = 300):
         dpi=dpi,
         transparent=True,
         facecolor="none",
+        edgecolor="none",
+        bbox_inches="tight",
+        pad_inches=0.02,
     )
     plt.close(fig)
     print(f"  wrote {stem}_labelled.png & {stem}_unlabelled.png")
 
 
-def style_top_header(fig, handles, title: str, ncol: int = 4):
-    """Place title cleanly at the top and legend below it with automatic top margin so they never overlap."""
+def style_top_header(ax, handles, title: str, ncol: int = 4):
+    """Attach legend and title snugly above the axes without leaving empty canvas margins."""
     n_rows = max(1, math.ceil(len(handles) / max(1, ncol)))
-    top_margin = max(0.62, 0.89 - 0.045 * n_rows)
-    fig.subplots_adjust(left=0.11, right=0.98, bottom=0.13, top=top_margin)
-    fig.suptitle(title, x=0.11, y=0.97, ha="left", va="top", fontsize=9.5, fontweight="bold", color=fc.INK)
     if handles:
-        fig.legend(
+        ax.legend(
             handles=handles,
-            loc="upper left",
-            bbox_to_anchor=(0.11, 0.91),
+            loc="lower left",
+            bbox_to_anchor=(0.0, 1.02),
             ncol=ncol,
             frameon=False,
             fontsize=6.8,
             columnspacing=1.2,
             handlelength=1.8,
+            borderaxespad=0.0,
         )
+    ax.set_title(
+        title,
+        loc="left",
+        y=1.02 + 0.055 * n_rows,
+        fontsize=9.5,
+        fontweight="bold",
+        color=fc.INK,
+    )
 
 
 def load_media(mc_dir):
@@ -226,11 +240,12 @@ def main():
 
         ax.set_xlim(0, d["Day"].max())
         ax.set_ylim(bottom=0)
+        ax.margins(x=0, y=0.02)
         ax.set_xlabel("Simulation day")
         ax.set_ylabel(ylab)
         ax.grid(axis="y", linestyle=":", alpha=0.6)
 
-        style_top_header(fig, handles, f"{chr(65 + k)}. {ttl}", ncol=LEGEND_COLUMNS)
+        style_top_header(ax, handles, f"{chr(65 + k)}. {ttl}", ncol=LEGEND_COLUMNS)
         save_both(fig, f"S6{chr(65 + k)}_media_{key}", OUTPUT_DIR, DPI)
 
     # ---- per-media summary over all replications (measured window only if known)

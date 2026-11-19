@@ -22,7 +22,7 @@ plt.rcParams.update({
 # =========================================================== SETTINGS (edit these) ===========================================================
 OUTPUT_DIR = Path("manuscript_png/FigS3_AccessTime_Bcx")
 DPI = 300
-PNG_WIDTH = 10.0     # inches
+PNG_WIDTH = 8.0     # inches
 PNG_HEIGHT = 5.0     # inches
 BARE = True          # True: the unlabelled version also loses the legend and in-plot text
 
@@ -33,11 +33,12 @@ set_background_transparent = True
 TTP_XLIM = (0, 120)
 TTP_XTICKS = np.arange(0, 121, 24)
 
-ACC_XLIM = (0, 60)
-ACC_XTICKS = np.arange(0, 61, 10)
+ACC_XLIM = (0, 50)
+ACC_XTICKS = np.arange(0, 51, 10)
 
-PCT_YLIM = (0, 60)
-PCT_YTICKS = np.arange(0, 61, 10)
+PCT_YLIM = (0, 50)
+PCT_YTICKS = np.arange(0, 51, 10)
+bin_numb = 51
 # ==============================================================================================================================================
 
 
@@ -225,7 +226,7 @@ def Extract_and_Plot_Metrics(csv_path, out_dir, year, save_plots=True):
     # 3. GRAPH 1: Time to Positivity (TTP) Distribution + Fit (Percentage)
     # -------------------------------------------------------------
     fig1, ax1 = plt.subplots(figsize=(PNG_WIDTH, PNG_HEIGHT))
-    bin_edges_ttp = np.linspace(TTP_XLIM[0], TTP_XLIM[1], 41)
+    bin_edges_ttp = np.linspace(TTP_XLIM[0], TTP_XLIM[1], bin_numb)
     sns.histplot(
         positive_ttps_hrs,
         kde=False,
@@ -306,7 +307,7 @@ def Extract_and_Plot_Metrics(csv_path, out_dir, year, save_plots=True):
     # -------------------------------------------------------------
     if PROC_TIMESTAMP_COL in df.columns and not valid_acc.empty:
         fig3, ax_acc = plt.subplots(figsize=(PNG_WIDTH, PNG_HEIGHT))
-        bin_edges_acc = np.linspace(ACC_XLIM[0], ACC_XLIM[1], 31)
+        bin_edges_acc = np.linspace(ACC_XLIM[0], ACC_XLIM[1], bin_numb)
         sns.histplot(
             valid_acc,
             bins=bin_edges_acc,

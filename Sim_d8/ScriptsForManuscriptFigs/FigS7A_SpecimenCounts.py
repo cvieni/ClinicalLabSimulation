@@ -92,7 +92,7 @@ REFERENCE_SPECIMEN = None
 
 
 def save_both(fig, stem, out_dir: Path, dpi: int = 300):
-    """Save <stem>_labelled.png (white bg, visible axes) and <stem>_unlabelled.png (transparent bg, tick marks only) on an identical canvas."""
+    """Save <stem>_labelled.png (white bg, visible axes) and <stem>_unlabelled.png (transparent bg, tight crop around axes & ticks)."""
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # 1. Labelled version: solid white background, visible axes, tick labels, text annotations, and legend
@@ -112,6 +112,9 @@ def save_both(fig, stem, out_dir: Path, dpi: int = 300):
         dpi=dpi,
         transparent=False,
         facecolor="white",
+        edgecolor="none",
+        bbox_inches="tight",
+        pad_inches=0.04,
     )
 
     # 2. Strip all titles, axis labels, tick values, legends, and bar value text (keep tick marks & axis lines)
@@ -136,9 +139,11 @@ def save_both(fig, stem, out_dir: Path, dpi: int = 300):
     if fig._suptitle is not None:
         fig._suptitle.set_visible(False)
 
-    # 3. Unlabelled version: transparent background, visible axes & tick marks, identical canvas alignment
+    # 3. Unlabelled version: transparent background, tight crop around axes & tick marks
+    fig.patch.set_facecolor("none")
     fig.patch.set_alpha(0.0)
     for ax in fig.axes:
+        ax.set_facecolor("none")
         ax.patch.set_alpha(0.0)
 
     fig.savefig(
@@ -146,10 +151,13 @@ def save_both(fig, stem, out_dir: Path, dpi: int = 300):
         dpi=dpi,
         transparent=True,
         facecolor="none",
+        edgecolor="none",
+        bbox_inches="tight",
+        pad_inches=0.02,
     )
     plt.close(fig)
     print(f"  wrote {stem}_labelled.png & {stem}_unlabelled.png")
-
+    
 
 def load_counts(mc_dir):
     mc = Path(mc_dir)

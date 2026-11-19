@@ -20,7 +20,7 @@ plt.rcParams.update({
 
 # =========================================================== SETTINGS (edit these) ===========================================================
 OUTPUT_DIR = Path("manuscript_png/FigS4_AccessTime_Others")
-PNG_WIDTH = 10.0     # inches
+PNG_WIDTH = 8.0     # inches
 PNG_HEIGHT = 5.0     # inches
 DPI = 300
 
@@ -30,11 +30,12 @@ figure_margin_size = 0.0
 set_background_transparent = True
 
 # Fixed Axis Bounds
-ACC_XLIM = (0, 60)
-ACC_XTICKS = np.arange(0, 61, 10)
+ACC_XLIM = (0, 120)
+ACC_XTICKS = np.arange(0, 51, 10)
 
-PCT_YLIM = (0, 60)
-PCT_YTICKS = np.arange(0, 61, 10)
+PCT_YLIM = (0, 50)
+PCT_YTICKS = np.arange(0, 51, 10)
+bin_numb = 51
 # ==============================================================================================================================================
 
 
@@ -302,7 +303,7 @@ def Process_and_Plot_Group(df, base_filename, out_dir, year, save_plots=True):
     # -------------------------------------------------------------
     if not valid_acc.empty:
         fig3, ax_acc = plt.subplots(figsize=(PNG_WIDTH, PNG_HEIGHT))
-        bin_edges_acc = np.linspace(ACC_XLIM[0], ACC_XLIM[1], 31)
+        bin_edges_acc = np.linspace(ACC_XLIM[0], ACC_XLIM[1], bin_numb)
         sns.histplot(
             valid_acc,
             bins=bin_edges_acc,
